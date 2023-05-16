@@ -20,6 +20,45 @@ DETECTION_WINDOW_GROWTH = 1.2
 DETECTION_WINDOW_JUMP = 0.1
 DETECTION_THRESHOLD = 4.0
 
+def gpu_props():
+    gpu = cuda.get_current_device()
+    props = {}
+    props["name"] = gpu.name.decode("ASCII")
+    props["max_threads_per_block"] = gpu.MAX_THREADS_PER_BLOCK
+    props["max_block_dim_x"] = gpu.MAX_BLOCK_DIM_X
+    props["max_block_dim_y"] = gpu.MAX_BLOCK_DIM_Y
+    props["max_block_dim_z"] = gpu.MAX_BLOCK_DIM_Z
+    props["max_grid_dim_x"] = gpu.MAX_GRID_DIM_X
+    props["max_grid_dim_y"] = gpu.MAX_GRID_DIM_Y
+    props["max_grid_dim_z"] = gpu.MAX_GRID_DIM_Z    
+    props["max_shared_memory_per_block"] = gpu.MAX_SHARED_MEMORY_PER_BLOCK
+    props["async_engine_count"] = gpu.ASYNC_ENGINE_COUNT
+    props["can_map_host_memory"] = gpu.CAN_MAP_HOST_MEMORY
+    props["multiprocessor_count"] = gpu.MULTIPROCESSOR_COUNT
+    props["warp_size"] = gpu.WARP_SIZE
+    props["unified_addressing"] = gpu.UNIFIED_ADDRESSING
+    props["pci_bus_id"] = gpu.PCI_BUS_ID
+    props["pci_device_id"] = gpu.PCI_DEVICE_ID
+    props["compute_capability"] = gpu.compute_capability            
+    CC_CORES_PER_SM_DICT = {
+        (2,0) : 32,
+        (2,1) : 48,
+        (3,0) : 192,
+        (3,5) : 192,
+        (3,7) : 192,
+        (5,0) : 128,
+        (5,2) : 128,
+        (6,0) : 64,
+        (6,1) : 128,
+        (7,0) : 64,
+        (7,5) : 64,
+        (8,0) : 64,
+        (8,6) : 128
+        }
+    props["cores_per_SM"] = CC_CORES_PER_SM_DICT.get(gpu.compute_capability)
+    props["cores_total"] = props["cores_per_SM"] * gpu.MULTIPROCESSOR_COUNT
+    return props   
+
 def fddb_read_single_fold(path_root, path_fold_relative, n_negs_per_img, hcoords, n, verbose=False, fold_title="", seed=0):
     np.random.seed(seed)    
     
@@ -584,7 +623,8 @@ if __name__ == "__main__":
     DATA_NAME = f"data_face_n_{n}_S_{S}_P_{P}_NPI_{NPI}_SEED_{SEED}.bin"
     CLF_NAME = f"clf_face_n_{n}_S_{S}_P_{P}_NPI_{NPI}_SEED_{SEED}_T_{T}_B_{B}_real.bin"
     print(f"DATA_NAME: {DATA_NAME}")
-    print(f"CLF_NAME: {CLF_NAME}")        
+    print(f"CLF_NAME: {CLF_NAME}")
+    print(f"GPU_PROPS: {gpu_props()}")     
     
     # FDDB DATA
     # t1 = time.time()
