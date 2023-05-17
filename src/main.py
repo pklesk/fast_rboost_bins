@@ -21,16 +21,16 @@ np.set_printoptions(linewidth=512)
 
 # main settings
 S = 5 # "scales" parameter to generete Haar-like features
-P = 5 # "positions" parameter to generete Haar-like features
-NPI = 50 # no. of negatives (negative windows) to sample per image from FDDB material
+P = 6 # "positions" parameter to generete Haar-like features
+NPI = 100 # no. of negatives (negative windows) to sample per image from FDDB material
 T = 512 # size of ensemble in FastRealBoostBins (equivalently, no. of boosting rounds when fitting)
 B = 8 # no. of bins
 SEED = 0 # randomization seed
 DEMO_HAAR_FEATURES = False
-REGENERATE_DATA_FROM_FDDB = False
+REGENERATE_DATA_FROM_FDDB = True
 FIT_OR_REFIT_MODEL = False
 MEASURE_ACCS_OF_MODEL = False
-DEMO_DETECT_IN_VIDEO = True
+DEMO_DETECT_IN_VIDEO = False
 
 # detection procedure settings
 DETECTION_SCALES = 8
@@ -38,7 +38,7 @@ DETECTION_WINDOW_HEIGHT_MIN = 64
 DETECTION_WINDOW_WIDTH_MIN = 64
 DETECTION_WINDOW_GROWTH = 1.2
 DETECTION_WINDOW_JUMP = 0.1
-DETECTION_THRESHOLD = 4.0
+DETECTION_THRESHOLD = 3.75
 
 # folders
 FDDB_FOLDER = "../fddb/"
@@ -139,7 +139,7 @@ def fddb_read_single_fold(path_root, path_fold_relative, n_negs_per_img, hcoords
                 cv2.rectangle(i0, p1, p2, (0, 0, 255), 1)
                 cv2.imshow("FDDB", i0)                        
             shcoords_one_window = (np.array([h, w, h, w]) * hcoords).astype(np.int16)                        
-            feats = haar_features_one_window(ii, j0, k0, shcoords_one_window, n, np.arange(n))
+            feats = haar_features_one_window_numba_jit(ii, j0, k0, shcoords_one_window, n, np.arange(n, dtype=np.int32))
             if verbose:
                 print(f"[positive window {img_face_coords} accepted; features: {feats}]")
                 cv2.waitKey(1) 
@@ -154,8 +154,8 @@ def fddb_read_single_fold(path_root, path_fold_relative, n_negs_per_img, hcoords
                 ious = list(map(lambda ifc : iou(patch, ifc), img_faces_coords))
                 max_iou = max(ious) if len(ious) > 0 else 0.0
                 if max_iou < neg_max_iou:
-                    shcoords_one_window = (w * hcoords).astype(np.int16)
-                    feats = haar_features_one_window(ii, j0, k0, shcoords_one_window, n, np.arange(n))
+                    shcoords_one_window = (np.array([h, w, h, w]) * hcoords).astype(np.int16)
+                    feats = haar_features_one_window_numba_jit(ii, j0, k0, shcoords_one_window, n, np.arange(n, dtype=np.int32))
                     X_list.append(feats)
                     y_list.append(-1)                    
                     if verbose:
@@ -579,7 +579,8 @@ def postprocess_avg(detections, responses, threshold=0.5):
 def demo_detect_in_video(clf, hcoords, threshold, computations="simple", postprocess="avg", n_jobs=4, verbose_loop=True, verbose_detect=False):
     print("DEMO OF DETECT IN VIDEO...")
     features_indexes = clf.features_indexes_
-    video = cv2.VideoCapture(0 + cv2.CAP_DSHOW)
+    video = cv2.VideoCapture(0)
+    #video = cv2.VideoCapture(0 + cv2.CAP_DSHOW)
     video.set(cv2.CAP_PROP_FRAME_WIDTH, 640)
     video.set(cv2.CAP_PROP_FRAME_HEIGHT, 480)
     video.set(cv2.CAP_PROP_FPS, 30)    
