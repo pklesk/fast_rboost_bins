@@ -699,7 +699,7 @@ if __name__ == "__main__":
     hcoords = haar_coords(S, P, hinds)
          
     DATA_NAME = f"data_face_n_{n}_S_{S}_P_{P}_NPI_{NPI}_SEED_{SEED}.bin"
-    CLF_NAME = f"clf_frbb_face_n_{n}_S_{S}_P_{P}_NPI_{NPI}_SEED_{SEED}_T_{T}_B_{B}l.bin"    
+    CLF_NAME = f"clf_frbb_face_n_{n}_S_{S}_P_{P}_NPI_{NPI}_SEED_{SEED}_T_{T}_B_{B}.bin"    
     print(f"DATA_NAME: {DATA_NAME}")
     print(f"CLF_NAME: {CLF_NAME}")
     print(f"GPU_PROPS: {gpu_props()}")
