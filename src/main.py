@@ -1,24 +1,50 @@
+import sys
 import numpy as np
+from frbb import FastRealBoostBins
+from numba import cuda, jit
+from numba import void, int8, int16, int32, float32, uint8
+from numba.core.errors import NumbaPerformanceWarning
 import cv2
 from haar import *
 import time
-from numba import cuda, jit
-from numba import void, int8, int16, int32, float32, uint8
 import pickle
-from boosting import RealBoostBins
 from joblib import Parallel, delayed
 from functools import reduce
+import warnings
 
-CLFS_FOLDER = "../models/"
-DATA_FOLDER = "../data/"
-EXTRAS_FOLDER = "../extras/"
+__version__ = "1.0.0"
+__author__ = "Przemysław Klęsk"
+__email__ = "pklesk@zut.edu.pl"
 
+warnings.simplefilter("ignore", category=NumbaPerformanceWarning)
+np.set_printoptions(linewidth=512)
+
+# main settings
+S = 5 # "scales" parameter to generete Haar-like features
+P = 5 # "positions" parameter to generete Haar-like features
+NPI = 50 # no. of negatives (negative windows) to sample per image from FDDB material
+T = 512 # size of ensemble in FastRealBoostBins (equivalently, no. of boosting rounds when fitting)
+B = 8 # no. of bins
+SEED = 0 # randomization seed
+DEMO_HAAR_FEATURES = False
+REGENERATE_DATA_FROM_FDDB = False
+FIT_OR_REFIT_MODEL = False
+MEASURE_ACCS_OF_MODEL = False
+DEMO_DETECT_IN_VIDEO = True
+
+# detection procedure settings
 DETECTION_SCALES = 8
-DETECTION_WINDOW_HEIGHT_MIN = 48
-DETECTION_WINDOW_WIDTH_MIN = 48
+DETECTION_WINDOW_HEIGHT_MIN = 64
+DETECTION_WINDOW_WIDTH_MIN = 64
 DETECTION_WINDOW_GROWTH = 1.2
 DETECTION_WINDOW_JUMP = 0.1
 DETECTION_THRESHOLD = 4.0
+
+# folders
+FDDB_FOLDER = "../fddb/"
+DATA_FOLDER = "../data/"
+CLFS_FOLDER = "../models/"
+EXTRAS_FOLDER = "../extras/"
 
 def gpu_props():
     gpu = cuda.get_current_device()
@@ -86,7 +112,7 @@ def fddb_read_single_fold(path_root, path_fold_relative, n_negs_per_img, hcoords
         
         i0 = cv2.imread(file_name)
         i = cv2.cvtColor(i0, cv2.COLOR_BGR2GRAY)
-        ii = integral_image(i)
+        ii = integral_image_numba_jit(i)
         n_img += 1        
         n_img_faces = int(f.readline())        
         img_faces_coords = []
@@ -207,23 +233,72 @@ def fddb_data(path_fddb_root, hfs_coords, n_negs_per_img, n, seed=0):
     return X_train, y_train, X_test, y_test
 
 def pickle_all(fname, some_list):
-    print("PICKLE...")
+    print(f"PICKLE... [to file: {fname}]")
     t1 = time.time()
-    f = open(fname, "wb+")
-    pickle.dump(some_list, f, protocol=pickle.HIGHEST_PROTOCOL)
-    f.close()
+    try:
+        f = open(fname, "wb+")
+        pickle.dump(some_list, f, protocol=pickle.HIGHEST_PROTOCOL)
+        f.close()
+    except IOError:
+        sys.exit("[error occurred when trying to open or pickle the file]")
     t2 = time.time()
     print("PICKLE DONE. [time: " + str(t2 - t1) + " s]")
 
 def unpickle_all(fname):
-    print("UNPICKLE...")
-    t1 = time.time()    
-    f = open(fname, "rb")
-    some_list = pickle.load(f)
-    f.close()
+    print(f"UNPICKLE... [from file: {fname}]")
+    t1 = time.time()
+    try:    
+        f = open(fname, "rb")
+        some_list = pickle.load(f)
+        f.close()
+    except IOError:
+        sys.exit("[error occurred when trying to open or read the file]")
     t2 = time.time()
     print("UNPICKLE DONE. [time: " + str(t2 - t1) + " s]")
     return some_list
+
+def measure_accs_of_model(clf, X_train, y_train, X_test, y_test):
+    print(f"MEASURE ACCS OF MODEL...")
+    t1_accs = time.time()    
+    t1 = time.time()
+    acc_train = clf.score(X_train, y_train)
+    t2 = time.time()
+    print(f"[train acc: {acc_train}; data shape: {X_train.shape}, time: {t2 - t1} s]")
+    ind_pos = y_train == 1
+    X_train_pos = X_train[ind_pos]
+    y_train_pos = y_train[ind_pos]    
+    t1 = time.time()
+    sens_train = clf.score(X_train_pos, y_train_pos)
+    t2 = time.time()
+    print(f"[train sensitivity: {sens_train}; data shape: {X_train_pos.shape}, time: {t2 - t1} s]")
+    ind_neg = y_train == -1
+    X_train_neg = X_train[ind_neg]
+    y_train_neg = y_train[ind_neg]    
+    t1 = time.time()
+    far_train = 1.0 - clf.score(X_train_neg, y_train_neg)
+    t2 = time.time()
+    print(f"[train far: {far_train}; data shape: {X_train_neg.shape}, time: {t2 - t1} s]")
+    t1 = time.time()
+    acc_test = clf.score(X_test, y_test)
+    t2 = time.time()
+    print(f"[test acc: {acc_test}; data shape: {X_test.shape}, time: {t2 - t1} s]")
+    ind_pos = y_test == 1
+    X_test_pos = X_test[ind_pos]
+    y_test_pos = y_test[ind_pos]    
+    t1 = time.time()
+    sens_test = clf.score(X_test_pos, y_test_pos)
+    t2 = time.time()
+    print(f"[test sensitivity: {sens_test}; data shape: {X_test_pos.shape}, time: {t2 - t1} s]")
+    ind_neg = y_test == -1
+    X_test_neg = X_test[ind_neg]
+    y_test_neg = y_test[ind_neg]    
+    t1 = time.time()
+    far_test = 1.0 - clf.score(X_test_neg, y_test_neg)
+    t2 = time.time()
+    print(f"[test far: {far_test}; data shape: {X_test_neg.shape}, time: {t2 - t1} s]")
+    t2_accs = time.time()
+    print("MEASURE ACCS DONE. [time: " + str(t2_accs - t1_accs) + " s]")
+
 
 def draw_feature_at(i, j0, k0, shcoords_one_feature):
     i_copy = i.copy()
@@ -233,35 +308,40 @@ def draw_feature_at(i, j0, k0, shcoords_one_feature):
     cv2.rectangle(i_copy, (k0 + k, j0 + j), (k0 + k + w - 1, j0 + j + h - 1), (255, 255, 255), cv2.FILLED)
     return i_copy
 
-# TODO find a new image (of me as author)
-def demo_of_features(hinds, hcoords, n):
-    i = cv2.imread(EXTRAS_FOLDER + "000000.jpg")
+def demo_haar_features(hinds, hcoords, n):
+    print(f"DEMO OF HAAR FEATURES... [hcoords.shape: {hcoords.shape}]")
+    i = cv2.imread(EXTRAS_FOLDER + "photo_for_features_demo.jpg")
     i_resized = resize_image(i)
     i_gray = cv2.cvtColor(i_resized, cv2.COLOR_BGR2GRAY)
-    ii = integral_image(i_gray)
-    j0, k0 = 160, 280
-    h = 64
-    w = h
-    cv2.rectangle(i_resized, (k0, j0), (k0 + w - 1, j0 + h - 1), (0, 0, 255), 1)    
-    cv2.imshow("TEST IMAGE", i_resized)
+    ii = integral_image_numba_jit(i_gray)
+    j0, k0 = 116, 100
+    w = h = 221
+    cv2.rectangle(i_resized, (k0, j0), (k0 + w - 1, j0 + h - 1), (0, 0, 255), 1)
+    title = "DEMO OF FEATURES [press any key to continue or 'q' to quit]"    
+    cv2.imshow(title, i_resized)
     cv2.waitKey()    
-    for i, c in zip(hinds, hcoords):
-        hcoords_window = (c * h).astype(np.int32) 
+    for ord_ind, (ind, c) in enumerate(zip(hinds, hcoords)):
+        hcoords_window = (np.array([h, w, h, w]) * c).astype(np.int16) 
         i_with_feature = draw_feature_at(i_resized, j0, k0, hcoords_window)
         i_temp = cv2.addWeighted(i_resized, 0.5, i_with_feature, 0.5, 0.0)
-        print(f"INDEX: {i}")
-        print(f"HCOORDS:\n {c}")
-        print(f"HCOORDS_WINDOW:\n {hcoords_window}")
-        print(f"HAAR FEATURE: {haar_feature(ii, j0, k0, hcoords_window)}")        
-        print("---")
-        cv2.imshow("TEST IMAGE", i_temp)
-        cv2.waitKey()
-    hcoords_window_subset = (hcoords * h).astype(np.int32)
+        print(f"feature index (ordinal): {ord_ind}")
+        print(f"feature multi-index: {ind}")
+        print(f"feature hcoords (cartesian):\n {c}")
+        print(f"feature hcoords in window:\n {hcoords_window}")
+        print(f"feature value: {haar_feature_numba_jit(ii, j0, k0, hcoords_window)}")        
+        print("----------------------------------------------------------------")
+        cv2.imshow(title, i_temp)
+        key = cv2.waitKey()
+        if key & 0xFF == ord('q'):
+            break
+    cv2.destroyAllWindows()
+    hcoords_window_subset = (np.array([h, w, h, w]) * hcoords).astype(np.int16) 
     t1 = time.time()
-    features = haar_features(ii, j0, k0, hcoords_window_subset, n, np.arange(n))
+    features = haar_features_one_window_numba_jit(ii, j0, k0, hcoords_window_subset, n, np.arange(n))
     t2 = time.time()
-    print(f"EXTRACTING {n} HAAR FEATURES [time: {t2 - t1} s]")
-    print(features)
+    print(f"[time of extraction of all {n} haar features for this window (in one call): {t2 - t1} s]")
+    print(f"[features: {features}]") 
+    print(f"DEMO OF HAAR FEATURES DONE.")
 
 def prepare_detection_windows_and_scaled_haar_coords(image_height, image_width, hcoords, features_indexes):
     hcoords_subset = hcoords[features_indexes]
@@ -426,12 +506,12 @@ def detect_cuda(i, clf, hcoords, features_indexes, threshold=0.0, windows=None, 
     if verbose:
         print(f"[detect_cuda: haar_features_multiple_windows_numba_cuda done; time: {t2_haar_multiple - t1_haar_multiple} s]")
     t1_df = time.time()    
-    RealBoostBins.decision_function_for_detection_numba_cuda[bpg, tpb](dev_X_selected, dev_mins_selected, dev_maxes_selected, dev_logits, dev_responses)
+    FastRealBoostBins.decision_function_numba_cuda_job[bpg, tpb](dev_X_selected, dev_mins_selected, dev_maxes_selected, dev_logits, dev_responses)
     responses = dev_responses.copy_to_host()
     cuda.synchronize()
     t2_df = time.time()
     if verbose:
-        print(f"[detect_cuda: RealBoostBins.decision_function_for_detection_numba_cuda done; time: {t2_df - t1_df} s]")
+        print(f"[detect_cuda: FastRealBoostBins.decision_function_numba_cuda_job done; time: {t2_df - t1_df} s]")
     t1_detections = time.time()                
     detected = responses > threshold
     detections = windows[detected, 1:] # skipping scale index
@@ -496,8 +576,8 @@ def postprocess_avg(detections, responses, threshold=0.5):
         r_final.append(r_avg)
     return d_final, r_final
 
-def detect_in_video(clf, hcoords, threshold, computations="simple", postprocess="avg", n_jobs=4, verbose_loop=True, verbose_detect=False):
-    print("DETECT_IN_VIDEO...")
+def demo_detect_in_video(clf, hcoords, threshold, computations="simple", postprocess="avg", n_jobs=4, verbose_loop=True, verbose_detect=False):
+    print("DEMO OF DETECT IN VIDEO...")
     features_indexes = clf.features_indexes_
     video = cv2.VideoCapture(0 + cv2.CAP_DSHOW)
     video.set(cv2.CAP_PROP_FRAME_WIDTH, 640)
@@ -604,87 +684,47 @@ def detect_in_video(clf, hcoords, threshold, computations="simple", postprocess=
     t2_loop = time.time()
     video.release()
     cv2.destroyAllWindows()
-    print(f"AVERAGE FPS (COMPUTATIONS) OVER ALL FRAMES: {n_frames / time_comps:.2f}")
-    print(f"AVERAGE FPS (DISPLAY) OVER ALL FRAMES: {n_frames / (t2_loop - t1_loop):.2f}")    
-    print("DETECT_IN_VIDEO DONE.")
+    avg_fps_comps = n_frames / time_comps
+    avg_fps_disp = n_frames / (t2_loop - t1_loop)
+    print(f"DEMO OF DETECT IN VIDEO DONE. [avg fps (computations): {avg_fps_comps:.2f}, avg fps (display): {avg_fps_disp:.2f}]")
         
-if __name__ == "__main__":    
-    S = 5
-    P = 5
-    NPI = 50 # negatives (to sample out) per image
-    T = 512
-    B = 8
-    SEED = 0    
-    n = HAAR_TEMPLATES.shape[0] * S**2 * (2 * P - 1)**2    
+# ----------------------------------------------------------------------------------------------------------------------------------------------------------------
+# MAIN
+# ----------------------------------------------------------------------------------------------------------------------------------------------------------------
+if __name__ == "__main__":        
+    print("DEMONSTRATION OF \"FAST REAL-BOOST WITH BINS\" ALGORITHM IMPLEMENTED VIA NUMBA.JIT AND NUMBA.CUDA.")
 
+    n = HAAR_TEMPLATES.shape[0] * S**2 * (2 * P - 1)**2    
     hinds = haar_indexes(S, P)
     hcoords = haar_coords(S, P, hinds)
-     
+         
     DATA_NAME = f"data_face_n_{n}_S_{S}_P_{P}_NPI_{NPI}_SEED_{SEED}.bin"
-    CLF_NAME = f"clf_face_n_{n}_S_{S}_P_{P}_NPI_{NPI}_SEED_{SEED}_T_{T}_B_{B}_real.bin"
+    CLF_NAME = f"clf_face_n_{n}_S_{S}_P_{P}_NPI_{NPI}_SEED_{SEED}_T_{T}_B_{B}_real.bin"    
     print(f"DATA_NAME: {DATA_NAME}")
     print(f"CLF_NAME: {CLF_NAME}")
-    print(f"GPU_PROPS: {gpu_props()}")     
+    print(f"GPU_PROPS: {gpu_props()}")
     
-    # FDDB DATA
-    # t1 = time.time()
-    # X_train, y_train, X_test, y_test = fddb_data("c:/wi/2020_2021/um2/fddb/", hcoords, NPI, n, SEED)
-    # pickle_all(DATA_FOLDER + DATA_NAME, [X_train, y_train, X_test, y_test])
-    # [X_train, y_train, X_test, y_test] = unpickle_all(DATA_FOLDER + DATA_NAME)
-    # print(f"[X_train.shape: {X_train.shape} (positives: {np.sum(y_train == 1)}), X_test.shape: {X_test.shape} (positives: {np.sum(y_test == 1)})]")    
-    # t2 = time.time()
+    if DEMO_HAAR_FEATURES:
+        demo_haar_features(hinds, hcoords, n)      
     
-    # REAL BOOST    
-    # clf = RealBoostBins(T=T, B=B, fit_mode="numba_cuda", decision_function_mode="numba_jit", verbose=True, debug_verbose=False)
-    # clf.fit(X_train, y_train)
-    # pickle_all(CLFS_FOLDER + CLF_NAME, [clf])
-    [clf] = unpickle_all(CLFS_FOLDER + CLF_NAME)
-    
-    
-    # ACCURACY MEASURES
-    # t1 = time.time()
-    # acc_train = clf.score(X_train, y_train)
-    # t2 = time.time()
-    # print(f"TRAIN ACC: {acc_train} [time: {t2 - t1} s]")
-    # ind_p = y_train == 1
-    # t1 = time.time()
-    # sens_train = clf.score(X_train[ind_p], y_train[ind_p])
-    # t2 = time.time()
-    # print(f"TRAIN SENSITIVITY: {sens_train} [time: {t2 - t1} s]")
-    # ind_n = y_train == -1
-    # t1 = time.time()
-    # far_train = 1.0 - clf.score(X_train[ind_n], y_train[ind_n])
-    # t2 = time.time()
-    # print(f"TRAIN FAR: {far_train} [time: {t2 - t1} s]")
-    # t1 = time.time()
-    # acc_test = clf.score(X_test, y_test)
-    # t2 = time.time()
-    # print(f"TEST ACC: {acc_test} [time: {t2 - t1} s]")
-    # ind_p = y_test == 1
-    # t1 = time.time()
-    # sens_test = clf.score(X_test[ind_p], y_test[ind_p])
-    # t2 = time.time()
-    # print(f"TEST SENSITIVITY: {sens_train} [time: {t2 - t1} s]")
-    # ind_n = y_test == -1
-    # t1 = time.time()
-    # far_test = 1.0 - clf.score(X_test[ind_n], y_test[ind_n])
-    # t2 = time.time()
-    # print(f"TEST FAR: {far_test} [time: {t2 - t1} s]")
-    
-    # i = cv2.imread(DATA_FOLDER + "000000.jpg")
-    # i_resized = resize_image(i)
-    # i_gray = cv2.cvtColor(i_resized, cv2.COLOR_BGR2GRAY)
-    # ii = integral_image(i_gray)
-    #
-    # detections = detect_simple(i, clf, hcoords, n, clf.features_indexes_, threshold=DETECTION_THRESHOLD, verbose=True)
-    # print(f"DETECTIONS LENGTH: {len(detections)}")
-    # for (j0, k0, h, w) in detections:
-    #     color = (0, 0, 255)
-    #     cv2.rectangle(i_resized, (k0, j0), (k0 + w - 1, j0 + h - 1), color, 1)
-    #     #cv2.putText(i_resized, f"{response:0.2f}", (k0, j0), cv2.FONT_HERSHEY_PLAIN, 1.4, color, 2)
-    #     cv2.imshow("OUTPUT", i_resized)
-    # cv2.waitKey()
+    if REGENERATE_DATA_FROM_FDDB:
+        X_train, y_train, X_test, y_test = fddb_data(FDDB_FOLDER, hcoords, NPI, n, SEED)
+        pickle_all(DATA_FOLDER + DATA_NAME, [X_train, y_train, X_test, y_test])    
 
-    detect_in_video(clf, hcoords, threshold=DETECTION_THRESHOLD, computations="cuda", postprocess="avg", n_jobs=8, verbose_loop=True, verbose_detect=True)
+    if FIT_OR_REFIT_MODEL or MEASURE_ACCS_OF_MODEL:
+        [X_train, y_train, X_test, y_test] = unpickle_all(DATA_FOLDER + DATA_NAME)
+        print(f"[X_train.shape: {X_train.shape} (positives: {np.sum(y_train == 1)}), X_test.shape: {X_test.shape} (positives: {np.sum(y_test == 1)})]")
+    
+    if FIT_OR_REFIT_MODEL: 
+        clf = FastRealBoostBins(T=T, B=B, fit_mode="numba_cuda", decision_function_mode="numba_cuda", verbose=True, debug_verbose=False)
+        clf.fit(X_train, y_train)
+        pickle_all(CLFS_FOLDER + CLF_NAME, [clf])
+    [clf] = unpickle_all(CLFS_FOLDER + CLF_NAME)
+        
+    if MEASURE_ACCS_OF_MODEL:
+        measure_accs_of_model(clf, X_train, y_train, X_test, y_test)
+    
+    if DEMO_DETECT_IN_VIDEO:
+        demo_detect_in_video(clf, hcoords, threshold=DETECTION_THRESHOLD, computations="cuda", postprocess="avg", n_jobs=8, verbose_loop=True, verbose_detect=True)
 
     print("ALL DONE.")

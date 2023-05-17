@@ -2,7 +2,17 @@ import numpy as np
 import cv2
 from numba import cuda, jit
 from numba import void, int16, int32, float32, uint8
+from numba.core.errors import NumbaPerformanceWarning
+import warnings
 
+__version__ = "1.0.0"
+__author__ = "Przemysław Klęsk"
+__email__ = "pklesk@zut.edu.pl"
+
+warnings.simplefilter("ignore", category=NumbaPerformanceWarning)
+np.set_printoptions(linewidth=512)
+
+# haar-related constants
 HSQRT2 = 0.5 * np.sqrt(2.0)
 HAAR_TEMPLATES = np.array([ # each row describes a template - a white rectangle (j, k, h, w) placed within a black unit square
     [0.0, 0.0, 0.5, 1.0],   # "top-down edge"
