@@ -11,6 +11,9 @@ import pickle
 from joblib import Parallel, delayed
 from functools import reduce
 import warnings
+from sklearn.metrics import roc_curve
+from matplotlib import pyplot as plt
+from numba.core.typing.builtins import CmpOpLt
 
 __version__ = "1.0.0"
 __author__ = "Przemysław Klęsk"
@@ -21,24 +24,24 @@ np.set_printoptions(linewidth=512)
 
 # main settings
 S = 5 # "scales" parameter to generete Haar-like features
-P = 6 # "positions" parameter to generete Haar-like features
-NPI = 100 # no. of negatives (negative windows) to sample per image from FDDB material
+P = 5 # "positions" parameter to generete Haar-like features
+NPI = 5 # no. of negatives (negative windows) to sample per image from FDDB material
 T = 512 # size of ensemble in FastRealBoostBins (equivalently, no. of boosting rounds when fitting)
 B = 8 # no. of bins
 SEED = 0 # randomization seed
 DEMO_HAAR_FEATURES = False
 REGENERATE_DATA_FROM_FDDB = True
-FIT_OR_REFIT_MODEL = False
+FIT_OR_REFIT_MODEL = True
 MEASURE_ACCS_OF_MODEL = False
 DEMO_DETECT_IN_VIDEO = False
 
 # detection procedure settings
-DETECTION_SCALES = 8
-DETECTION_WINDOW_HEIGHT_MIN = 64
-DETECTION_WINDOW_WIDTH_MIN = 64
+DETECTION_SCALES = 12
+DETECTION_WINDOW_HEIGHT_MIN = 48
+DETECTION_WINDOW_WIDTH_MIN = 48
 DETECTION_WINDOW_GROWTH = 1.2
-DETECTION_WINDOW_JUMP = 0.1
-DETECTION_THRESHOLD = 3.75
+DETECTION_WINDOW_JUMP = 0.05
+DETECTION_THRESHOLD = 6.5
 
 # folders
 FDDB_FOLDER = "../fddb/"
@@ -135,22 +138,24 @@ def fddb_read_single_fold(path_root, path_fold_relative, n_negs_per_img, hcoords
             img_faces_coords.append(img_face_coords)
             if verbose:
                 p1 = (k0, j0)
-                p2 = (k0 + w - 1, j0 + w - 1)    
+                p2 = (k0 + w - 1, j0 + h - 1)    
                 cv2.rectangle(i0, p1, p2, (0, 0, 255), 1)
                 cv2.imshow("FDDB", i0)                        
             shcoords_one_window = (np.array([h, w, h, w]) * hcoords).astype(np.int16)                        
             feats = haar_features_one_window_numba_jit(ii, j0, k0, shcoords_one_window, n, np.arange(n, dtype=np.int32))
             if verbose:
                 print(f"[positive window {img_face_coords} accepted; features: {feats}]")
-                cv2.waitKey(1) 
+                cv2.imshow("FDDB", i0)
+                cv2.waitKey(0) 
             X_list.append(feats)
             y_list.append(1)
-        for _ in range(n_negs_per_img):
+        for _ in range(n_negs_per_img):            
             while True:
-                w = int((np.random.random() * w_relative_spread + w_relative_min) * i.shape[0])
+                h = int((np.random.random() * w_relative_spread + w_relative_min) * i.shape[0])
+                w = h
                 j0 = int(np.random.random() * (i.shape[0] - w + 1))
                 k0 = int(np.random.random() * (i.shape[1] - w + 1))                 
-                patch = np.array([j0, k0, j0 + w - 1, k0 + w - 1])
+                patch = np.array([j0, k0, j0 + h - 1, k0 + w - 1])
                 ious = list(map(lambda ifc : iou(patch, ifc), img_faces_coords))
                 max_iou = max(ious) if len(ious) > 0 else 0.0
                 if max_iou < neg_max_iou:
@@ -161,7 +166,7 @@ def fddb_read_single_fold(path_root, path_fold_relative, n_negs_per_img, hcoords
                     if verbose:
                         print(f"[negative window {patch} accepted; features: {feats}]")
                         p1 = (k0, j0)
-                        p2 = (k0 + w - 1, j0 + w - 1)            
+                        p2 = (k0 + w - 1, j0 + h - 1)            
                         cv2.rectangle(i0, p1, p2, (0, 255, 0), 1)
                     break
                 else:                    
@@ -200,7 +205,7 @@ def fddb_data(path_fddb_root, hfs_coords, n_negs_per_img, n, seed=0):
     for index, fold_path in enumerate(fold_paths_train):
         print(f"PROCESSING TRAIN FOLD {index + 1}/{len(fold_paths_train)}...")
         t1 = time.time()
-        X, y = fddb_read_single_fold(path_fddb_root, fold_path, n_negs_per_img, hfs_coords, n, verbose=False, fold_title=fold_path, seed=seed)
+        X, y = fddb_read_single_fold(path_fddb_root, fold_path, n_negs_per_img, hfs_coords, n, verbose=True, fold_title=fold_path, seed=seed)
         t2 = time.time()
         print(f"PROCESSING TRAIN FOLD {index + 1}/{len(fold_paths_train)} DONE. [time: {t2 - t1} s]")
         print("---")
@@ -310,7 +315,8 @@ def draw_feature_at(i, j0, k0, shcoords_one_feature):
 
 def demo_haar_features(hinds, hcoords, n):
     print(f"DEMO OF HAAR FEATURES... [hcoords.shape: {hcoords.shape}]")
-    i = cv2.imread(EXTRAS_FOLDER + "photo_for_features_demo.jpg")
+    #i = cv2.imread(EXTRAS_FOLDER + "photo_for_features_demo.jpg")
+    i = cv2.imread(EXTRAS_FOLDER + "gabi.jpg")
     i_resized = resize_image(i)
     i_gray = cv2.cvtColor(i_resized, cv2.COLOR_BGR2GRAY)
     ii = integral_image_numba_jit(i_gray)
@@ -598,7 +604,8 @@ def demo_detect_in_video(clf, hcoords, threshold, computations="simple", postpro
     fps_disp_ma = 0.0    
     fps_disp = 0.0
     fps_comps_ma = 0.0    
-    fps_comps = 0.0     
+    fps_comps = 0.0
+    draw_thickness = 1 if postprocess == None else 2
     # device side arrays in case of cuda method
     dev_windows = None 
     dev_shcoords_multiple_scales = None    
@@ -653,8 +660,9 @@ def demo_detect_in_video(clf, hcoords, threshold, computations="simple", postpro
             ks = int(np.round(k0 * w_scale))
             hs = int(np.round(h * h_scale))
             ws = int(np.round(w * w_scale))
-            cv2.rectangle(frame, (ks, js), (ks + ws - 1, js + hs - 1), (0, 0, 255), 2)
-            cv2.putText(frame, f"{responses[index]:.2f}", (k0, j0 + ws - 2), cv2.FONT_HERSHEY_PLAIN, 1.0, (0, 0, 255), 1)
+            cv2.rectangle(frame, (ks, js), (ks + ws - 1, js + hs - 1), (0, 0, 255), draw_thickness)
+            if postprocess:
+                cv2.putText(frame, f"{responses[index]:.2f}", (k0, j0 + ws - 2), cv2.FONT_HERSHEY_PLAIN, 1.0, (0, 0, 255), draw_thickness)
         if n_frames > 0:
             fps_disp_ma = ma_decay * fps_disp_ma + (1.0 - ma_decay) * 1.0 / tpf_prev
             fps_disp = fps_disp_ma / (1.0 - ma_decay**(n_frames + 1))
@@ -729,3 +737,42 @@ if __name__ == "__main__":
         demo_detect_in_video(clf, hcoords, threshold=DETECTION_THRESHOLD, computations="cuda", postprocess="avg", n_jobs=8, verbose_loop=True, verbose_detect=True)
 
     print("ALL DONE.")
+    
+if __name__ == "__main_rocs__":        
+    print("ROCS...")
+    
+    clfs_settings = [{"S": 5, "P": 5, "NPI": 50, "SEED": 0, "T": 512, "B": 8},
+                     {"S": 5, "P": 6, "NPI": 100, "SEED": 0, "T": 512, "B": 8},
+                     {"S": 5, "P": 6, "NPI": 100, "SEED": 0, "T": 1024, "B": 8}
+                     ]
+    
+    for s in clfs_settings:
+        S = s["S"]
+        P = s["P"]
+        NPI = s["NPI"]
+        SEED = s["SEED"]
+        T = s["T"]
+        B = s["B"] 
+        n = HAAR_TEMPLATES.shape[0] * S**2 * (2 * P - 1)**2    
+        hinds = haar_indexes(S, P)
+        hcoords = haar_coords(S, P, hinds)
+        DATA_NAME = f"data_face_n_{n}_S_{S}_P_{P}_NPI_{NPI}_SEED_{SEED}.bin"        
+        CLF_NAME = f"clf_frbb_face_n_{n}_S_{S}_P_{P}_NPI_{NPI}_SEED_{SEED}_T_{T}_B_{B}.bin"
+        print("---")
+        print(f"DATA_NAME: {DATA_NAME}")
+        print(f"CLF_NAME: {CLF_NAME}")            
+        [X_train, y_train, X_test, y_test] = unpickle_all(DATA_FOLDER + DATA_NAME)        
+        [clf] = unpickle_all(CLFS_FOLDER + CLF_NAME)                
+        responses_test = clf.decision_function(X_test)
+        roc = roc_curve(y_test, responses_test)
+        fars, sens, thrs = roc
+        roc_arr = np.array([fars, sens, thrs]).T
+        print(f"X_train.shape: {X_train.shape}, X_test.shape: {X_test.shape}")
+        # with np.printoptions(threshold=np.inf):
+        #     print(roc_arr)
+        plt.plot(fars, sens, label=CLF_NAME)
+    plt.xscale("log")
+    plt.xlabel("FAR")
+    plt.ylabel("SENSITIVITY")
+    plt.legend(loc="lower right", fontsize=7)
+    plt.show()
