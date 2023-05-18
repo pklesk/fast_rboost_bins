@@ -26,7 +26,7 @@ np.set_printoptions(linewidth=512)
 S = 5 # "scales" parameter to generete Haar-like features
 P = 5 # "positions" parameter to generete Haar-like features
 NPI = 50 # no. of negatives (negative windows) to sample per image from FDDB material
-T = 1024 # size of ensemble in FastRealBoostBins (equivalently, no. of boosting rounds when fitting)
+T = 512 # size of ensemble in FastRealBoostBins (equivalently, no. of boosting rounds when fitting)
 B = 8 # no. of bins
 SEED = 0 # randomization seed
 DEMO_HAAR_FEATURES = False
@@ -37,11 +37,11 @@ DEMO_DETECT_IN_VIDEO = True
 
 # detection procedure settings
 DETECTION_SCALES = 10
-DETECTION_WINDOW_HEIGHT_MIN = 64
-DETECTION_WINDOW_WIDTH_MIN = 64
+DETECTION_WINDOW_HEIGHT_MIN = 96
+DETECTION_WINDOW_WIDTH_MIN = 96
 DETECTION_WINDOW_GROWTH = 1.2
 DETECTION_WINDOW_JUMP = 0.05
-DETECTION_THRESHOLD = 8.0
+DETECTION_THRESHOLD = 6.0
 
 # folders
 FDDB_FOLDER = "../fddb/"
@@ -584,8 +584,8 @@ def postprocess_avg(detections, responses, threshold=0.5):
 def demo_detect_in_video(clf, hcoords, threshold, computations="simple", postprocess="avg", n_jobs=4, verbose_loop=True, verbose_detect=False):
     print("DEMO OF DETECT IN VIDEO...")
     features_indexes = clf.features_indexes_
-    video = cv2.VideoCapture(0)
-    #video = cv2.VideoCapture(0 + cv2.CAP_DSHOW)
+    #video = cv2.VideoCapture(0)
+    video = cv2.VideoCapture(0 + cv2.CAP_DSHOW)
     video.set(cv2.CAP_PROP_FRAME_WIDTH, 640)
     video.set(cv2.CAP_PROP_FRAME_HEIGHT, 480)
     video.set(cv2.CAP_PROP_FPS, 30)    
