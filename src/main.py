@@ -35,19 +35,24 @@ FIT_OR_REFIT_MODEL = False
 MEASURE_ACCS_OF_MODEL = False
 DEMO_DETECT_IN_VIDEO = True
 
+# cv2 camera settings
+CV2_VIDEO_CAPTURE_CAMERA_INDEX = 0
+CV2_VIDEO_CAPTURE_IS_IT_MSWINDOWS = True
+
 # detection procedure settings
 DETECTION_SCALES = 10
-DETECTION_WINDOW_HEIGHT_MIN = 96
-DETECTION_WINDOW_WIDTH_MIN = 96
+DETECTION_WINDOW_HEIGHT_MIN = 64
+DETECTION_WINDOW_WIDTH_MIN = 64
 DETECTION_WINDOW_GROWTH = 1.2
 DETECTION_WINDOW_JUMP = 0.05
-DETECTION_THRESHOLD = 6.0
+DETECTION_THRESHOLD = 5.5
+DETECTION_POSTPROCESS = "avg" # possible values: None, "nms", "avg"
 
 # folders
-FDDB_FOLDER = "../fddb/"
-DATA_FOLDER = "../data/"
-CLFS_FOLDER = "../models/"
-EXTRAS_FOLDER = "../extras/"
+FOLDER_DATA = "../data/"
+FOLDER_CLFS = "../models/"
+FOLDER_EXTRAS = "../extras/"
+FOLDER_RAW_DATA_FDDB = "../raw_data_fddb/"
 
 def gpu_props():
     gpu = cuda.get_current_device()
@@ -314,8 +319,7 @@ def draw_feature_at(i, j0, k0, shcoords_one_feature):
 
 def demo_haar_features(hinds, hcoords, n):
     print(f"DEMO OF HAAR FEATURES... [hcoords.shape: {hcoords.shape}]")
-    #i = cv2.imread(EXTRAS_FOLDER + "photo_for_features_demo.jpg")
-    i = cv2.imread(EXTRAS_FOLDER + "gabi.jpg")
+    i = cv2.imread(FOLDER_EXTRAS + "photo_for_features_demo.jpg")
     i_resized = resize_image(i)
     i_gray = cv2.cvtColor(i_resized, cv2.COLOR_BGR2GRAY)
     ii = integral_image_numba_jit(i_gray)
@@ -576,16 +580,15 @@ def postprocess_avg(detections, responses, threshold=0.5):
                 d_avg.append(d[j])
                 r_avg.append(r[j])
         d_avg = (np.round(np.mean(np.array(d_avg), axis=0))).astype(np.int16)
-        r_max = np.max(r_avg)
+        r_avg = np.mean(r_avg)
         d_final.append(d_avg)
-        r_final.append(r_max)
+        r_final.append(r_avg)
     return d_final, r_final
 
 def demo_detect_in_video(clf, hcoords, threshold, computations="simple", postprocess="avg", n_jobs=4, verbose_loop=True, verbose_detect=False):
     print("DEMO OF DETECT IN VIDEO...")
     features_indexes = clf.features_indexes_
-    #video = cv2.VideoCapture(0)
-    video = cv2.VideoCapture(0 + cv2.CAP_DSHOW)
+    video = cv2.VideoCapture(CV2_VIDEO_CAPTURE_CAMERA_INDEX + (cv2.CAP_DSHOW if CV2_VIDEO_CAPTURE_IS_IT_MSWINDOWS else 0))
     video.set(cv2.CAP_PROP_FRAME_WIDTH, 640)
     video.set(cv2.CAP_PROP_FRAME_HEIGHT, 480)
     video.set(cv2.CAP_PROP_FPS, 30)    
@@ -716,27 +719,27 @@ if __name__ == "__main__":
         demo_haar_features(hinds, hcoords, n)      
     
     if REGENERATE_DATA_FROM_FDDB:
-        X_train, y_train, X_test, y_test = fddb_data(FDDB_FOLDER, hcoords, NPI, n, SEED)
-        pickle_all(DATA_FOLDER + DATA_NAME, [X_train, y_train, X_test, y_test])    
+        X_train, y_train, X_test, y_test = fddb_data(FOLDER_RAW_DATA_FDDB, hcoords, NPI, n, SEED)
+        pickle_all(FOLDER_DATA + DATA_NAME, [X_train, y_train, X_test, y_test])    
 
     if FIT_OR_REFIT_MODEL or MEASURE_ACCS_OF_MODEL:
-        [X_train, y_train, X_test, y_test] = unpickle_all(DATA_FOLDER + DATA_NAME)
+        [X_train, y_train, X_test, y_test] = unpickle_all(FOLDER_DATA + DATA_NAME)
         print(f"[X_train.shape: {X_train.shape} (positives: {np.sum(y_train == 1)}), X_test.shape: {X_test.shape} (positives: {np.sum(y_test == 1)})]")
     
     if FIT_OR_REFIT_MODEL: 
         clf = FastRealBoostBins(T=T, B=B, fit_mode="numba_cuda", decision_function_mode="numba_cuda", verbose=True, debug_verbose=False)
         clf.fit(X_train, y_train)
-        pickle_all(CLFS_FOLDER + CLF_NAME, [clf])
+        pickle_all(FOLDER_CLFS + CLF_NAME, [clf])
         
     clf = None
     if MEASURE_ACCS_OF_MODEL or DEMO_DETECT_IN_VIDEO:
-        [clf] = unpickle_all(CLFS_FOLDER + CLF_NAME)
+        [clf] = unpickle_all(FOLDER_CLFS + CLF_NAME)
         
     if MEASURE_ACCS_OF_MODEL:
         measure_accs_of_model(clf, X_train, y_train, X_test, y_test)
     
     if DEMO_DETECT_IN_VIDEO:
-        demo_detect_in_video(clf, hcoords, threshold=DETECTION_THRESHOLD, computations="cuda", postprocess="avg", n_jobs=8, verbose_loop=True, verbose_detect=True)
+        demo_detect_in_video(clf, hcoords, threshold=DETECTION_THRESHOLD, computations="cuda", postprocess=DETECTION_POSTPROCESS, n_jobs=8, verbose_loop=True, verbose_detect=True)
 
     print("ALL DONE.")
     
@@ -763,8 +766,8 @@ if __name__ == "__main_rocs__":
         print("---")
         print(f"DATA_NAME: {DATA_NAME}")
         print(f"CLF_NAME: {CLF_NAME}")            
-        [X_train, y_train, X_test, y_test] = unpickle_all(DATA_FOLDER + DATA_NAME)        
-        [clf] = unpickle_all(CLFS_FOLDER + CLF_NAME)                
+        [X_train, y_train, X_test, y_test] = unpickle_all(FOLDER_DATA + DATA_NAME)        
+        [clf] = unpickle_all(FOLDER_CLFS + CLF_NAME)                
         responses_test = clf.decision_function(X_test)
         roc = roc_curve(y_test, responses_test)
         fars, sens, thrs = roc
