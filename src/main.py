@@ -25,23 +25,23 @@ np.set_printoptions(linewidth=512)
 # main settings
 S = 5 # "scales" parameter to generete Haar-like features
 P = 5 # "positions" parameter to generete Haar-like features
-NPI = 5 # no. of negatives (negative windows) to sample per image from FDDB material
-T = 512 # size of ensemble in FastRealBoostBins (equivalently, no. of boosting rounds when fitting)
+NPI = 50 # no. of negatives (negative windows) to sample per image from FDDB material
+T = 1024 # size of ensemble in FastRealBoostBins (equivalently, no. of boosting rounds when fitting)
 B = 8 # no. of bins
 SEED = 0 # randomization seed
 DEMO_HAAR_FEATURES = False
-REGENERATE_DATA_FROM_FDDB = True
-FIT_OR_REFIT_MODEL = True
+REGENERATE_DATA_FROM_FDDB = False
+FIT_OR_REFIT_MODEL = False
 MEASURE_ACCS_OF_MODEL = False
-DEMO_DETECT_IN_VIDEO = False
+DEMO_DETECT_IN_VIDEO = True
 
 # detection procedure settings
-DETECTION_SCALES = 12
-DETECTION_WINDOW_HEIGHT_MIN = 48
-DETECTION_WINDOW_WIDTH_MIN = 48
+DETECTION_SCALES = 10
+DETECTION_WINDOW_HEIGHT_MIN = 64
+DETECTION_WINDOW_WIDTH_MIN = 64
 DETECTION_WINDOW_GROWTH = 1.2
 DETECTION_WINDOW_JUMP = 0.05
-DETECTION_THRESHOLD = 6.5
+DETECTION_THRESHOLD = 8.0
 
 # folders
 FDDB_FOLDER = "../fddb/"
@@ -128,7 +128,7 @@ def fddb_read_single_fold(path_root, path_fold_relative, n_negs_per_img, hcoords
             img_face_coords = np.array([j0, k0, j0 + h - 1, k0 + w - 1])
             if j0 < 0 or k0 < 0 or j0 + h - 1 >= i.shape[0] or k0 + w - 1 >= i.shape[1]:
                 if verbose:
-                    print(f"[window {img_face_coords} out of bounds -> ingored]")
+                    print(f"[window {img_face_coords} out of bounds -> ignored]")
                 continue
             if (h / ii.shape[0] < 0.075): # min relative size of positive window (smaller may lead to division by zero when white regions in haar features have no area)
                 if verbose:
@@ -139,15 +139,13 @@ def fddb_read_single_fold(path_root, path_fold_relative, n_negs_per_img, hcoords
             if verbose:
                 p1 = (k0, j0)
                 p2 = (k0 + w - 1, j0 + h - 1)    
-                cv2.rectangle(i0, p1, p2, (0, 0, 255), 1)
-                cv2.imshow("FDDB", i0)                        
+                cv2.rectangle(i0, p1, p2, (0, 0, 255), 1)                        
             shcoords_one_window = (np.array([h, w, h, w]) * hcoords).astype(np.int16)                        
             feats = haar_features_one_window_numba_jit(ii, j0, k0, shcoords_one_window, n, np.arange(n, dtype=np.int32))
             if verbose:
                 print(f"[positive window {img_face_coords} accepted; features: {feats}]")
-                cv2.imshow("FDDB", i0)
+                cv2.imshow("FDDB [press ESC to continue]", i0)
                 cv2.waitKey(0)
-                cv2.destroyAllWindows() 
             X_list.append(feats)
             y_list.append(1)
         for _ in range(n_negs_per_img):            
@@ -177,9 +175,8 @@ def fddb_read_single_fold(path_root, path_fold_relative, n_negs_per_img, hcoords
                         p2 = (k0 + w - 1, j0 + w - 1)
                         cv2.rectangle(i0, p1, p2, (255, 255, 0), 1)
         if verbose: 
-            cv2.imshow("FDDB", i0)
+            cv2.imshow("FDDB [press ESC to continue]", i0)
             cv2.waitKey(0)
-            cv2.destroyAllWindows()
         line = f.readline().strip()
     print(f"IMAGES IN THIS FOLD: {n_img}.")
     print(f"ACCEPTED FACES IN THIS FOLD: {n_faces}.")
@@ -207,7 +204,7 @@ def fddb_data(path_fddb_root, hfs_coords, n_negs_per_img, n, seed=0):
     for index, fold_path in enumerate(fold_paths_train):
         print(f"PROCESSING TRAIN FOLD {index + 1}/{len(fold_paths_train)}...")
         t1 = time.time()
-        X, y = fddb_read_single_fold(path_fddb_root, fold_path, n_negs_per_img, hfs_coords, n, verbose=True, fold_title=fold_path, seed=seed)
+        X, y = fddb_read_single_fold(path_fddb_root, fold_path, n_negs_per_img, hfs_coords, n, verbose=False, fold_title=fold_path, seed=seed)
         t2 = time.time()
         print(f"PROCESSING TRAIN FOLD {index + 1}/{len(fold_paths_train)} DONE. [time: {t2 - t1} s]")
         print("---")
@@ -325,7 +322,7 @@ def demo_haar_features(hinds, hcoords, n):
     j0, k0 = 116, 100
     w = h = 221
     cv2.rectangle(i_resized, (k0, j0), (k0 + w - 1, j0 + h - 1), (0, 0, 255), 1)
-    title = "DEMO OF FEATURES [press any key to continue or 'q' to quit]"    
+    title = "DEMO OF FEATURES [press any key to continue or ESC to quit]"    
     cv2.imshow(title, i_resized)
     cv2.waitKey()    
     for ord_ind, (ind, c) in enumerate(zip(hinds, hcoords)):
@@ -340,7 +337,7 @@ def demo_haar_features(hinds, hcoords, n):
         print("----------------------------------------------------------------")
         cv2.imshow(title, i_temp)
         key = cv2.waitKey()
-        if key & 0xFF == ord('q'):
+        if key & 0xFF == 27: # esc key
             break
     cv2.destroyAllWindows()
     hcoords_window_subset = (np.array([h, w, h, w]) * hcoords).astype(np.int16) 
@@ -579,9 +576,9 @@ def postprocess_avg(detections, responses, threshold=0.5):
                 d_avg.append(d[j])
                 r_avg.append(r[j])
         d_avg = (np.round(np.mean(np.array(d_avg), axis=0))).astype(np.int16)
-        r_avg = np.mean(r_avg)
+        r_max = np.max(r_avg)
         d_final.append(d_avg)
-        r_final.append(r_avg)
+        r_final.append(r_max)
     return d_final, r_final
 
 def demo_detect_in_video(clf, hcoords, threshold, computations="simple", postprocess="avg", n_jobs=4, verbose_loop=True, verbose_detect=False):
@@ -664,7 +661,7 @@ def demo_detect_in_video(clf, hcoords, threshold, computations="simple", postpro
             ws = int(np.round(w * w_scale))
             cv2.rectangle(frame, (ks, js), (ks + ws - 1, js + hs - 1), (0, 0, 255), draw_thickness)
             if postprocess:
-                cv2.putText(frame, f"{responses[index]:.2f}", (k0, j0 + ws - 2), cv2.FONT_HERSHEY_PLAIN, 1.0, (0, 0, 255), draw_thickness)
+                cv2.putText(frame, f"{responses[index]:.1f}", (k0, j0 + ws - 2), cv2.FONT_HERSHEY_PLAIN, 1.0, (0, 0, 255), draw_thickness)
         if n_frames > 0:
             fps_disp_ma = ma_decay * fps_disp_ma + (1.0 - ma_decay) * 1.0 / tpf_prev
             fps_disp = fps_disp_ma / (1.0 - ma_decay**(n_frames + 1))
@@ -675,8 +672,8 @@ def demo_detect_in_video(clf, hcoords, threshold, computations="simple", postpro
         cv2.putText(frame, f"WINDOWS TO CHECK PER FRAME: {windows.shape[0]}", (0, frame_h - 1 - 32), cv2.FONT_HERSHEY_PLAIN, 1.0, (255, 255, 255), 1)        
         cv2.putText(frame, f"FPS (COMPUTATIONS): {fps_comps:.2f}", (0, frame_h - 1 - 16), cv2.FONT_HERSHEY_PLAIN, 1.0, (255, 255, 255), 1)
         cv2.putText(frame, f"FPS (DISPLAY): {fps_disp:.2f}", (0, frame_h - 1), cv2.FONT_HERSHEY_PLAIN, 1.0, (255, 255, 255), 1)        
-        cv2.imshow(f"DEMO: REAL-BOOST + BINS ON HAAR-LIKE FEATURES [press 'q' to quit]", frame)    
-        if cv2.waitKey(1) & 0xFF == ord('q'):
+        cv2.imshow(f"DEMO: REAL-BOOST + BINS ON HAAR-LIKE FEATURES [press ESC to quit]", frame)        
+        if cv2.waitKey(1) & 0xFF == 27: # esc key
             break       
         t2_other = time.time()        
         n_frames += 1
@@ -689,12 +686,12 @@ def demo_detect_in_video(clf, hcoords, threshold, computations="simple", postpro
             print(f"[windows to check per frame: {windows.shape[0]}]")
             print(f"[fps (computations): {fps_comps}]")
             print(f"[fps (display): {fps_disp:.2f}]")
-            print(f"[detections in this frame: {len(detections)}]")            
+            print(f"[detections in this frame: {len(detections)}]")           
         t2 = time.time()
         tpf_prev = t2 - t1        
     t2_loop = time.time()
-    video.release()
     cv2.destroyAllWindows()
+    video.release()    
     avg_fps_comps = n_frames / time_comps
     avg_fps_disp = n_frames / (t2_loop - t1_loop)
     print(f"DEMO OF DETECT IN VIDEO DONE. [avg fps (computations): {avg_fps_comps:.2f}, avg fps (display): {avg_fps_disp:.2f}]")
@@ -730,7 +727,10 @@ if __name__ == "__main__":
         clf = FastRealBoostBins(T=T, B=B, fit_mode="numba_cuda", decision_function_mode="numba_cuda", verbose=True, debug_verbose=False)
         clf.fit(X_train, y_train)
         pickle_all(CLFS_FOLDER + CLF_NAME, [clf])
-    [clf] = unpickle_all(CLFS_FOLDER + CLF_NAME)
+        
+    clf = None
+    if MEASURE_ACCS_OF_MODEL or DEMO_DETECT_IN_VIDEO:
+        [clf] = unpickle_all(CLFS_FOLDER + CLF_NAME)
         
     if MEASURE_ACCS_OF_MODEL:
         measure_accs_of_model(clf, X_train, y_train, X_test, y_test)
@@ -743,9 +743,9 @@ if __name__ == "__main__":
 if __name__ == "__main_rocs__":        
     print("ROCS...")
     
-    clfs_settings = [{"S": 5, "P": 5, "NPI": 50, "SEED": 0, "T": 512, "B": 8},
-                     {"S": 5, "P": 6, "NPI": 100, "SEED": 0, "T": 512, "B": 8},
-                     {"S": 5, "P": 6, "NPI": 100, "SEED": 0, "T": 1024, "B": 8}
+    clfs_settings = [{"S": 5, "P": 5, "NPI": 50, "SEED": 0, "T": 512, "B": 8}#,
+                     # {"S": 5, "P": 6, "NPI": 100, "SEED": 0, "T": 512, "B": 8},
+                     # {"S": 5, "P": 6, "NPI": 100, "SEED": 0, "T": 1024, "B": 8}
                      ]
     
     for s in clfs_settings:
@@ -768,13 +768,13 @@ if __name__ == "__main_rocs__":
         responses_test = clf.decision_function(X_test)
         roc = roc_curve(y_test, responses_test)
         fars, sens, thrs = roc
-        roc_arr = np.array([fars, sens, thrs]).T
-        print(f"X_train.shape: {X_train.shape}, X_test.shape: {X_test.shape}")
-        # with np.printoptions(threshold=np.inf):
-        #     print(roc_arr)
+        roc_arr = np.array([fars, sens, thrs]).T        
         plt.plot(fars, sens, label=CLF_NAME)
+        print(f"X_train.shape: {X_train.shape}, X_test.shape: {X_test.shape}")        
+        with np.printoptions(threshold=np.inf):
+            print(roc_arr)        
     plt.xscale("log")
     plt.xlabel("FAR")
     plt.ylabel("SENSITIVITY")
-    plt.legend(loc="lower right", fontsize=7)
+    plt.legend(loc="lower right", fontsize=8)
     plt.show()
