@@ -146,7 +146,8 @@ def fddb_read_single_fold(path_root, path_fold_relative, n_negs_per_img, hcoords
             if verbose:
                 print(f"[positive window {img_face_coords} accepted; features: {feats}]")
                 cv2.imshow("FDDB", i0)
-                cv2.waitKey(0) 
+                cv2.waitKey(0)
+                cv2.destroyAllWindows() 
             X_list.append(feats)
             y_list.append(1)
         for _ in range(n_negs_per_img):            
@@ -178,6 +179,7 @@ def fddb_read_single_fold(path_root, path_fold_relative, n_negs_per_img, hcoords
         if verbose: 
             cv2.imshow("FDDB", i0)
             cv2.waitKey(0)
+            cv2.destroyAllWindows()
         line = f.readline().strip()
     print(f"IMAGES IN THIS FOLD: {n_img}.")
     print(f"ACCEPTED FACES IN THIS FOLD: {n_faces}.")
