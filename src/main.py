@@ -41,12 +41,12 @@ CV2_VIDEO_CAPTURE_CAMERA_INDEX = 0
 CV2_VIDEO_CAPTURE_IS_IT_MSWINDOWS = False
 
 # detection procedure settings
-DETECTION_SCALES = 8
-DETECTION_WINDOW_HEIGHT_MIN = 64
-DETECTION_WINDOW_WIDTH_MIN = 64
+DETECTION_SCALES = 10
+DETECTION_WINDOW_HEIGHT_MIN = 96
+DETECTION_WINDOW_WIDTH_MIN = 96
 DETECTION_WINDOW_GROWTH = 1.2
 DETECTION_WINDOW_JUMP = 0.05
-DETECTION_THRESHOLD = 7.5
+DETECTION_THRESHOLD = 7.0
 DETECTION_POSTPROCESS = "avg" # possible values: None, "nms", "avg"
 
 # folders
@@ -895,11 +895,12 @@ if __name__ == "__main__":
 
     print("ALL DONE.")
     
-if __name__ == "__rocs__":        
+if __name__ == "__main_rocs__":        
     print("ROCS...")
     
     clfs_settings = [{"S": 5, "P": 5, "NPI": 50, "AUG": 0, "SEED": 0, "T": 512, "B": 8},
                      {"S": 5, "P": 5, "NPI": 10, "AUG": 1, "SEED": 0, "T": 512, "B": 8},
+                     {"S": 5, "P": 5, "NPI": 100, "AUG": 0, "SEED": 0, "T": 1024, "B": 8},
                      ]
     
     for s in clfs_settings:
@@ -915,8 +916,9 @@ if __name__ == "__rocs__":
         hcoords = haar_coords(S, P, hinds)
         
         data_suffix = f"{KIND}_n_{n}_S_{S}_P_{P}_NPI_{NPI}_AUG_{AUG}_SEED_{SEED}" 
-        DATA_NAME = f"data_{data_suffix}.bin"
-        DATA_NAME = "data_face_n_18225_S_5_P_5_NPI_50_AUG_0_SEED_0.bin"
+        #DATA_NAME = f"data_{data_suffix}.bin"
+        #DATA_NAME = "data_face_n_18225_S_5_P_5_NPI_50_AUG_0_SEED_0.bin"
+        DATA_NAME = "data_face_n_18225_S_5_P_5_NPI_100_AUG_0_SEED_0.bin"
         #DATA_NAME = "data_face_n_18225_S_5_P_5_NPI_10_AUG_1_SEED_0.bin"        
         CLF_NAME = f"clf_frbb_{data_suffix}_T_{T}_B_{B}.bin"    
         print("---")
@@ -931,7 +933,7 @@ if __name__ == "__rocs__":
         plt.plot(fars, sens, label=CLF_NAME)
         print(f"X_train.shape: {X_train.shape}, X_test.shape: {X_test.shape}")        
         with np.printoptions(threshold=np.inf):
-            print(roc_arr)        
+            print(roc_arr)
     plt.xscale("log")
     plt.xlabel("FAR")
     plt.ylabel("SENSITIVITY")
