@@ -28,26 +28,26 @@ S = 5 # "scales" parameter to generete Haar-like features
 P = 5 # "positions" parameter to generete Haar-like features
 NPI = 50 # no. of negatives (negative windows) to sample per image from FDDB material
 AUG = 0 # data augmentation (0 -> none or 1 -> present)
-T = 512 # size of ensemble in FastRealBoostBins (equivalently, no. of boosting rounds when fitting)
+T = 1024 # size of ensemble in FastRealBoostBins (equivalently, no. of boosting rounds when fitting)
 B = 8 # no. of bins
 SEED = 0 # randomization seed
 DEMO_HAAR_FEATURES = False
 REGENERATE_DATA_FROM_FDDB = False
-FIT_OR_REFIT_MODEL = False
+FIT_OR_REFIT_MODEL = True
 MEASURE_ACCS_OF_MODEL = False
-DEMO_DETECT_IN_VIDEO = True
+DEMO_DETECT_IN_VIDEO = False
 
 # cv2 camera settings
 CV2_VIDEO_CAPTURE_CAMERA_INDEX = 0
-CV2_VIDEO_CAPTURE_IS_IT_MSWINDOWS = True
+CV2_VIDEO_CAPTURE_IS_IT_MSWINDOWS = False
 
 # detection procedure settings
 DETECTION_SCALES = 10
-DETECTION_WINDOW_HEIGHT_MIN = 96
-DETECTION_WINDOW_WIDTH_MIN = 96
+DETECTION_WINDOW_HEIGHT_MIN = 64
+DETECTION_WINDOW_WIDTH_MIN = 64
 DETECTION_WINDOW_GROWTH = 1.2
 DETECTION_WINDOW_JUMP = 0.05
-DETECTION_THRESHOLD = 4.5
+DETECTION_THRESHOLD = 9.5
 DETECTION_POSTPROCESS = "avg" # possible values: None, "nms", "avg"
 
 # folders
