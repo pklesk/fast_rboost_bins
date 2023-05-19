@@ -13,7 +13,6 @@ from functools import reduce
 import warnings
 from sklearn.metrics import roc_curve
 from matplotlib import pyplot as plt
-from numba.core.typing.builtins import CmpOpLt
 
 __version__ = "1.0.0"
 __author__ = "Przemysław Klęsk"
@@ -28,7 +27,7 @@ S = 5 # "scales" parameter to generete Haar-like features
 P = 5 # "positions" parameter to generete Haar-like features
 NPI = 100 # no. of negatives (negative windows) to sample per image from FDDB material
 AUG = 0 # data augmentation (0 -> none or 1 -> present)
-T = 1024 # size of ensemble in FastRealBoostBins (equivalently, no. of boosting rounds when fitting)
+T = 2048 # size of ensemble in FastRealBoostBins (equivalently, no. of boosting rounds when fitting)
 B = 8 # no. of bins
 SEED = 0 # randomization seed
 DEMO_HAAR_FEATURES = False
@@ -459,7 +458,6 @@ def measure_accs_of_model(clf, X_train, y_train, X_test, y_test):
     print(f"[test far: {far_test}; data shape: {X_test_neg.shape}, time: {t2 - t1} s]")
     t2_accs = time.time()
     print("MEASURE ACCS DONE. [time: " + str(t2_accs - t1_accs) + " s]")
-
 
 def draw_feature_at(i, j0, k0, shcoords_one_feature):
     i_copy = i.copy()
@@ -901,6 +899,7 @@ if __name__ == "__rocs__":
     
     clfs_settings = [{"S": 5, "P": 5, "NPI": 50, "AUG": 0, "SEED": 0, "T": 512, "B": 8},
                      {"S": 5, "P": 5, "NPI": 10, "AUG": 1, "SEED": 0, "T": 512, "B": 8},
+                     {"S": 5, "P": 5, "NPI": 100, "AUG": 0, "SEED": 0, "T": 1024, "B": 8}
                      ]
     
     for s in clfs_settings:
@@ -916,9 +915,10 @@ if __name__ == "__rocs__":
         hcoords = haar_coords(S, P, hinds)
         
         data_suffix = f"{KIND}_n_{n}_S_{S}_P_{P}_NPI_{NPI}_AUG_{AUG}_SEED_{SEED}" 
-        DATA_NAME = f"data_{data_suffix}.bin"
-        DATA_NAME = "data_face_n_18225_S_5_P_5_NPI_50_AUG_0_SEED_0.bin"
-        #DATA_NAME = "data_face_n_18225_S_5_P_5_NPI_10_AUG_1_SEED_0.bin"        
+        #DATA_NAME = f"data_{data_suffix}.bin"
+        #DATA_NAME = "data_face_n_18225_S_5_P_5_NPI_50_AUG_0_SEED_0.bin"
+        #DATA_NAME = "data_face_n_18225_S_5_P_5_NPI_10_AUG_1_SEED_0.bin"                
+        DATA_NAME = "data_face_n_18225_S_5_P_5_NPI_100_AUG_0_SEED_0.bin"        
         CLF_NAME = f"clf_frbb_{data_suffix}_T_{T}_B_{B}.bin"    
         print("---")
         print(f"DATA_NAME: {DATA_NAME}")
