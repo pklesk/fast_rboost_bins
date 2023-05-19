@@ -26,7 +26,7 @@ np.set_printoptions(linewidth=512)
 KIND = "face"
 S = 5 # "scales" parameter to generete Haar-like features
 P = 5 # "positions" parameter to generete Haar-like features
-NPI = 50 # no. of negatives (negative windows) to sample per image from FDDB material
+NPI = 100 # no. of negatives (negative windows) to sample per image from FDDB material
 AUG = 0 # data augmentation (0 -> none or 1 -> present)
 T = 1024 # size of ensemble in FastRealBoostBins (equivalently, no. of boosting rounds when fitting)
 B = 8 # no. of bins
@@ -34,7 +34,7 @@ SEED = 0 # randomization seed
 DEMO_HAAR_FEATURES = False
 REGENERATE_DATA_FROM_FDDB = False
 FIT_OR_REFIT_MODEL = True
-MEASURE_ACCS_OF_MODEL = False
+MEASURE_ACCS_OF_MODEL = True
 DEMO_DETECT_IN_VIDEO = False
 
 # cv2 camera settings
