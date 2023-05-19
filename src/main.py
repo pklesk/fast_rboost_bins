@@ -95,7 +95,7 @@ def gpu_props():
     props["cores_total"] = props["cores_per_SM"] * gpu.MULTIPROCESSOR_COUNT
     return props   
 
-def fddb_read_single_fold(path_root, path_fold_relative, n_negs_per_img, hcoords, n, verbose=False, fold_title="", seed=0, data_augmentation=True):
+def fddb_read_single_fold(path_root, path_fold_relative, n_negs_per_img, hcoords, n, verbose=False, fold_title="", seed=0, data_augmentation=False):
     np.random.seed(seed)    
     
     # settings for sampling negatives
@@ -342,7 +342,7 @@ def fddb_read_single_fold_old(path_root, path_fold_relative, n_negs_per_img, hco
     y = np.stack(y_list)
     return X, y
 
-def fddb_data(path_fddb_root, hfs_coords, n_negs_per_img, n, seed=0):
+def fddb_data(path_fddb_root, hfs_coords, n_negs_per_img, n, seed=0, data_augmentation=False):
     n_negs_per_img = n_negs_per_img
        
     fold_paths_train = [
@@ -361,7 +361,7 @@ def fddb_data(path_fddb_root, hfs_coords, n_negs_per_img, n, seed=0):
     for index, fold_path in enumerate(fold_paths_train):
         print(f"PROCESSING TRAIN FOLD {index + 1}/{len(fold_paths_train)}...")
         t1 = time.time()
-        X, y = fddb_read_single_fold(path_fddb_root, fold_path, n_negs_per_img, hfs_coords, n, verbose=False, fold_title=fold_path, seed=seed, data_augmentation=True)
+        X, y = fddb_read_single_fold(path_fddb_root, fold_path, n_negs_per_img, hfs_coords, n, verbose=False, fold_title=fold_path, seed=seed, data_augmentation=data_augmentation)
         t2 = time.time()
         print(f"PROCESSING TRAIN FOLD {index + 1}/{len(fold_paths_train)} DONE. [time: {t2 - t1} s]")
         print("---")
@@ -379,7 +379,7 @@ def fddb_data(path_fddb_root, hfs_coords, n_negs_per_img, n, seed=0):
     for index, fold_path in enumerate(fold_paths_test):
         print(f"PROCESSING TEST FOLD {index + 1}/{len(fold_paths_test)}...")
         t1 = time.time()
-        X, y = fddb_read_single_fold(path_fddb_root, fold_path, n_negs_per_img, hfs_coords, n, verbose=False, fold_title=fold_path, seed=seed, data_augmentation=True)
+        X, y = fddb_read_single_fold(path_fddb_root, fold_path, n_negs_per_img, hfs_coords, n, verbose=False, fold_title=fold_path, seed=seed, data_augmentation=data_augmentation)
         t2 = time.time()
         print(f"PROCESSING TEST FOLD {index + 1}/{len(fold_paths_test)} DONE. [time: {t2 - t1} s]")
         print("---")
@@ -872,7 +872,7 @@ if __name__ == "__main__":
         demo_haar_features(hinds, hcoords, n)      
     
     if REGENERATE_DATA_FROM_FDDB:
-        X_train, y_train, X_test, y_test = fddb_data(FOLDER_RAW_DATA_FDDB, hcoords, NPI, n, SEED)
+        X_train, y_train, X_test, y_test = fddb_data(FOLDER_RAW_DATA_FDDB, hcoords, NPI, n, SEED, data_augmentation=(AUG == 1))
         pickle_all(FOLDER_DATA + DATA_NAME, [X_train, y_train, X_test, y_test])    
 
     if FIT_OR_REFIT_MODEL or MEASURE_ACCS_OF_MODEL:
