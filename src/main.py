@@ -23,9 +23,11 @@ warnings.simplefilter("ignore", category=NumbaPerformanceWarning)
 np.set_printoptions(linewidth=512)
 
 # main settings
+KIND = "face"
 S = 5 # "scales" parameter to generete Haar-like features
 P = 5 # "positions" parameter to generete Haar-like features
 NPI = 50 # no. of negatives (negative windows) to sample per image from FDDB material
+AUG = 0 # data augmentation (0 -> none or 1 -> present)
 T = 512 # size of ensemble in FastRealBoostBins (equivalently, no. of boosting rounds when fitting)
 B = 8 # no. of bins
 SEED = 0 # randomization seed
@@ -41,11 +43,11 @@ CV2_VIDEO_CAPTURE_IS_IT_MSWINDOWS = True
 
 # detection procedure settings
 DETECTION_SCALES = 10
-DETECTION_WINDOW_HEIGHT_MIN = 64
-DETECTION_WINDOW_WIDTH_MIN = 64
+DETECTION_WINDOW_HEIGHT_MIN = 96
+DETECTION_WINDOW_WIDTH_MIN = 96
 DETECTION_WINDOW_GROWTH = 1.2
 DETECTION_WINDOW_JUMP = 0.05
-DETECTION_THRESHOLD = 5.5
+DETECTION_THRESHOLD = 4.5
 DETECTION_POSTPROCESS = "avg" # possible values: None, "nms", "avg"
 
 # folders
@@ -93,7 +95,157 @@ def gpu_props():
     props["cores_total"] = props["cores_per_SM"] * gpu.MULTIPROCESSOR_COUNT
     return props   
 
-def fddb_read_single_fold(path_root, path_fold_relative, n_negs_per_img, hcoords, n, verbose=False, fold_title="", seed=0):
+def fddb_read_single_fold(path_root, path_fold_relative, n_negs_per_img, hcoords, n, verbose=False, fold_title="", seed=0, data_augmentation=True):
+    np.random.seed(seed)    
+    
+    # settings for sampling negatives
+    w_relative_min = 0.1
+    w_relative_max = 0.35
+    w_relative_spread = w_relative_max - w_relative_min
+    neg_max_iou = 0.5
+    
+    X_list = []
+    y_list = []
+    
+    lines = []
+    f = open(path_root + path_fold_relative, "r")
+    while True:
+        line = f.readline()
+        if line != "":
+            lines.append(line)
+        else:
+            break
+    f.close()
+    
+    n_img = 0
+    n_faces = 0
+    counter = 0
+    li = 0 # line index
+    line = lines[li].strip()
+    li += 1
+    augmentations = [None]
+    if data_augmentation: 
+        augmentations += ["sharpen", "blur", "random_brightness", "random_channel_shift"]    
+    while line != "":
+        file_name = path_root + line + ".jpg"
+        log_line =  str(counter) + ": [" + file_name + "]"
+        if fold_title != "":
+            log_line += " [" + fold_title + "]" 
+        print(log_line)
+        counter += 1
+        
+        i0_original = cv2.imread(file_name)                    
+        line = lines[li]
+        li += 1
+        n_img_faces = int(line)   
+        for aug_index, aug in enumerate(augmentations):
+            if verbose:
+                print(f"[augmentation: {aug}]")
+            i0 = np.copy(i0_original)
+            if aug_index > 0:
+                li -= n_img_faces
+            if aug is not None:
+                if aug == "sharpen":
+                    kernel = np.array([[0, -1, 0], [-1, 5, -1], [0, -1, 0]])
+                    i0 = cv2.filter2D(i0, -1, kernel)
+                if aug == "blur":
+                    i0 = cv2.blur(i0, ksize=(5, 5))
+                if aug == "random_brightness":
+                    value = np.random.uniform(0.5, 2.5)
+                    hsv = cv2.cvtColor(i0, cv2.COLOR_BGR2HSV)
+                    hsv = np.array(hsv, dtype=np.float64)
+                    hsv[:, :, [1, 2]] = value * hsv[:, :, [1, 2]]
+                    hsv = np.clip(hsv, 0, 255)
+                    hsv = np.array(hsv, dtype=np.uint8)
+                    i0 = cv2.cvtColor(hsv, cv2.COLOR_HSV2BGR)
+                if aug == "random_channel_shift":
+                    i0 = i0.astype(np.int16)
+                    for chnl in range(3):
+                        value = int(np.random.uniform(-64, 64))
+                        i0[:, :, chnl] += value
+                    i0 = (np.clip(i0, 0, 255)).astype(np.uint8)
+            i = cv2.cvtColor(i0, cv2.COLOR_BGR2GRAY)                    
+            ii = integral_image_numba_jit(i)
+            n_img += 1        
+            img_faces_coords = []
+            for _ in range(n_img_faces):
+                line = lines[li].strip()
+                li += 1
+                r_major, _, _, center_x, center_y, dummy_one = list(map(float, line.split()))
+                h = int(1.5 * r_major)
+                w = h                
+                j0 = int(center_y - h / 2) 
+                k0 = int(center_x - w / 2)
+                if aug is not None:
+                    growth = np.random.uniform(0.95, 1.05)
+                    h = int(np.round(h * growth))
+                    w = h
+                    j0 += int(np.round(np.random.uniform(-0.05, 0.05) * h))
+                    k0 += int(np.round(np.random.uniform(-0.05, 0.05) * w))
+                img_face_coords = np.array([j0, k0, j0 + h - 1, k0 + w - 1])
+                if j0 < 0 or k0 < 0 or j0 + h - 1 >= i.shape[0] or k0 + w - 1 >= i.shape[1]:
+                    if verbose:
+                        print(f"[window {img_face_coords} out of bounds -> ignored]")
+                    continue
+                if (h / ii.shape[0] < 0.075): # min relative size of positive window (smaller may lead to division by zero when white regions in haar features have no area)
+                    if verbose:
+                        print(f"[window {img_face_coords} too small -> ignored]")
+                    continue                            
+                n_faces += 1
+                img_faces_coords.append(img_face_coords)
+                if verbose:
+                    p1 = (k0, j0)
+                    p2 = (k0 + w - 1, j0 + h - 1)    
+                    cv2.rectangle(i0, p1, p2, (0, 0, 255), 1)                        
+                shcoords_one_window = (np.array([h, w, h, w]) * hcoords).astype(np.int16)                        
+                feats = haar_features_one_window_numba_jit(ii, j0, k0, shcoords_one_window, n, np.arange(n, dtype=np.int32))
+                if verbose:
+                    print(f"[positive window {img_face_coords} accepted; features: {feats}]")
+                    cv2.imshow("FDDB [press ESC to continue]", i0)
+                    cv2.waitKey(0)
+                X_list.append(feats)
+                y_list.append(1)
+            for _ in range(n_negs_per_img):            
+                while True:
+                    h = int((np.random.random() * w_relative_spread + w_relative_min) * i.shape[0])
+                    w = h
+                    j0 = int(np.random.random() * (i.shape[0] - w + 1))
+                    k0 = int(np.random.random() * (i.shape[1] - w + 1))                 
+                    patch = np.array([j0, k0, j0 + h - 1, k0 + w - 1])
+                    ious = list(map(lambda ifc : iou(patch, ifc), img_faces_coords))
+                    max_iou = max(ious) if len(ious) > 0 else 0.0
+                    if max_iou < neg_max_iou:
+                        shcoords_one_window = (np.array([h, w, h, w]) * hcoords).astype(np.int16)
+                        feats = haar_features_one_window_numba_jit(ii, j0, k0, shcoords_one_window, n, np.arange(n, dtype=np.int32))
+                        X_list.append(feats)
+                        y_list.append(-1)                    
+                        if verbose:
+                            print(f"[negative window {patch} accepted; features: {feats}]")
+                            p1 = (k0, j0)
+                            p2 = (k0 + w - 1, j0 + h - 1)            
+                            cv2.rectangle(i0, p1, p2, (0, 255, 0), 1)
+                        break
+                    else:                    
+                        if verbose:
+                            print(f"[negative window {patch} ignored due to max iou: {max_iou}]")
+                            p1 = (k0, j0)
+                            p2 = (k0 + w - 1, j0 + w - 1)
+                            cv2.rectangle(i0, p1, p2, (255, 255, 0), 1)
+            if verbose: 
+                cv2.imshow("FDDB [press ESC to continue]", i0)
+                cv2.waitKey(0)
+        if li == len(lines):
+            break
+        line = lines[li].strip()
+        li += 1
+    print(f"IMAGES IN THIS FOLD: {n_img}.")
+    print(f"ACCEPTED FACES IN THIS FOLD: {n_faces}.")
+    f.close()
+    X = np.stack(X_list)
+    y = np.stack(y_list)
+    return X, y
+
+def fddb_read_single_fold_old(path_root, path_fold_relative, n_negs_per_img, hcoords, n, verbose=False, fold_title="", seed=0):
     np.random.seed(seed)    
     
     # settings for sampling negatives
@@ -209,7 +361,7 @@ def fddb_data(path_fddb_root, hfs_coords, n_negs_per_img, n, seed=0):
     for index, fold_path in enumerate(fold_paths_train):
         print(f"PROCESSING TRAIN FOLD {index + 1}/{len(fold_paths_train)}...")
         t1 = time.time()
-        X, y = fddb_read_single_fold(path_fddb_root, fold_path, n_negs_per_img, hfs_coords, n, verbose=False, fold_title=fold_path, seed=seed)
+        X, y = fddb_read_single_fold(path_fddb_root, fold_path, n_negs_per_img, hfs_coords, n, verbose=False, fold_title=fold_path, seed=seed, data_augmentation=True)
         t2 = time.time()
         print(f"PROCESSING TRAIN FOLD {index + 1}/{len(fold_paths_train)} DONE. [time: {t2 - t1} s]")
         print("---")
@@ -227,7 +379,7 @@ def fddb_data(path_fddb_root, hfs_coords, n_negs_per_img, n, seed=0):
     for index, fold_path in enumerate(fold_paths_test):
         print(f"PROCESSING TEST FOLD {index + 1}/{len(fold_paths_test)}...")
         t1 = time.time()
-        X, y = fddb_read_single_fold(path_fddb_root, fold_path, n_negs_per_img, hfs_coords, n, verbose=False, fold_title=fold_path, seed=seed)
+        X, y = fddb_read_single_fold(path_fddb_root, fold_path, n_negs_per_img, hfs_coords, n, verbose=False, fold_title=fold_path, seed=seed, data_augmentation=True)
         t2 = time.time()
         print(f"PROCESSING TEST FOLD {index + 1}/{len(fold_paths_test)} DONE. [time: {t2 - t1} s]")
         print("---")
@@ -708,9 +860,10 @@ if __name__ == "__main__":
     n = HAAR_TEMPLATES.shape[0] * S**2 * (2 * P - 1)**2    
     hinds = haar_indexes(S, P)
     hcoords = haar_coords(S, P, hinds)
-         
-    DATA_NAME = f"data_face_n_{n}_S_{S}_P_{P}_NPI_{NPI}_SEED_{SEED}.bin"
-    CLF_NAME = f"clf_frbb_face_n_{n}_S_{S}_P_{P}_NPI_{NPI}_SEED_{SEED}_T_{T}_B_{B}.bin"    
+    
+    data_suffix = f"{KIND}_n_{n}_S_{S}_P_{P}_NPI_{NPI}_AUG_{AUG}_SEED_{SEED}" 
+    DATA_NAME = f"data_{data_suffix}.bin"
+    CLF_NAME = f"clf_frbb_{data_suffix}_T_{T}_B_{B}.bin"    
     print(f"DATA_NAME: {DATA_NAME}")
     print(f"CLF_NAME: {CLF_NAME}")
     print(f"GPU_PROPS: {gpu_props()}")
@@ -743,26 +896,30 @@ if __name__ == "__main__":
 
     print("ALL DONE.")
     
-if __name__ == "__main_rocs__":        
+if __name__ == "__rocs__":        
     print("ROCS...")
     
-    clfs_settings = [{"S": 5, "P": 5, "NPI": 50, "SEED": 0, "T": 512, "B": 8}#,
-                     # {"S": 5, "P": 6, "NPI": 100, "SEED": 0, "T": 512, "B": 8},
-                     # {"S": 5, "P": 6, "NPI": 100, "SEED": 0, "T": 1024, "B": 8}
+    clfs_settings = [{"S": 5, "P": 5, "NPI": 50, "AUG": 0, "SEED": 0, "T": 512, "B": 8},
+                     {"S": 5, "P": 5, "NPI": 10, "AUG": 1, "SEED": 0, "T": 512, "B": 8},
                      ]
     
     for s in clfs_settings:
         S = s["S"]
         P = s["P"]
         NPI = s["NPI"]
+        AUG = s["AUG"]
         SEED = s["SEED"]
         T = s["T"]
         B = s["B"] 
         n = HAAR_TEMPLATES.shape[0] * S**2 * (2 * P - 1)**2    
         hinds = haar_indexes(S, P)
         hcoords = haar_coords(S, P, hinds)
-        DATA_NAME = f"data_face_n_{n}_S_{S}_P_{P}_NPI_{NPI}_SEED_{SEED}.bin"        
-        CLF_NAME = f"clf_frbb_face_n_{n}_S_{S}_P_{P}_NPI_{NPI}_SEED_{SEED}_T_{T}_B_{B}.bin"
+        
+        data_suffix = f"{KIND}_n_{n}_S_{S}_P_{P}_NPI_{NPI}_AUG_{AUG}_SEED_{SEED}" 
+        DATA_NAME = f"data_{data_suffix}.bin"
+        DATA_NAME = "data_face_n_18225_S_5_P_5_NPI_50_AUG_0_SEED_0.bin"
+        #DATA_NAME = "data_face_n_18225_S_5_P_5_NPI_10_AUG_1_SEED_0.bin"        
+        CLF_NAME = f"clf_frbb_{data_suffix}_T_{T}_B_{B}.bin"    
         print("---")
         print(f"DATA_NAME: {DATA_NAME}")
         print(f"CLF_NAME: {CLF_NAME}")            
