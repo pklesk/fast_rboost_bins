@@ -25,9 +25,9 @@ np.set_printoptions(linewidth=512)
 KIND = "face"
 S = 5 # "scales" parameter to generete Haar-like features
 P = 5 # "positions" parameter to generete Haar-like features
-NPI = 100 # no. of negatives (negative windows) to sample per image from FDDB material
-AUG = 0 # data augmentation (0 -> none or 1 -> present)
-T = 1024 # size of ensemble in FastRealBoostBins (equivalently, no. of boosting rounds when fitting)
+NPI = 10 # no. of negatives (negative windows) to sample per image from FDDB material
+AUG = 1 # data augmentation (0 -> none or 1 -> present)
+T = 2048 # size of ensemble in FastRealBoostBins (equivalently, no. of boosting rounds when fitting)
 B = 8 # no. of bins
 SEED = 0 # randomization seed
 DEMO_HAAR_FEATURES = False
@@ -42,8 +42,8 @@ CV2_VIDEO_CAPTURE_IS_IT_MSWINDOWS = False
 
 # detection procedure settings
 DETECTION_SCALES = 10
-DETECTION_WINDOW_HEIGHT_MIN = 96
-DETECTION_WINDOW_WIDTH_MIN = 96
+DETECTION_WINDOW_HEIGHT_MIN = 64
+DETECTION_WINDOW_WIDTH_MIN = 64
 DETECTION_WINDOW_GROWTH = 1.2
 DETECTION_WINDOW_JUMP = 0.05
 DETECTION_THRESHOLD = 8.5
@@ -828,7 +828,6 @@ def demo_detect_in_video(clf, hcoords, threshold, computations="simple", postpro
         imshow_name = "DEMO: FAST REAL-BOOST WITH BINS WORKING ON HAAR-LIKE FEATURES [press ESC to quit]"             
         cv2.imshow(imshow_name, frame)
         cv2.namedWindow(imshow_name)
-        cv2.moveWindow(imshow_name, 64, 64)
         if cv2.waitKey(1) & 0xFF == 27: # esc key
             break       
         t2_other = time.time()        
@@ -855,7 +854,7 @@ def demo_detect_in_video(clf, hcoords, threshold, computations="simple", postpro
 # ----------------------------------------------------------------------------------------------------------------------------------------------------------------
 # MAIN
 # ----------------------------------------------------------------------------------------------------------------------------------------------------------------
-if __name__ == "__main__":        
+if __name__ == "__main_main__":        
     print("DEMONSTRATION OF \"FAST REAL-BOOST WITH BINS\" ALGORITHM IMPLEMENTED VIA NUMBA.JIT AND NUMBA.CUDA.")
 
     n = HAAR_TEMPLATES.shape[0] * S**2 * (2 * P - 1)**2    
@@ -897,13 +896,15 @@ if __name__ == "__main__":
 
     print("ALL DONE.")
     
-if __name__ == "__main_rocs__":        
+if __name__ == "__main__":        
     print("ROCS...")
     
-    clfs_settings = [{"S": 5, "P": 5, "NPI": 50, "AUG": 0, "SEED": 0, "T": 512, "B": 8},
-                     {"S": 5, "P": 5, "NPI": 100, "AUG": 0, "SEED": 0, "T": 1024, "B": 8},
-                     {"S": 5, "P": 5, "NPI": 100, "AUG": 0, "SEED": 0, "T": 2048, "B": 8},
-                     {"S": 5, "P": 5, "NPI": 10, "AUG": 1, "SEED": 0, "T": 512, "B": 8}
+    clfs_settings = [
+                     #{"S": 5, "P": 5, "NPI": 50, "AUG": 0, "SEED": 0, "T": 512, "B": 8},
+                     #{"S": 5, "P": 5, "NPI": 100, "AUG": 0, "SEED": 0, "T": 1024, "B": 8},
+                     #{"S": 5, "P": 5, "NPI": 100, "AUG": 0, "SEED": 0, "T": 2048, "B": 8},
+                     {"S": 5, "P": 5, "NPI": 10, "AUG": 1, "SEED": 0, "T": 512, "B": 8},
+                     {"S": 5, "P": 5, "NPI": 10, "AUG": 1, "SEED": 0, "T": 2048, "B": 8}
                      ]
     
     for s in clfs_settings:
@@ -920,10 +921,9 @@ if __name__ == "__main_rocs__":
         
         data_suffix = f"{KIND}_n_{n}_S_{S}_P_{P}_NPI_{NPI}_AUG_{AUG}_SEED_{SEED}" 
         #DATA_NAME = f"data_{data_suffix}.bin"
-        #DATA_NAME = "data_face_n_18225_S_5_P_5_NPI_50_AUG_0_SEED_0.bin"
-        #DATA_NAME = "data_face_n_18225_S_5_P_5_NPI_10_AUG_1_SEED_0.bin"                
+        #DATA_NAME = "data_face_n_18225_S_5_P_5_NPI_50_AUG_0_SEED_0.bin"                
+        #DATA_NAME = "data_face_n_18225_S_5_P_5_NPI_100_AUG_0_SEED_0.bin" 
         DATA_NAME = "data_face_n_18225_S_5_P_5_NPI_10_AUG_1_SEED_0.bin"        
-        #DATA_NAME = "data_face_n_18225_S_5_P_5_NPI_10_AUG_1_SEED_0.bin"        
         CLF_NAME = f"clf_frbb_{data_suffix}_T_{T}_B_{B}.bin"    
         print("---")
         print(f"DATA_NAME: {DATA_NAME}")
