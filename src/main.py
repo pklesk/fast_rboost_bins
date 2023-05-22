@@ -25,16 +25,16 @@ np.set_printoptions(linewidth=512)
 KIND = "face"
 S = 5 # "scales" parameter to generete Haar-like features
 P = 5 # "positions" parameter to generete Haar-like features
-NPI = 100 # no. of negatives (negative windows) to sample per image from FDDB material
-AUG = 0 # data augmentation (0 -> none or 1 -> present)
+NPI = 10 # no. of negatives (negative windows) to sample per image from FDDB material
+AUG = 1 # data augmentation (0 -> none or 1 -> present)
 T = 1024 # size of ensemble in FastRealBoostBins (equivalently, no. of boosting rounds when fitting)
 B = 8 # no. of bins
 SEED = 0 # randomization seed
 DEMO_HAAR_FEATURES = False
-REGENERATE_DATA_FROM_FDDB = False
+REGENERATE_DATA_FROM_FDDB = True
 FIT_OR_REFIT_MODEL = False
 MEASURE_ACCS_OF_MODEL = False
-DEMO_DETECT_IN_VIDEO = True
+DEMO_DETECT_IN_VIDEO = False
 
 # cv2 camera settings
 CV2_VIDEO_CAPTURE_CAMERA_INDEX = 0
@@ -123,8 +123,10 @@ def fddb_read_single_fold(path_root, path_fold_relative, n_negs_per_img, hcoords
     line = lines[li].strip()
     li += 1
     augmentations = [None]
+    augmentations_extras = []
     if data_augmentation: 
-        augmentations += ["sharpen", "blur", "random_brightness", "random_channel_shift"]    
+        augmentations += ["sharpen", "blur", "random_brightness", "random_channel_shift"]
+        augmentations_extras += ["random_window_distort", "random_horizontal_flip"]
     while line != "":
         file_name = path_root + line + ".jpg"
         log_line =  str(counter) + ": [" + file_name + "]"
@@ -137,10 +139,11 @@ def fddb_read_single_fold(path_root, path_fold_relative, n_negs_per_img, hcoords
         line = lines[li]
         li += 1
         n_img_faces = int(line)   
-        for aug_index, aug in enumerate(augmentations):
+        for aug_index, aug in enumerate(augmentations):            
             if verbose:
                 print(f"[augmentation: {aug}]")
             i0 = np.copy(i0_original)
+            flipped = False
             if aug_index > 0:
                 li -= n_img_faces
             if aug is not None:
@@ -150,7 +153,7 @@ def fddb_read_single_fold(path_root, path_fold_relative, n_negs_per_img, hcoords
                 if aug == "blur":
                     i0 = cv2.blur(i0, ksize=(5, 5))
                 if aug == "random_brightness":
-                    value = np.random.uniform(0.5, 2.5)
+                    value = np.random.uniform(0.5, 2.0)
                     hsv = cv2.cvtColor(i0, cv2.COLOR_BGR2HSV)
                     hsv = np.array(hsv, dtype=np.float64)
                     hsv[:, :, [1, 2]] = value * hsv[:, :, [1, 2]]
@@ -163,6 +166,10 @@ def fddb_read_single_fold(path_root, path_fold_relative, n_negs_per_img, hcoords
                         value = int(np.random.uniform(-64, 64))
                         i0[:, :, chnl] += value
                     i0 = (np.clip(i0, 0, 255)).astype(np.uint8)
+                if "random_horizontal_flip" in augmentations_extras:
+                    if np.random.rand() < 0.5:
+                        i0 = np.copy(np.fliplr(i0))
+                        flipped = True
             i = cv2.cvtColor(i0, cv2.COLOR_BGR2GRAY)                    
             ii = integral_image_numba_jit(i)
             n_img += 1        
@@ -175,7 +182,9 @@ def fddb_read_single_fold(path_root, path_fold_relative, n_negs_per_img, hcoords
                 w = h                
                 j0 = int(center_y - h / 2) 
                 k0 = int(center_x - w / 2)
-                if aug is not None:
+                if flipped:
+                    k0 = i.shape[1] - 1 - k0 - w + 1
+                if aug is not None and "random_window_distort" in augmentations_extras:
                     growth = np.random.uniform(0.95, 1.05)
                     h = int(np.round(h * growth))
                     w = h
@@ -777,7 +786,8 @@ def demo_detect_in_video(clf, hcoords, threshold, computations="simple", postpro
     resized_width = int(np.round(frame.shape[1] / frame.shape[0] * HEIGHT))
     windows, shcoords_multiple_scales = prepare_detection_windows_and_scaled_haar_coords(HEIGHT, resized_width, hcoords, features_indexes)
     print(f"[frame shape: {frame.shape}]")
-    print(f"[windows to check per frame: {windows.shape[0]}]")
+    print(f"[windows per frame: {windows.shape[0]}]")
+    print(f"[terms per window: {clf.T_}]")
     print(f"[about to start a camera...]")
     h_scale = frame_h / HEIGHT
     w_scale = frame_w / resized_width 
@@ -876,10 +886,11 @@ def demo_detect_in_video(clf, hcoords, threshold, computations="simple", postpro
         if verbose_loop:
             print(f"[read time: {t2_read - t1_read} s]")
             print(f"[flip time: {t2_flip - t1_flip} s]")
+            print(f"[windows per frame: {windows.shape[0]}]")
+            print(f"[terms per window: {clf.T_}]")            
             print(f"[computations time: {t2_comps - t1_comps} s]")
             print(f"[postprocess time: {t2_post - t1_post} s]")
             print(f"[other time: {t2_other - t1_other} s]")
-            print(f"[windows to check per frame: {windows.shape[0]}]")
             print(f"[fps (computations): {fps_comps:.1f}]")
             print(f"[fps (display): {fps_disp:.1f}]")
             print(f"[detections in this frame: {len(detections)}]")           
@@ -897,7 +908,7 @@ def demo_detect_in_video(clf, hcoords, threshold, computations="simple", postpro
 # ----------------------------------------------------------------------------------------------------------------------------------------------------------------
 # MAIN
 # ----------------------------------------------------------------------------------------------------------------------------------------------------------------
-if __name__ == "__main_main__":        
+if __name__ == "__main__":        
     print("DEMONSTRATION OF \"FAST REAL-BOOST WITH BINS\" ALGORITHM IMPLEMENTED VIA NUMBA.JIT AND NUMBA.CUDA.")
 
     n = HAAR_TEMPLATES.shape[0] * S**2 * (2 * P - 1)**2    
