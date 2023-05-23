@@ -23,10 +23,10 @@ np.set_printoptions(linewidth=512)
 
 # main settings
 KIND = "face"
-S = 5 # "scales" parameter to generete Haar-like features
-P = 5 # "positions" parameter to generete Haar-like features
-NPI = 10 # no. of negatives (negative windows) to sample per image from FDDB material
-AUG = 1 # data augmentation (0 -> none or 1 -> present)
+S = 5 # parameter "scales" to generete Haar-like features
+P = 5 # parameter "positions" to generete Haar-like features
+NPI = 200 # no. of negatives (negative windows) to sample per image from FDDB material
+AUG = 0 # data augmentation (0 -> none or 1 -> present)
 T = 1024 # size of ensemble in FastRealBoostBins (equivalently, no. of boosting rounds when fitting)
 B = 8 # no. of bins
 SEED = 0 # randomization seed
@@ -42,11 +42,11 @@ CV2_VIDEO_CAPTURE_IS_IT_MSWINDOWS = False
 
 # detection procedure settings
 DETECTION_SCALES = 10
-DETECTION_WINDOW_HEIGHT_MIN = 64
-DETECTION_WINDOW_WIDTH_MIN = 64
+DETECTION_WINDOW_HEIGHT_MIN = 96
+DETECTION_WINDOW_WIDTH_MIN = 96
 DETECTION_WINDOW_GROWTH = 1.2
 DETECTION_WINDOW_JUMP = 0.05
-DETECTION_THRESHOLD = 8.5
+DETECTION_THRESHOLD = 8.31246566772461
 DETECTION_POSTPROCESS = "avg" # possible values: None, "nms", "avg"
 
 # folders
@@ -54,6 +54,7 @@ FOLDER_DATA = "../data/"
 FOLDER_CLFS = "../models/"
 FOLDER_EXTRAS = "../extras/"
 FOLDER_RAW_DATA_FDDB = "../raw_data_fddb/"
+FOLDER_RAW_DATA_HAND = "../raw_data_hand/"
 
 def gpu_props():
     gpu = cuda.get_current_device()
@@ -904,11 +905,52 @@ def demo_detect_in_video(clf, hcoords, threshold, computations="simple", postpro
     avg_time_comps_frbb = time_comps_frbb / n_frames
     avg_fps_disp = n_frames / (t2_loop - t1_loop)
     print(f"DEMO OF DETECT IN VIDEO DONE. [avg fps (computations): {avg_fps_comps:.1f}, avg time haar: {avg_time_comps_haar * 1000:.1f} ms, avg time frbb: {avg_time_comps_frbb * 1000:.1f} ms; avg fps (display): {avg_fps_disp:.1f}]")
+
+def best_prec_threshold(roc, y_test):
+    py = np.zeros(2)
+    py[0] = np.mean(y_test == -1)
+    py[1] = np.mean(y_test == 1)
+    fprs, tprs, dts = roc
+    sub = fprs > 0.0
+    fprs_sub = fprs[sub]
+    tprs_sub = tprs[sub]
+    dts_sub = dts[sub]
+    tp = tprs_sub * py[1]
+    fp = fprs_sub * py[0]
+    precs = tp / (tp + fp)
+    best_index = np.argmax(precs)
+    best_thr = dts_sub[best_index]
+    best_prec = precs[best_index]    
+    if best_index > 0:
+        best_thr = 0.5 * (best_thr + dts_sub[best_index - 1]) 
+        best_prec = 0.5 * (best_prec + precs[best_index - 1])
+    print(f"[best_prec_threshold -> best_thr: {best_thr}, best_prec: {best_prec}; py: {py}, fprs_sub[best_index]: {fprs_sub[best_index]}, tprs_sub[best_index]: {tprs_sub[best_index]}]")
+    return best_thr, best_prec
+
+def rotate_image(i, angle):
+    h, w, _ = i.shape
+    center = tuple(np.array([h, w]) / 2.0)
+    rot_mat = cv2.getRotationMatrix2D(center, angle, 1.0)
+    new_i = cv2.warpAffine(i, rot_mat, (w, h))
+    return new_i
+
+def distort_image(i, distort_range):
+    h, w, _ = i.shape
+    
+    r = distort_range
+    rh = 0.5 * distort_range
+    pts1 = np.float32([[5,5],[20,5],[5,20]])
+    pt1 = 5 + r * np.random.uniform() - rh
+    pt2 = 20 + r * np.random.uniform() - rh
+    pts2 = np.float32([[pt1,5],[pt2,pt1],[5,pt2]])
+    distort_mat = cv2.getAffineTransform(pts1, pts2)    
+    new_i = cv2.warpAffine(i, distort_mat, (w, h))
+    return new_i
         
 # ----------------------------------------------------------------------------------------------------------------------------------------------------------------
 # MAIN
 # ----------------------------------------------------------------------------------------------------------------------------------------------------------------
-if __name__ == "__main__":        
+if __name__ == "__main_main__":        
     print("DEMONSTRATION OF \"FAST REAL-BOOST WITH BINS\" ALGORITHM IMPLEMENTED VIA NUMBA.JIT AND NUMBA.CUDA.")
 
     n = HAAR_TEMPLATES.shape[0] * S**2 * (2 * P - 1)**2    
@@ -953,10 +995,10 @@ if __name__ == "__main__":
 if __name__ == "__rocs__":        
     print("ROCS...")
     
-    clfs_settings = [{"S": 5, "P": 5, "NPI": 50, "AUG": 0, "SEED": 0, "T": 512, "B": 8},
-                     {"S": 5, "P": 5, "NPI": 50, "AUG": 0, "SEED": 0, "T": 1024, "B": 8},
+    clfs_settings = [#{"S": 5, "P": 5, "NPI": 50, "AUG": 0, "SEED": 0, "T": 512, "B": 8},
+                     #{"S": 5, "P": 5, "NPI": 50, "AUG": 0, "SEED": 0, "T": 1024, "B": 8},
                      {"S": 5, "P": 5, "NPI": 100, "AUG": 0, "SEED": 0, "T": 1024, "B": 8},
-                     {"S": 5, "P": 5, "NPI": 100, "AUG": 0, "SEED": 0, "T": 2048, "B": 8},
+                     #{"S": 5, "P": 5, "NPI": 100, "AUG": 0, "SEED": 0, "T": 2048, "B": 8}
                      #{"S": 5, "P": 5, "NPI": 10, "AUG": 1, "SEED": 0, "T": 512, "B": 8}
                      ]
     
@@ -974,9 +1016,10 @@ if __name__ == "__rocs__":
         
         data_suffix = f"{KIND}_n_{n}_S_{S}_P_{P}_NPI_{NPI}_AUG_{AUG}_SEED_{SEED}" 
         #DATA_NAME = f"data_{data_suffix}.bin"
+        #DATA_NAME = "data_face_n_18225_S_5_P_5_NPI_10_AUG_1_SEED_0.bin"
         #DATA_NAME = "data_face_n_18225_S_5_P_5_NPI_50_AUG_0_SEED_0.bin"
-        #DATA_NAME = "data_face_n_18225_S_5_P_5_NPI_100_AUG_0_SEED_0.bin"        
-        DATA_NAME = "data_face_n_18225_S_5_P_5_NPI_10_AUG_1_SEED_0.bin"                                     
+        #DATA_NAME = "data_face_n_18225_S_5_P_5_NPI_100_AUG_0_SEED_0.bin"                                     
+        DATA_NAME = "data_face_n_18225_S_5_P_5_NPI_200_AUG_0_SEED_0.bin"
         CLF_NAME = f"clf_frbb_{data_suffix}_T_{T}_B_{B}.bin"    
         print("---")
         print(f"DATA_NAME: {DATA_NAME}")
@@ -985,10 +1028,11 @@ if __name__ == "__rocs__":
         [clf] = unpickle_all(FOLDER_CLFS + CLF_NAME)                
         responses_test = clf.decision_function(X_test)
         roc = roc_curve(y_test, responses_test)
+        best_thr, best_prec = best_prec_threshold(roc, y_test) 
         fars, sens, thrs = roc
         roc_arr = np.array([fars, sens, thrs]).T        
         plt.plot(fars, sens, label=CLF_NAME)
-        print(f"X_train.shape: {X_train.shape}, X_test.shape: {X_test.shape}")        
+        print(f"[X_train.shape: {X_train.shape}, X_test.shape: {X_test.shape}]")        
         # with np.printoptions(threshold=np.inf):
         #     print(roc_arr)
     plt.xscale("log")
@@ -996,3 +1040,30 @@ if __name__ == "__rocs__":
     plt.ylabel("SENSITIVITY")
     plt.legend(loc="lower right", fontsize=8)
     plt.show()
+    
+if __name__ == "__main__":
+    print("HAND TESTS...")
+    b = cv2.imread(FOLDER_RAW_DATA_HAND + "backgrounds/02.jpg")
+    bh, bw, bc = b.shape
+    t = cv2.imread(FOLDER_RAW_DATA_HAND + "targets/02.jpg")
+    th, tw, tc = t.shape
+    ratio = 0.25
+    ts = cv2.resize(t, (round(ratio * bw), round(ratio * bw / tw * th)))
+    th, tw, tc = ts.shape
+    # ts = rotate_image(ts, 45)    
+    
+    ts = distort_image(ts, 5)
+    ts[ts == 0] = 255
+    
+    j, k = 50, 100    
+    roi = b[j : j + th, k : k + tw]
+    ts_gray = cv2.cvtColor(ts, cv2.COLOR_BGR2GRAY)    
+    thr, mask = cv2.threshold(ts_gray, 245, 255, cv2.THRESH_BINARY_INV)    
+    mask_inv = cv2.bitwise_not(mask)
+    b_bg = cv2.bitwise_and(roi, roi, mask=mask_inv)
+    t_fg = cv2.bitwise_and(ts, ts, mask=mask)
+    dst = cv2.add(b_bg, t_fg)
+    dst = cv2.medianBlur(dst, 5)
+    b[j : j + th, k : k + tw] = dst
+    cv2.imshow("combined", b)
+    cv2.waitKey()

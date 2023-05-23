@@ -413,7 +413,6 @@ class FastRealBoostBins(BaseEstimator, ClassifierMixin):
                 temp = float32(-2.0)
             logits[j, b] = temp                          
 
-
     @staticmethod
     @cuda.jit(void(int8[:, :], int8[:], float32[:], float32[:, :], float32[:], int32[:, :]))
     def errs_exp_numba_cuda(X_binned_sub, yy_sub, w_sub, logits, errs_exp, mutexes):
