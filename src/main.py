@@ -33,10 +33,10 @@ B = 8 # no. of bins
 SEED = 0 # randomization seed
 DEMO_HAAR_FEATURES = False
 REGENERATE_DATA_FROM_FDDB = False
-REGENERATE_DATA_SYNTHETIC = True
-FIT_OR_REFIT_MODEL = False
-MEASURE_ACCS_OF_MODEL = False
-DEMO_DETECT_IN_VIDEO = True
+REGENERATE_DATA_SYNTHETIC = False
+FIT_OR_REFIT_MODEL = True
+MEASURE_ACCS_OF_MODEL = True
+DEMO_DETECT_IN_VIDEO = False
 
 # cv2 camera settings
 CV2_VIDEO_CAPTURE_CAMERA_INDEX = 0
@@ -972,7 +972,7 @@ if __name__ == "__main__":
         pickle_all(FOLDER_DATA + DATA_NAME, [X_train, y_train, X_test, y_test])
     
     if REGENERATE_DATA_SYNTHETIC:
-        X_train, y_train, X_test, y_test = synthetic_data(FOLDER_RAW_DATA_HAND + "backgrounds/", FOLDER_RAW_DATA_HAND + "targets/", 10000, 10, hcoords, n, train_ratio=0.75, seed=0, verbose=False)
+        X_train, y_train, X_test, y_test = synthetic_data(FOLDER_RAW_DATA_HAND + "backgrounds/", FOLDER_RAW_DATA_HAND + "targets/", 10000, NPI, hcoords, n, train_ratio=0.75, seed=0, verbose=False)
         pickle_all(FOLDER_DATA + DATA_NAME, [X_train, y_train, X_test, y_test])    
 
     if FIT_OR_REFIT_MODEL or MEASURE_ACCS_OF_MODEL:
