@@ -1,7 +1,7 @@
 DEMONSTRATION OF "FAST REAL-BOOST WITH BINS" ALGORITHM IMPLEMENTED VIA NUMBA.JIT AND NUMBA.CUDA.
 DATA_NAME: data_face_n_18225_S_5_P_5_NPI_10_AUG_1_SEED_0.bin
-CLF_NAME: clf_frbb_face_n_18225_S_5_P_5_NPI_10_AUG_1_SEED_0_T_512_B_8.bin
-GPU_PROPS: {'name': 'Quadro M4000M', 'max_threads_per_block': 1024, 'max_block_dim_x': 1024, 'max_block_dim_y': 1024, 'max_block_dim_z': 64, 'max_grid_dim_x': 2147483647, 'max_grid_dim_y': 65535, 'max_grid_dim_z': 65535, 'max_shared_memory_per_block': 49152, 'async_engine_count': 5, 'can_map_host_memory': 1, 'multiprocessor_count': 10, 'warp_size': 32, 'unified_addressing': 1, 'pci_bus_id': 1, 'pci_device_id': 0, 'compute_capability': (5, 2), 'cores_per_SM': 128, 'cores_total': 1280}
+CLF_NAME: clf_frbb_face_n_18225_S_5_P_5_NPI_10_AUG_1_SEED_0_T_1024_B_8.bin
+GPU_PROPS: {'name': 'NVIDIA GeForce RTX 3090', 'max_threads_per_block': 1024, 'max_block_dim_x': 1024, 'max_block_dim_y': 1024, 'max_block_dim_z': 64, 'max_grid_dim_x': 2147483647, 'max_grid_dim_y': 65535, 'max_grid_dim_z': 65535, 'max_shared_memory_per_block': 49152, 'async_engine_count': 2, 'can_map_host_memory': 1, 'multiprocessor_count': 82, 'warp_size': 32, 'unified_addressing': 1, 'pci_bus_id': 1, 'pci_device_id': 0, 'compute_capability': (8, 6), 'cores_per_SM': 128, 'cores_total': 10496}
 PROCESSING TRAIN FOLD 1/9...
 0: [../raw_data_fddb/2002/08/11/big/img_591.jpg] [FDDB-folds/FDDB-fold-01-ellipseList.txt]
 1: [../raw_data_fddb/2002/08/26/big/img_265.jpg] [FDDB-folds/FDDB-fold-01-ellipseList.txt]
@@ -294,8 +294,8 @@ PROCESSING TRAIN FOLD 1/9...
 288: [../raw_data_fddb/2002/08/07/big/img_1453.jpg] [FDDB-folds/FDDB-fold-01-ellipseList.txt]
 289: [../raw_data_fddb/2002/08/02/big/img_760.jpg] [FDDB-folds/FDDB-fold-01-ellipseList.txt]
 IMAGES IN THIS FOLD: 1450.
-ACCEPTED FACES IN THIS FOLD: 2259.
-PROCESSING TRAIN FOLD 1/9 DONE. [time: 49.847652435302734 s]
+ACCEPTED FACES IN THIS FOLD: 2267.
+PROCESSING TRAIN FOLD 1/9 DONE. [time: 26.675923347473145 s]
 ---
 PROCESSING TRAIN FOLD 2/9...
 0: [../raw_data_fddb/2002/07/28/big/img_416.jpg] [FDDB-folds/FDDB-fold-02-ellipseList.txt]
@@ -584,8 +584,8 @@ PROCESSING TRAIN FOLD 2/9...
 283: [../raw_data_fddb/2002/08/16/big/img_166.jpg] [FDDB-folds/FDDB-fold-02-ellipseList.txt]
 284: [../raw_data_fddb/2002/09/01/big/img_16333.jpg] [FDDB-folds/FDDB-fold-02-ellipseList.txt]
 IMAGES IN THIS FOLD: 1425.
-ACCEPTED FACES IN THIS FOLD: 2326.
-PROCESSING TRAIN FOLD 2/9 DONE. [time: 49.431435346603394 s]
+ACCEPTED FACES IN THIS FOLD: 2323.
+PROCESSING TRAIN FOLD 2/9 DONE. [time: 26.19354009628296 s]
 ---
 PROCESSING TRAIN FOLD 3/9...
 0: [../raw_data_fddb/2002/07/26/big/img_1010.jpg] [FDDB-folds/FDDB-fold-03-ellipseList.txt]
@@ -863,8 +863,8 @@ PROCESSING TRAIN FOLD 3/9...
 272: [../raw_data_fddb/2002/08/31/big/img_17756.jpg] [FDDB-folds/FDDB-fold-03-ellipseList.txt]
 273: [../raw_data_fddb/2002/08/24/big/img_288.jpg] [FDDB-folds/FDDB-fold-03-ellipseList.txt]
 IMAGES IN THIS FOLD: 1370.
-ACCEPTED FACES IN THIS FOLD: 2276.
-PROCESSING TRAIN FOLD 3/9 DONE. [time: 47.02033233642578 s]
+ACCEPTED FACES IN THIS FOLD: 2270.
+PROCESSING TRAIN FOLD 3/9 DONE. [time: 25.367546319961548 s]
 ---
 PROCESSING TRAIN FOLD 4/9...
 0: [../raw_data_fddb/2002/08/18/big/img_181.jpg] [FDDB-folds/FDDB-fold-04-ellipseList.txt]
@@ -1170,8 +1170,8 @@ PROCESSING TRAIN FOLD 4/9...
 300: [../raw_data_fddb/2002/08/16/big/img_370.jpg] [FDDB-folds/FDDB-fold-04-ellipseList.txt]
 301: [../raw_data_fddb/2002/08/13/big/img_380.jpg] [FDDB-folds/FDDB-fold-04-ellipseList.txt]
 IMAGES IN THIS FOLD: 1510.
-ACCEPTED FACES IN THIS FOLD: 2264.
-PROCESSING TRAIN FOLD 4/9 DONE. [time: 52.01579928398132 s]
+ACCEPTED FACES IN THIS FOLD: 2269.
+PROCESSING TRAIN FOLD 4/9 DONE. [time: 27.563427448272705 s]
 ---
 PROCESSING TRAIN FOLD 5/9...
 0: [../raw_data_fddb/2002/08/16/big/img_932.jpg] [FDDB-folds/FDDB-fold-05-ellipseList.txt]
@@ -1473,8 +1473,8 @@ PROCESSING TRAIN FOLD 5/9...
 296: [../raw_data_fddb/2002/07/19/big/img_300.jpg] [FDDB-folds/FDDB-fold-05-ellipseList.txt]
 297: [../raw_data_fddb/2002/07/26/big/img_219.jpg] [FDDB-folds/FDDB-fold-05-ellipseList.txt]
 IMAGES IN THIS FOLD: 1490.
-ACCEPTED FACES IN THIS FOLD: 2291.
-PROCESSING TRAIN FOLD 5/9 DONE. [time: 51.93510389328003 s]
+ACCEPTED FACES IN THIS FOLD: 2294.
+PROCESSING TRAIN FOLD 5/9 DONE. [time: 27.33364701271057 s]
 ---
 PROCESSING TRAIN FOLD 6/9...
 0: [../raw_data_fddb/2002/08/01/big/img_1468.jpg] [FDDB-folds/FDDB-fold-06-ellipseList.txt]
@@ -1780,8 +1780,8 @@ PROCESSING TRAIN FOLD 6/9...
 300: [../raw_data_fddb/2003/01/13/big/img_818.jpg] [FDDB-folds/FDDB-fold-06-ellipseList.txt]
 301: [../raw_data_fddb/2002/08/09/big/img_486.jpg] [FDDB-folds/FDDB-fold-06-ellipseList.txt]
 IMAGES IN THIS FOLD: 1510.
-ACCEPTED FACES IN THIS FOLD: 2244.
-PROCESSING TRAIN FOLD 6/9 DONE. [time: 52.443419456481934 s]
+ACCEPTED FACES IN THIS FOLD: 2246.
+PROCESSING TRAIN FOLD 6/9 DONE. [time: 27.52695369720459 s]
 ---
 PROCESSING TRAIN FOLD 7/9...
 0: [../raw_data_fddb/2002/08/22/big/img_141.jpg] [FDDB-folds/FDDB-fold-07-ellipseList.txt]
@@ -2064,8 +2064,8 @@ PROCESSING TRAIN FOLD 7/9...
 277: [../raw_data_fddb/2003/01/15/big/img_604.jpg] [FDDB-folds/FDDB-fold-07-ellipseList.txt]
 278: [../raw_data_fddb/2002/08/16/big/img_935.jpg] [FDDB-folds/FDDB-fold-07-ellipseList.txt]
 IMAGES IN THIS FOLD: 1395.
-ACCEPTED FACES IN THIS FOLD: 2230.
-PROCESSING TRAIN FOLD 7/9 DONE. [time: 47.90321111679077 s]
+ACCEPTED FACES IN THIS FOLD: 2232.
+PROCESSING TRAIN FOLD 7/9 DONE. [time: 25.60118341445923 s]
 ---
 PROCESSING TRAIN FOLD 8/9...
 0: [../raw_data_fddb/2002/08/20/big/img_394.jpg] [FDDB-folds/FDDB-fold-08-ellipseList.txt]
@@ -2345,8 +2345,8 @@ PROCESSING TRAIN FOLD 8/9...
 274: [../raw_data_fddb/2002/08/06/big/img_2812.jpg] [FDDB-folds/FDDB-fold-08-ellipseList.txt]
 275: [../raw_data_fddb/2002/08/13/big/img_564.jpg] [FDDB-folds/FDDB-fold-08-ellipseList.txt]
 IMAGES IN THIS FOLD: 1380.
-ACCEPTED FACES IN THIS FOLD: 2198.
-PROCESSING TRAIN FOLD 8/9 DONE. [time: 47.48230743408203 s]
+ACCEPTED FACES IN THIS FOLD: 2200.
+PROCESSING TRAIN FOLD 8/9 DONE. [time: 25.264552354812622 s]
 ---
 PROCESSING TRAIN FOLD 9/9...
 0: [../raw_data_fddb/2002/07/22/big/img_43.jpg] [FDDB-folds/FDDB-fold-09-ellipseList.txt]
@@ -2609,8 +2609,8 @@ PROCESSING TRAIN FOLD 9/9...
 257: [../raw_data_fddb/2003/01/17/big/img_884.jpg] [FDDB-folds/FDDB-fold-09-ellipseList.txt]
 258: [../raw_data_fddb/2002/07/25/big/img_639.jpg] [FDDB-folds/FDDB-fold-09-ellipseList.txt]
 IMAGES IN THIS FOLD: 1295.
-ACCEPTED FACES IN THIS FOLD: 2214.
-PROCESSING TRAIN FOLD 9/9 DONE. [time: 45.04375505447388 s]
+ACCEPTED FACES IN THIS FOLD: 2219.
+PROCESSING TRAIN FOLD 9/9 DONE. [time: 23.921817302703857 s]
 ---
 PROCESSING TEST FOLD 1/1...
 0: [../raw_data_fddb/2002/08/31/big/img_18008.jpg] [FDDB-folds/FDDB-fold-10-ellipseList.txt]
@@ -2894,11 +2894,11 @@ PROCESSING TEST FOLD 1/1...
 278: [../raw_data_fddb/2002/08/13/big/img_619.jpg] [FDDB-folds/FDDB-fold-10-ellipseList.txt]
 279: [../raw_data_fddb/2002/08/02/big/img_366.jpg] [FDDB-folds/FDDB-fold-10-ellipseList.txt]
 IMAGES IN THIS FOLD: 1400.
-ACCEPTED FACES IN THIS FOLD: 2314.
-PROCESSING TEST FOLD 1/1 DONE. [time: 48.83581781387329 s]
+ACCEPTED FACES IN THIS FOLD: 2319.
+PROCESSING TEST FOLD 1/1 DONE. [time: 25.72701096534729 s]
 ---
-TRAIN DATA SHAPE: (148552, 18225).
-TEST DATA SHAPE: (16314, 18225).
+TRAIN DATA SHAPE: (148570, 18225).
+TEST DATA SHAPE: (16319, 18225).
 PICKLE... [to file: ../data/data_face_n_18225_S_5_P_5_NPI_10_AUG_1_SEED_0.bin]
-PICKLE DONE. [time: 35.817681312561035 s]
+PICKLE DONE. [time: 1.9991810321807861 s]
 ALL DONE.
