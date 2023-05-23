@@ -172,7 +172,7 @@ def haar_features_multiple_windows_numba_cuda(ii, windows, shcoords_multiple_sca
         t += tpb
 
 @jit(nopython=True)
-def ii_delta_numba_jit_tf(ii, j1, k1, j2, k2): 
+def ii_delta_numba_jit_tf(ii, j1, k1, j2, k2): # same functionality as in haar_feature_numba_jit but types-free signature (tf)
     delta = ii[j2, k2]
     if j1 > 0: 
         delta -= ii[j1 - 1, k2]
