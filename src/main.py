@@ -26,16 +26,16 @@ np.set_printoptions(linewidth=512)
 KIND = "hand"
 S = 5 # parameter "scales" to generete Haar-like features
 P = 5 # parameter "positions" to generete Haar-like features
-NPI = 10 # no. of negatives (negative windows) to sample per image from FDDB material
+NPI = 20 # no. of negatives (negative windows) to sample per image from FDDB material
 AUG = 0 # data augmentation (0 -> none or 1 -> present)
 T = 1024 # size of ensemble in FastRealBoostBins (equivalently, no. of boosting rounds when fitting)
 B = 8 # no. of bins
 SEED = 0 # randomization seed
 DEMO_HAAR_FEATURES = False
 REGENERATE_DATA_FROM_FDDB = False
-REGENERATE_DATA_SYNTHETIC = False
-FIT_OR_REFIT_MODEL = True
-MEASURE_ACCS_OF_MODEL = True
+REGENERATE_DATA_SYNTHETIC = True
+FIT_OR_REFIT_MODEL = False
+MEASURE_ACCS_OF_MODEL = False
 DEMO_DETECT_IN_VIDEO = False
 
 # cv2 camera settings
@@ -48,7 +48,7 @@ DETECTION_WINDOW_HEIGHT_MIN = 96
 DETECTION_WINDOW_WIDTH_MIN = 96
 DETECTION_WINDOW_GROWTH = 1.2
 DETECTION_WINDOW_JUMP = 0.05
-DETECTION_THRESHOLD = 5.5
+DETECTION_THRESHOLD = 7.0
 DETECTION_POSTPROCESS = "avg" # possible values: None, "nms", "avg"
 
 # folders
@@ -308,13 +308,23 @@ def fddb_data(path_fddb_root, hfs_coords, n_negs_per_img, n, seed=0, data_augmen
     print(f"TEST DATA SHAPE: {X_test.shape}.") 
     return X_train, y_train, X_test, y_test
 
+def rotate_bound(image, angle):
+    h, w = image.shape[:2]
+    cj, ck = w // 2, h // 2
+    M = cv2.getRotationMatrix2D((cj, ck), angle, 1.0)
+    cos = np.abs(M[0, 0])
+    sin = np.abs(M[0, 1])
+    nW = int(h * sin + w * cos)
+    nH = int(h * cos + w * sin)
+    M[0, 2] += 0.5 * nW - cj
+    M[1, 2] += 0.5 * nH - ck
+    return cv2.warpAffine(image, M, (nW, nH))
+
 def synthetic_data(folder_backgrounds, folder_targets, n_poss, n_negs_per_img, hcoords, n, train_ratio=0.75, seed=0, verbose=True):
     print("SYNTHETIC DATA...")
     t1 = time.time()
     relative_min = 0.1
-    relative_max = 0.35
-    resize_min = 0.95
-    resize_max = 1.05
+    relative_max = 0.5
     neg_max_iou = 0.5
     margin_pixels = 8
     np.random.seed(seed)    
@@ -330,27 +340,28 @@ def synthetic_data(folder_backgrounds, folder_targets, n_poss, n_negs_per_img, h
         b = cv2.imread(b_fname)
         bh, bw = b.shape[:2]
         t_fname = folder_targets + t_names[np.random.randint(n_t)]
-        t = cv2.imread(t_fname)
+        t = cv2.imread(t_fname)        
         print(f"{index}: [background: {b_fname}, target: {t_fname}]")
+        if np.random.rand() < 0.5:
+            t = np.fliplr(t)
         th, tw = t.shape[:2]
         ratio = np.random.uniform(relative_min, relative_max)
-        ratio_h = ratio * np.random.uniform(resize_min, resize_max)
-        ratio_w = ratio * np.random.uniform(resize_min, resize_max)
         side = min(bw, bh)
         if th < tw:
-            ts = cv2.resize(t, (round(side *  ratio_w), round(side * ratio_h * th / tw)))
+            ts = cv2.resize(t, (round(side *  ratio), round(side * ratio * th / tw)))
         else:
-            ts = cv2.resize(t, (round(side *  ratio_w * tw / th), round(side * ratio_h)))
+            ts = cv2.resize(t, (round(side *  ratio * tw / th), round(side * ratio)))
         h, w = ts.shape[:2]
-        c = tuple(np.array([h, w]) / 2.0)
-        rot_mat = cv2.getRotationMatrix2D(c, np.random.rand() * 360.0, 1.0)
-        ts = cv2.warpAffine(ts, rot_mat, (w, h))
+        c = np.array([h, w]) / 2.0            
+        ts = rotate_bound(ts, np.random.uniform(-45, 45.0))
+        hr, wr = ts.shape[:2]
         ts[ts == 0] = 255        
         ts = cv2.medianBlur(ts, 3)
-        h, w = ts.shape[:2]        
-        j0 = margin_pixels + np.random.randint(bh - h - 2 * margin_pixels)
-        k0 = margin_pixels + np.random.randint(bw - w - 2 * margin_pixels)
-        roi = b[j0 : j0 + h, k0 : k0 + w]
+        cr = np.array([hr, wr]) / 2.0
+        correction_shift = (np.round(cr - c)).astype(np.int16)
+        j0 = margin_pixels + correction_shift[0] + np.random.randint(bh - hr - 2 * margin_pixels - correction_shift[0])
+        k0 = margin_pixels + correction_shift[1] + np.random.randint(bw - wr - 2 * margin_pixels - correction_shift[1])
+        roi = b[j0 : j0 + hr, k0 : k0 + wr]
         ts_gray = cv2.cvtColor(ts, cv2.COLOR_BGR2GRAY)    
         _, mask = cv2.threshold(ts_gray, 245, 255, cv2.THRESH_BINARY_INV)    
         mask_inv = cv2.bitwise_not(mask)
@@ -358,14 +369,16 @@ def synthetic_data(folder_backgrounds, folder_targets, n_poss, n_negs_per_img, h
         t_fg = cv2.bitwise_and(ts, ts, mask=mask)
         overlay = cv2.add(b_bg, t_fg)
         overlay = cv2.medianBlur(overlay, 3)
-        b[j0 : j0 + h, k0 : k0 + w] = overlay
+        b[j0 : j0 + hr, k0 : k0 + wr] = overlay
+        j0 += correction_shift[0]
+        k0 += correction_shift[1]
         target_coords = np.array([j0, k0, j0 + h - 1, k0 + w - 1])
         i = cv2.cvtColor(b, cv2.COLOR_BGR2GRAY)       
         ii = integral_image_numba_jit(i)                
         if verbose:
             b_copy = np.copy(b)
             p1 = (k0, j0)
-            p2 = (k0 + w - 1, j0 + h - 1)    
+            p2 = (k0 + w - 1, j0 + h - 1)
             cv2.rectangle(b_copy, p1, p2, (0, 0, 255), 1)
         shcoords_one_window = (np.array([h, w, h, w]) * hcoords).astype(np.int16)                        
         feats = haar_features_one_window_numba_jit(ii, j0, k0, shcoords_one_window, n, np.arange(n, dtype=np.int32))
@@ -1043,31 +1056,3 @@ if __name__ == "__roc__":
     plt.ylabel("SENSITIVITY")
     plt.legend(loc="lower right", fontsize=8)
     plt.show()
-    
-if __name__ == "__hand__":
-    np.random.seed(0)
-    print("HAND TESTS...")
-    for _ in range(10):
-        b = cv2.imread(FOLDER_RAW_DATA_HAND + "backgrounds/01.jpg")
-        bh, bw, bc = b.shape
-        t = cv2.imread(FOLDER_RAW_DATA_HAND + "targets/02.jpg")
-        th, tw, tc = t.shape
-        ratio = np.random.uniform(0.125, 0.5)
-        ts = cv2.resize(t, (round(ratio * bw), round(ratio * bw / tw * th)))
-        ts = resize_image(ts, np.random.uniform(0.9, 1.1), np.random.uniform(0.9, 1.1))
-        ts = rotate_image(ts, np.random.rand() * 2 * np.pi)            
-        ts[ts == 0] = 255        
-        ts = cv2.medianBlur(ts, 3)
-        th, tw, tc = ts.shape        
-        j, k = 50, 100
-        roi = b[j : j + th, k : k + tw]
-        ts_gray = cv2.cvtColor(ts, cv2.COLOR_BGR2GRAY)    
-        thr, mask = cv2.threshold(ts_gray, 245, 255, cv2.THRESH_BINARY_INV)    
-        mask_inv = cv2.bitwise_not(mask)
-        b_bg = cv2.bitwise_and(roi, roi, mask=mask_inv)
-        t_fg = cv2.bitwise_and(ts, ts, mask=mask)
-        dst = cv2.add(b_bg, t_fg)
-        dst = cv2.medianBlur(dst, 5)
-        b[j : j + th, k : k + tw] = dst
-        cv2.imshow("combined", b)
-        cv2.waitKey()
