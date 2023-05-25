@@ -24,20 +24,20 @@ np.set_printoptions(linewidth=512)
 
 
 # main settings
-KIND = "hand"
+KIND = "face"
 S = 5 # parameter "scales" to generete Haar-like features
 P = 5 # parameter "positions" to generete Haar-like features
-AUG = True # data augmentation (0 -> none or 1 -> present)
-KOP = 5 # "kilos of positives " - no. of thousands of positives (positive windows) to generate (in case of synthetic data only; 0 value for real data, meaning 'not applicable')
-NPI = 10 # "negatives per image" - no. of negatives (negative windows) to sample per image (image real or generated synthetically) 
+AUG = False # data augmentation (0 -> none or 1 -> present)
+KOP = 0 # "kilos of positives " - no. of thousands of positives (positive windows) to generate (in case of synthetic data only; 0 value for real data, meaning 'not applicable')
+NPI = 100 # "negatives per image" - no. of negatives (negative windows) to sample per image (image real or generated synthetically) 
 T = 1024 # size of ensemble in FastRealBoostBins (equivalently, no. of boosting rounds when fitting)
 B = 8 # no. of bins
 SEED = 0 # randomization seed
 DEMO_HAAR_FEATURES = False
 REGENERATE_DATA = False
-FIT_OR_REFIT_MODEL = True
-MEASURE_ACCS_OF_MODEL = True
-DEMO_DETECT_IN_VIDEO = False
+FIT_OR_REFIT_MODEL = False
+MEASURE_ACCS_OF_MODEL = False
+DEMO_DETECT_IN_VIDEO = True
 
 # cv2 camera settings
 CV2_VIDEO_CAPTURE_CAMERA_INDEX = 0
@@ -49,7 +49,7 @@ DETECTION_WINDOW_HEIGHT_MIN = 64
 DETECTION_WINDOW_WIDTH_MIN = 64
 DETECTION_WINDOW_GROWTH = 1.2
 DETECTION_WINDOW_JUMP = 0.05
-DETECTION_THRESHOLD = 6.0
+DETECTION_THRESHOLD = 6.5
 DETECTION_POSTPROCESS = "avg" # possible values: None, "nms", "avg"
 
 # folders
@@ -1041,7 +1041,7 @@ if __name__ == "__main__":
     
     if REGENERATE_DATA:
         if KIND == "face":
-            X_train, y_train, X_test, y_test = fddb_data(FOLDER_RAW_DATA_FDDB, hcoords, n, AUG, NPI, seed=SEED, verbose=False)
+            X_train, y_train, X_test, y_test = fddb_data(FOLDER_RAW_DATA_FDDB, hcoords, n, AUG, NPI, seed=SEED, verbose=True)
         elif KIND == "hand":
             X_train, y_train, X_test, y_test = synthetic_data(FOLDER_RAW_DATA_HAND + "backgrounds/", FOLDER_RAW_DATA_HAND + "targets/", hcoords, n, AUG, KOP * 1000, NPI, seed=SEED, verbose=False)
         pickle_objects(FOLDER_DATA + DATA_NAME, [X_train, y_train, X_test, y_test])
