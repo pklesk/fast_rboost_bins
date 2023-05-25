@@ -26,7 +26,7 @@ np.set_printoptions(linewidth=512)
 KIND = "hand"
 S = 5 # parameter "scales" to generete Haar-like features
 P = 5 # parameter "positions" to generete Haar-like features
-NPI = 20 # no. of negatives (negative windows) to sample per image from FDDB material
+NPI = 50 # no. of negatives (negative windows) to sample per image from FDDB material
 AUG = 0 # data augmentation (0 -> none or 1 -> present)
 T = 1024 # size of ensemble in FastRealBoostBins (equivalently, no. of boosting rounds when fitting)
 B = 8 # no. of bins
@@ -34,8 +34,8 @@ SEED = 0 # randomization seed
 DEMO_HAAR_FEATURES = False
 REGENERATE_DATA_FROM_FDDB = False
 REGENERATE_DATA_SYNTHETIC = True
-FIT_OR_REFIT_MODEL = False
-MEASURE_ACCS_OF_MODEL = False
+FIT_OR_REFIT_MODEL = True
+MEASURE_ACCS_OF_MODEL = True
 DEMO_DETECT_IN_VIDEO = False
 
 # cv2 camera settings
@@ -44,12 +44,12 @@ CV2_VIDEO_CAPTURE_IS_IT_MSWINDOWS = False
 
 # detection procedure settings
 DETECTION_SCALES = 10
-DETECTION_WINDOW_HEIGHT_MIN = 96
-DETECTION_WINDOW_WIDTH_MIN = 96
+DETECTION_WINDOW_HEIGHT_MIN = 64
+DETECTION_WINDOW_WIDTH_MIN = 64
 DETECTION_WINDOW_GROWTH = 1.2
 DETECTION_WINDOW_JUMP = 0.05
 DETECTION_THRESHOLD = 7.0
-DETECTION_POSTPROCESS = "avg" # possible values: None, "nms", "avg"
+DETECTION_POSTPROCESS = None # possible values: None, "nms", "avg"
 
 # folders
 FOLDER_DATA = "../data/"
@@ -343,6 +343,8 @@ def synthetic_data(folder_backgrounds, folder_targets, n_poss, n_negs_per_img, h
         t = cv2.imread(t_fname)        
         print(f"{index}: [background: {b_fname}, target: {t_fname}]")
         if np.random.rand() < 0.5:
+            b = np.fliplr(b)
+        if np.random.rand() < 0.5:
             t = np.fliplr(t)
         th, tw = t.shape[:2]
         ratio = np.random.uniform(relative_min, relative_max)
@@ -353,7 +355,7 @@ def synthetic_data(folder_backgrounds, folder_targets, n_poss, n_negs_per_img, h
             ts = cv2.resize(t, (round(side *  ratio * tw / th), round(side * ratio)))
         h, w = ts.shape[:2]
         c = np.array([h, w]) / 2.0            
-        ts = rotate_bound(ts, np.random.uniform(-45, 45.0))
+        ts = rotate_bound(ts, np.random.uniform(-22.5, 22.5))
         hr, wr = ts.shape[:2]
         ts[ts == 0] = 255        
         ts = cv2.medianBlur(ts, 3)
