@@ -14,7 +14,6 @@ from functools import reduce
 import warnings
 from sklearn.metrics import roc_curve
 from matplotlib import pyplot as plt
-from keras.engine import data_adapter
 
 __version__ = "1.0.0"
 __author__ = "Przemysław Klęsk"
