@@ -14,7 +14,6 @@ from functools import reduce
 import warnings
 from sklearn.metrics import roc_curve
 from matplotlib import pyplot as plt
-from keras.engine import data_adapter
 
 __version__ = "1.0.0"
 __author__ = "Przemysław Klęsk"
@@ -35,9 +34,9 @@ T = 1024 # size of ensemble in FastRealBoostBins (equivalently, no. of boosting 
 B = 8 # no. of bins
 SEED = 0 # randomization seed
 DEMO_HAAR_FEATURES = False
-REGENERATE_DATA = True
-FIT_OR_REFIT_MODEL = False
-MEASURE_ACCS_OF_MODEL = False
+REGENERATE_DATA = False
+FIT_OR_REFIT_MODEL = True
+MEASURE_ACCS_OF_MODEL = True
 DEMO_DETECT_IN_VIDEO = False
 
 # cv2 camera settings
