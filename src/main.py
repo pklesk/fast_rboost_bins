@@ -14,6 +14,7 @@ from functools import reduce
 import warnings
 from sklearn.metrics import roc_curve
 from matplotlib import pyplot as plt
+from keras.engine import data_adapter
 
 __version__ = "1.0.0"
 __author__ = "Przemysław Klęsk"
@@ -22,18 +23,19 @@ __email__ = "pklesk@zut.edu.pl"
 warnings.simplefilter("ignore", category=NumbaPerformanceWarning)
 np.set_printoptions(linewidth=512)
 
+
 # main settings
 KIND = "hand"
 S = 5 # parameter "scales" to generete Haar-like features
 P = 5 # parameter "positions" to generete Haar-like features
-NPI = 20 # no. of negatives (negative windows) to sample per image from FDDB material
-AUG = 0 # data augmentation (0 -> none or 1 -> present)
+AUG = True # data augmentation (0 -> none or 1 -> present)
+KOP = 5 # "kilos of positives " - no. of thousands of positives (positive windows) to generate (in case of synthetic data only; 0 value for real data, meaning 'not applicable')
+NPI = 10 # "negatives per image" - no. of negatives (negative windows) to sample per image (image real or generated synthetically) 
 T = 1024 # size of ensemble in FastRealBoostBins (equivalently, no. of boosting rounds when fitting)
 B = 8 # no. of bins
 SEED = 0 # randomization seed
 DEMO_HAAR_FEATURES = False
-REGENERATE_DATA_FROM_FDDB = False
-REGENERATE_DATA_SYNTHETIC = True
+REGENERATE_DATA = True
 FIT_OR_REFIT_MODEL = False
 MEASURE_ACCS_OF_MODEL = False
 DEMO_DETECT_IN_VIDEO = False
@@ -48,7 +50,7 @@ DETECTION_WINDOW_HEIGHT_MIN = 96
 DETECTION_WINDOW_WIDTH_MIN = 96
 DETECTION_WINDOW_GROWTH = 1.2
 DETECTION_WINDOW_JUMP = 0.05
-DETECTION_THRESHOLD = 7.0
+DETECTION_THRESHOLD = 6.0
 DETECTION_POSTPROCESS = "avg" # possible values: None, "nms", "avg"
 
 # folders
@@ -57,6 +59,11 @@ FOLDER_CLFS = "../models/"
 FOLDER_EXTRAS = "../extras/"
 FOLDER_RAW_DATA_FDDB = "../raw_data_fddb/"
 FOLDER_RAW_DATA_HAND = "../raw_data_hand/"
+
+# synthetic data generation constants
+SYNTHETIC_ROTATION_RANGE = np.pi / 4
+SYNTHETIC_TRAIN_RATIO = 0.75
+
 
 def gpu_props():
     gpu = cuda.get_current_device()
@@ -97,18 +104,14 @@ def gpu_props():
     props["cores_total"] = props["cores_per_SM"] * gpu.MULTIPROCESSOR_COUNT
     return props   
 
-def fddb_read_single_fold(path_root, path_fold_relative, n_negs_per_img, hcoords, n, verbose=False, fold_title="", seed=0, data_augmentation=False):
-    np.random.seed(seed)    
-    
-    # settings for sampling negatives
-    w_relative_min = 0.1
-    w_relative_max = 0.35
-    w_relative_spread = w_relative_max - w_relative_min
-    neg_max_iou = 0.5
-    
+def fddb_read_single_fold(path_root, path_fold_relative, hcoords, n, data_augmentation=False, n_negs_per_img=10, seed=0, fold_title="", verbose=False):
+    np.random.seed(seed)        
+    relative_min = 0.1 # when sampling negatives
+    relative_max = 0.35 # when sampling negatives
+    relative_spread = relative_max - relative_min
+    neg_max_iou = 0.5 
     X_list = []
-    y_list = []
-    
+    y_list = []    
     lines = []
     f = open(path_root + path_fold_relative, "r")
     while True:
@@ -117,8 +120,7 @@ def fddb_read_single_fold(path_root, path_fold_relative, n_negs_per_img, hcoords
             lines.append(line)
         else:
             break
-    f.close()
-    
+    f.close()    
     n_img = 0
     n_faces = 0
     counter = 0
@@ -132,12 +134,10 @@ def fddb_read_single_fold(path_root, path_fold_relative, n_negs_per_img, hcoords
         augmentations_extras += ["random_window_distort", "random_horizontal_flip"]
     while line != "":
         file_name = path_root + line + ".jpg"
-        log_line =  str(counter) + ": [" + file_name + "]"
-        if fold_title != "":
-            log_line += " [" + fold_title + "]" 
+        fold_title_str = f"({fold_title})" if fold_title != "" else ""
+        log_line = f"[{counter}: {file_name} {fold_title_str}]"
         print(log_line)
-        counter += 1
-        
+        counter += 1        
         i0_original = cv2.imread(file_name)                    
         line = lines[li]
         li += 1
@@ -153,9 +153,9 @@ def fddb_read_single_fold(path_root, path_fold_relative, n_negs_per_img, hcoords
                 if aug == "sharpen":
                     kernel = np.array([[0, -1, 0], [-1, 5, -1], [0, -1, 0]])
                     i0 = cv2.filter2D(i0, -1, kernel)
-                if aug == "blur":
+                elif aug == "blur":
                     i0 = cv2.blur(i0, ksize=(5, 5))
-                if aug == "random_brightness":
+                elif aug == "random_brightness":
                     value = np.random.uniform(0.5, 2.0)
                     hsv = cv2.cvtColor(i0, cv2.COLOR_BGR2HSV)
                     hsv = np.array(hsv, dtype=np.float64)
@@ -163,7 +163,7 @@ def fddb_read_single_fold(path_root, path_fold_relative, n_negs_per_img, hcoords
                     hsv = np.clip(hsv, 0, 255)
                     hsv = np.array(hsv, dtype=np.uint8)
                     i0 = cv2.cvtColor(hsv, cv2.COLOR_HSV2BGR)
-                if aug == "random_channel_shift":
+                elif aug == "random_channel_shift":
                     i0 = i0.astype(np.int16)
                     for chnl in range(3):
                         value = int(np.random.uniform(-64, 64))
@@ -188,11 +188,18 @@ def fddb_read_single_fold(path_root, path_fold_relative, n_negs_per_img, hcoords
                 if flipped:
                     k0 = i.shape[1] - 1 - k0 - w + 1
                 if aug is not None and "random_window_distort" in augmentations_extras:
-                    growth = np.random.uniform(0.95, 1.05)
-                    h = int(np.round(h * growth))
-                    w = h
-                    j0 += int(np.round(np.random.uniform(-0.05, 0.05) * h))
-                    k0 += int(np.round(np.random.uniform(-0.05, 0.05) * w))
+                    growth = np.random.uniform(0.95, 1.05)                    
+                    hn = int(np.round(h * growth))
+                    wn = int(np.round(w * growth))
+                    j0n = j0 + (hn - h) // 2
+                    k0n = k0 + (wn - w) // 2
+                    j0n += int(np.round(np.random.uniform(-0.05, 0.05) * hn))
+                    k0n += int(np.round(np.random.uniform(-0.05, 0.05) * wn))
+                    if j0n >= 0 and j0n + hn - 1 < b.shape[0] and k0n >= 0 and k0n + wn - 1 < b.shape[1]:
+                        j0 = j0n
+                        k0 = k0n
+                        h = hn
+                        w = wn
                 img_face_coords = np.array([j0, k0, j0 + h - 1, k0 + w - 1])
                 if j0 < 0 or k0 < 0 or j0 + h - 1 >= i.shape[0] or k0 + w - 1 >= i.shape[1]:
                     if verbose:
@@ -218,7 +225,7 @@ def fddb_read_single_fold(path_root, path_fold_relative, n_negs_per_img, hcoords
                 y_list.append(1)
             for _ in range(n_negs_per_img):            
                 while True:
-                    h = int((np.random.random() * w_relative_spread + w_relative_min) * i.shape[0])
+                    h = int((np.random.random() * relative_spread + relative_min) * i.shape[0])
                     w = h
                     j0 = int(np.random.random() * (i.shape[0] - w + 1))
                     k0 = int(np.random.random() * (i.shape[1] - w + 1))                 
@@ -250,16 +257,16 @@ def fddb_read_single_fold(path_root, path_fold_relative, n_negs_per_img, hcoords
             break
         line = lines[li].strip()
         li += 1
-    print(f"IMAGES IN THIS FOLD: {n_img}.")
-    print(f"ACCEPTED FACES IN THIS FOLD: {n_faces}.")
+    aug_str = "(after data augmentation)" if data_augmentation else "(without data augmentation)" 
+    print(f"[total of images {aug_str} in this fold: {n_img}, accepted faces: {n_faces}]")
     f.close()
     X = np.stack(X_list)
     y = np.stack(y_list)
     return X, y
 
-def fddb_data(path_fddb_root, hfs_coords, n_negs_per_img, n, seed=0, data_augmentation=False):
-    n_negs_per_img = n_negs_per_img
-       
+def fddb_data(path_fddb_root, hcoords, n, data_augmentation=False, n_negs_per_img=10, seed=0, verbose=False):
+    print("FDDB DATA...")
+    t1 = time.time()
     fold_paths_train = [
         "FDDB-folds/FDDB-fold-01-ellipseList.txt",
         "FDDB-folds/FDDB-fold-02-ellipseList.txt",
@@ -274,12 +281,11 @@ def fddb_data(path_fddb_root, hfs_coords, n_negs_per_img, n, seed=0, data_augmen
     X_train = None 
     y_train = None
     for index, fold_path in enumerate(fold_paths_train):
-        print(f"PROCESSING TRAIN FOLD {index + 1}/{len(fold_paths_train)}...")
-        t1 = time.time()
-        X, y = fddb_read_single_fold(path_fddb_root, fold_path, n_negs_per_img, hfs_coords, n, verbose=False, fold_title=fold_path, seed=seed, data_augmentation=data_augmentation)
+        print(f"[processing train fold {index + 1}/{len(fold_paths_train)}...]")
+        t1 = time.time()        
+        X, y = fddb_read_single_fold(path_fddb_root, fold_path, hcoords, n, data_augmentation=data_augmentation, n_negs_per_img=n_negs_per_img, seed=seed, fold_title=fold_path, verbose=verbose)
         t2 = time.time()
-        print(f"PROCESSING TRAIN FOLD {index + 1}/{len(fold_paths_train)} DONE. [time: {t2 - t1} s]")
-        print("---")
+        print(f"[processing train fold {index + 1}/{len(fold_paths_train)} done; time: {t2 - t1} s]")
         if X_train is None:
             X_train = X
             y_train = y
@@ -292,20 +298,19 @@ def fddb_data(path_fddb_root, hfs_coords, n_negs_per_img, n, seed=0, data_augmen
     X_test = None
     y_test = None
     for index, fold_path in enumerate(fold_paths_test):
-        print(f"PROCESSING TEST FOLD {index + 1}/{len(fold_paths_test)}...")
-        t1 = time.time()
-        X, y = fddb_read_single_fold(path_fddb_root, fold_path, n_negs_per_img, hfs_coords, n, verbose=False, fold_title=fold_path, seed=seed, data_augmentation=data_augmentation)
+        print(f"[processing test fold {index + 1}/{len(fold_paths_test)}...]")
+        t1 = time.time()               
+        X, y = fddb_read_single_fold(path_fddb_root, fold_path, hcoords, n, data_augmentation=data_augmentation, n_negs_per_img=n_negs_per_img, seed=seed, fold_title=fold_path, verbose=verbose)
         t2 = time.time()
-        print(f"PROCESSING TEST FOLD {index + 1}/{len(fold_paths_test)} DONE. [time: {t2 - t1} s]")
-        print("---")
+        print(f"[processing test fold {index + 1}/{len(fold_paths_test)} done; time: {t2 - t1} s]")
         if X_test is None:
             X_test = X
             y_test = y
         else:
             X_test = np.r_[X_test, X]
             y_test = np.r_[y_test, y]   
-    print(f"TRAIN DATA SHAPE: {X_train.shape}.")
-    print(f"TEST DATA SHAPE: {X_test.shape}.") 
+    t2 = time.time()
+    print(f"FDDB DATA DONE. [time: {t2 - t1} s, X_train.shape: {X_train.shape}, X_test.shape: {X_test.shape}]")
     return X_train, y_train, X_test, y_test
 
 def rotate_bound(image, angle):
@@ -320,11 +325,12 @@ def rotate_bound(image, angle):
     M[1, 2] += 0.5 * nH - ck
     return cv2.warpAffine(image, M, (nW, nH))
 
-def synthetic_data(folder_backgrounds, folder_targets, n_poss, n_negs_per_img, hcoords, n, train_ratio=0.75, seed=0, verbose=True):
+def synthetic_data(folder_backgrounds, folder_targets, hcoords, n, data_augmentation=False, n_poss=1, n_negs_per_img=10, seed=0, verbose=False,
+                   rotation_range=SYNTHETIC_ROTATION_RANGE, train_ratio=SYNTHETIC_TRAIN_RATIO):
     print("SYNTHETIC DATA...")
     t1 = time.time()
-    relative_min = 0.1
-    relative_max = 0.5
+    relative_min = 0.1 # for both positives and negatives
+    relative_max = 0.5 # for both positives and negatives
     neg_max_iou = 0.5
     margin_pixels = 8
     np.random.seed(seed)    
@@ -334,96 +340,148 @@ def synthetic_data(folder_backgrounds, folder_targets, n_poss, n_negs_per_img, h
     n_t = len(t_names)
     X_list = []
     y_list = []
+    augmentations = [None]
+    augmentations_extras = []
+    if data_augmentation: 
+        augmentations += ["sharpen", "blur", "random_brightness", "random_channel_shift"]
+        augmentations_extras += ["random_window_distort", "random_horizontal_flip"]
     imshow_title = "SYNTHETIC IMAGE [press ESC to continue]"
-    for index in range(n_poss):
+    m = n_poss    
+    aug_str = " (with data augmentation)" if data_augmentation else ""
+    for index in range(m):
         b_fname = folder_backgrounds + b_names[np.random.randint(n_b)] 
-        b = cv2.imread(b_fname)
-        bh, bw = b.shape[:2]
-        t_fname = folder_targets + t_names[np.random.randint(n_t)]
-        t = cv2.imread(t_fname)        
-        print(f"{index}: [background: {b_fname}, target: {t_fname}]")
-        if np.random.rand() < 0.5:
-            t = np.fliplr(t)
-        th, tw = t.shape[:2]
-        ratio = np.random.uniform(relative_min, relative_max)
+        b_original = cv2.imread(b_fname)
+        bh, bw = b_original.shape[:2]
         side = min(bw, bh)
-        if th < tw:
-            ts = cv2.resize(t, (round(side *  ratio), round(side * ratio * th / tw)))
-        else:
-            ts = cv2.resize(t, (round(side *  ratio * tw / th), round(side * ratio)))
-        h, w = ts.shape[:2]
-        c = np.array([h, w]) / 2.0            
-        ts = rotate_bound(ts, np.random.uniform(-45, 45.0))
-        hr, wr = ts.shape[:2]
-        ts[ts == 0] = 255        
-        ts = cv2.medianBlur(ts, 3)
-        cr = np.array([hr, wr]) / 2.0
-        correction_shift = (np.round(cr - c)).astype(np.int16)
-        j0 = margin_pixels + correction_shift[0] + np.random.randint(bh - hr - 2 * margin_pixels - correction_shift[0])
-        k0 = margin_pixels + correction_shift[1] + np.random.randint(bw - wr - 2 * margin_pixels - correction_shift[1])
-        roi = b[j0 : j0 + hr, k0 : k0 + wr]
-        ts_gray = cv2.cvtColor(ts, cv2.COLOR_BGR2GRAY)    
-        _, mask = cv2.threshold(ts_gray, 245, 255, cv2.THRESH_BINARY_INV)    
-        mask_inv = cv2.bitwise_not(mask)
-        b_bg = cv2.bitwise_and(roi, roi, mask=mask_inv)
-        t_fg = cv2.bitwise_and(ts, ts, mask=mask)
-        overlay = cv2.add(b_bg, t_fg)
-        overlay = cv2.medianBlur(overlay, 3)
-        b[j0 : j0 + hr, k0 : k0 + wr] = overlay
-        j0 += correction_shift[0]
-        k0 += correction_shift[1]
-        target_coords = np.array([j0, k0, j0 + h - 1, k0 + w - 1])
-        i = cv2.cvtColor(b, cv2.COLOR_BGR2GRAY)       
-        ii = integral_image_numba_jit(i)                
-        if verbose:
-            b_copy = np.copy(b)
-            p1 = (k0, j0)
-            p2 = (k0 + w - 1, j0 + h - 1)
-            cv2.rectangle(b_copy, p1, p2, (0, 0, 255), 1)
-        shcoords_one_window = (np.array([h, w, h, w]) * hcoords).astype(np.int16)                        
-        feats = haar_features_one_window_numba_jit(ii, j0, k0, shcoords_one_window, n, np.arange(n, dtype=np.int32))
-        if verbose:
-            print(f"[positive window {target_coords} accepted; features: {feats}]")
-            cv2.imshow(imshow_title, b_copy)
-            cv2.waitKey(0)
-        X_list.append(feats)
-        y_list.append(1)
-        for _ in range(n_negs_per_img):            
-            while True:
-                side = min(b.shape[:2])
-                ratio = np.random.uniform(relative_min, relative_max)
-                rside = ratio * side
-                if tw < th:
-                    h = int(rside)
-                    w = int(rside * tw / th)
-                else:
-                    w = int(rside)
-                    h = int(rside * th / tw)                
-                j0 = int(np.random.random() * (i.shape[0] - h + 1))
-                k0 = int(np.random.random() * (i.shape[1] - w + 1))                 
-                patch = np.array([j0, k0, j0 + h - 1, k0 + w - 1])
-                max_iou = iou(patch, target_coords)       
-                if max_iou < neg_max_iou:
-                    shcoords_one_window = (np.array([h, w, h, w]) * hcoords).astype(np.int16)
-                    feats = haar_features_one_window_numba_jit(ii, j0, k0, shcoords_one_window, n, np.arange(n, dtype=np.int32))
-                    X_list.append(feats)
-                    y_list.append(-1)                    
-                    if verbose:
-                        print(f"[negative window {patch} accepted; features: {feats}]")
-                        p1 = (k0, j0)
-                        p2 = (k0 + w - 1, j0 + h - 1)            
-                        cv2.rectangle(b_copy, p1, p2, (0, 255, 0), 1)
-                    break                        
-                else:                    
-                    if verbose:
-                        print(f"[negative window {patch} ignored due to max iou: {max_iou}]")
-                        p1 = (k0, j0)
-                        p2 = (k0 + w - 1, j0 + w - 1)
-                        cv2.rectangle(b_copy, p1, p2, (255, 255, 0), 1)                    
-        if verbose: 
-            cv2.imshow(imshow_title, b_copy)
-            cv2.waitKey(0)
-            cv2.destroyAllWindows()
+        t_fname = folder_targets + t_names[np.random.randint(n_t)]
+        t = cv2.imread(t_fname)                
+        print(f"[{index + 1}/{m}: background: {b_fname}, target: {t_fname}{aug_str}]")
+        if index == 3256:
+            print("HERE")
+        for aug in augmentations:
+            b = np.copy(b_original)
+            if verbose:
+                print(f"[augmentation: {aug}]")
+            if aug is not None and "random_horizontal_flip" in augmentations_extras:
+                if np.random.rand() < 0.5:
+                    t = np.fliplr(t)
+                if np.random.rand() < 0.5:
+                    b = np.fliplr(b)
+            th, tw = t.shape[:2]
+            ratio = np.random.uniform(relative_min, relative_max)
+            rside = ratio * side
+            if th < tw:
+                ts = cv2.resize(t, (round(rside), round(rside * th / tw)))
+            else:
+                ts = cv2.resize(t, (round(rside * tw / th), round(rside)))
+            h, w = ts.shape[:2]
+            c = np.array([h, w]) / 2.0
+            angle_deg = 0.5 * rotation_range * 180.0 / np.pi
+            if aug is None:
+                angle_deg = 0.0
+            ts = rotate_bound(ts, np.random.uniform(-angle_deg, angle_deg))
+            hr, wr = ts.shape[:2]
+            ts[ts == 0] = 255        
+            ts = cv2.medianBlur(ts, 3)
+            cr = np.array([hr, wr]) / 2.0
+            correction_shift = (np.round(cr - c)).astype(np.int16)
+            j0 = margin_pixels + correction_shift[0] + np.random.randint(bh - hr - 2 * margin_pixels - correction_shift[0])
+            k0 = margin_pixels + correction_shift[1] + np.random.randint(bw - wr - 2 * margin_pixels - correction_shift[1])
+            roi = b[j0 : j0 + hr, k0 : k0 + wr]
+            ts_gray = cv2.cvtColor(ts, cv2.COLOR_BGR2GRAY)    
+            _, mask = cv2.threshold(ts_gray, 245, 255, cv2.THRESH_BINARY_INV)    
+            mask_inv = cv2.bitwise_not(mask)
+            b_bg = cv2.bitwise_and(roi, roi, mask=mask_inv)
+            t_fg = cv2.bitwise_and(ts, ts, mask=mask)
+            overlay = cv2.add(b_bg, t_fg)
+            overlay = cv2.medianBlur(overlay, 3)
+            b[j0 : j0 + hr, k0 : k0 + wr] = overlay
+            j0 += correction_shift[0]
+            k0 += correction_shift[1]
+            if aug is not None:
+                if aug == "sharpen":
+                    kernel = np.array([[0, -1, 0], [-1, 5, -1], [0, -1, 0]])
+                    b = cv2.filter2D(b, -1, kernel)
+                elif aug == "blur":
+                    b = cv2.blur(b, ksize=(5, 5))
+                elif aug == "random_brightness":
+                    value = np.random.uniform(0.5, 2.0)
+                    hsv = cv2.cvtColor(b, cv2.COLOR_BGR2HSV)
+                    hsv = np.array(hsv, dtype=np.float64)
+                    hsv[:, :, [1, 2]] = value * hsv[:, :, [1, 2]]
+                    hsv = np.clip(hsv, 0, 255)
+                    hsv = np.array(hsv, dtype=np.uint8)
+                    b = cv2.cvtColor(hsv, cv2.COLOR_HSV2BGR)
+                elif aug == "random_channel_shift":
+                    b = b.astype(np.int16)
+                    for chnl in range(3):
+                        value = int(np.random.uniform(-64, 64))
+                        b[:, :, chnl] += value
+                    b = (np.clip(b, 0, 255)).astype(np.uint8)
+                if "random_window_distort" in augmentations_extras:
+                    growth = np.random.uniform(0.95, 1.05)
+                    hn = int(np.round(h * growth))
+                    wn = int(np.round(w * growth))
+                    j0n = j0 + (hn - h) // 2
+                    k0n = k0 + (wn - w) // 2
+                    j0n += int(np.round(np.random.uniform(-0.05, 0.05) * hn))
+                    k0n += int(np.round(np.random.uniform(-0.05, 0.05) * wn))
+                    if j0n >= 0 and j0n + hn - 1 < b.shape[0] and k0n >= 0 and k0n + wn - 1 < b.shape[1]:
+                        j0 = j0n
+                        k0 = k0n
+                        h = hn
+                        w = wn                         
+            target_coords = np.array([j0, k0, j0 + h - 1, k0 + w - 1])                                
+            i = cv2.cvtColor(b, cv2.COLOR_BGR2GRAY)       
+            ii = integral_image_numba_jit(i)                
+            if verbose:
+                b_copy = np.copy(b)
+                p1 = (k0, j0)
+                p2 = (k0 + w - 1, j0 + h - 1)
+                cv2.rectangle(b_copy, p1, p2, (0, 0, 255), 1)
+            shcoords_one_window = (np.array([h, w, h, w]) * hcoords).astype(np.int16)                        
+            feats = haar_features_one_window_numba_jit(ii, j0, k0, shcoords_one_window, n, np.arange(n, dtype=np.int32))
+            if verbose:
+                print(f"[positive window {target_coords} accepted; features: {feats}]")
+                cv2.imshow(imshow_title, b_copy)
+                cv2.waitKey(0)
+            X_list.append(feats)
+            y_list.append(1)
+            for _ in range(n_negs_per_img):            
+                while True:
+                    ratio = np.random.uniform(relative_min, relative_max)
+                    rside = ratio * side
+                    if tw < th:
+                        h = int(rside)
+                        w = int(rside * tw / th)
+                    else:
+                        w = int(rside)
+                        h = int(rside * th / tw)                
+                    j0 = int(np.random.random() * (i.shape[0] - h + 1))
+                    k0 = int(np.random.random() * (i.shape[1] - w + 1))                 
+                    patch = np.array([j0, k0, j0 + h - 1, k0 + w - 1])
+                    max_iou = iou(patch, target_coords)       
+                    if max_iou < neg_max_iou:
+                        shcoords_one_window = (np.array([h, w, h, w]) * hcoords).astype(np.int16)
+                        feats = haar_features_one_window_numba_jit(ii, j0, k0, shcoords_one_window, n, np.arange(n, dtype=np.int32))
+                        X_list.append(feats)
+                        y_list.append(-1)                    
+                        if verbose:
+                            print(f"[negative window {patch} accepted; features: {feats}]")
+                            p1 = (k0, j0)
+                            p2 = (k0 + w - 1, j0 + h - 1)            
+                            cv2.rectangle(b_copy, p1, p2, (0, 255, 0), 1)
+                        break                        
+                    else:                    
+                        if verbose:
+                            print(f"[negative window {patch} ignored due to max iou: {max_iou}]")
+                            p1 = (k0, j0)
+                            p2 = (k0 + w - 1, j0 + w - 1)
+                            cv2.rectangle(b_copy, p1, p2, (255, 255, 0), 1)                    
+            if verbose: 
+                cv2.imshow(imshow_title, b_copy)
+                cv2.waitKey(0)
+                cv2.destroyAllWindows()            
     m_train = int(np.round(train_ratio * len(X_list)))
     X_train = np.stack(X_list[:m_train])
     y_train = np.stack(y_list[:m_train])
@@ -433,8 +491,8 @@ def synthetic_data(folder_backgrounds, folder_targets, n_poss, n_negs_per_img, h
     print(f"SYNTHETIC DATA DONE. [time: {t2 - t1} s, X_train.shape: {X_train.shape}, X_test.shape: {X_test.shape}]")    
     return X_train, y_train, X_test, y_test            
                             
-def pickle_all(fname, some_list):
-    print(f"PICKLE... [to file: {fname}]")
+def pickle_objects(fname, some_list):
+    print(f"PICKLE OBJECTS... [to file: {fname}]")
     t1 = time.time()
     try:
         f = open(fname, "wb+")
@@ -443,10 +501,10 @@ def pickle_all(fname, some_list):
     except IOError:
         sys.exit("[error occurred when trying to open or pickle the file]")
     t2 = time.time()
-    print("PICKLE DONE. [time: " + str(t2 - t1) + " s]")
+    print(f"PICKLE OBJECTS DONE. [time: {t2 - t1} s]")
 
-def unpickle_all(fname):
-    print(f"UNPICKLE... [from file: {fname}]")
+def unpickle_objects(fname):
+    print(f"UNPICKLE OBJECTS... [from file: {fname}]")
     t1 = time.time()
     try:    
         f = open(fname, "rb")
@@ -455,7 +513,7 @@ def unpickle_all(fname):
     except IOError:
         sys.exit("[error occurred when trying to open or read the file]")
     t2 = time.time()
-    print("UNPICKLE DONE. [time: " + str(t2 - t1) + " s]")
+    print(f"UNPICKLE OBJECTS DONE. [time: {t2 - t1} s]")
     return some_list
 
 def measure_accs_of_model(clf, X_train, y_train, X_test, y_test):
@@ -575,7 +633,7 @@ def detect_simple(i, clf, hcoords, n, features_indexes, threshold=0.0, windows=N
     dt_preprocess = t2_preprocess - t1_preprocess
     times["preprocess"] = dt_preprocess
     if verbose:
-        print(f"[detect_simple: preprocessing done; time: {dt_preprocess} s; i_gray.shape: {i_gray.shape}]")
+        print(f"[detect_simple: preprocessing done; time: {dt_preprocess} s, i_gray.shape: {i_gray.shape}]")
     t1_ii = time.time()
     ii = integral_image_numba_jit(i_gray)
     t2_ii = time.time()
@@ -590,7 +648,7 @@ def detect_simple(i, clf, hcoords, n, features_indexes, threshold=0.0, windows=N
         dt_prepare = t2_prepare - t1_prepare
         times["prepare"] = dt_prepare    
         if verbose:
-            print(f"[detect_simple: prepare_detection_windows_and_scaled_haar_coords done; time: {dt_prepare} s; windows to check: {windows.shape[0]}]")
+            print(f"[detect_simple: prepare_detection_windows_and_scaled_haar_coords done; time: {dt_prepare} s, windows to check: {windows.shape[0]}]")
     t1_haar = time.time()    
     X = haar_features_multiple_windows_numba_jit(ii, windows, shcoords_multiple_scales, n, features_indexes)
     t2_haar = time.time()
@@ -808,6 +866,7 @@ def postprocess_avg(detections, responses, threshold=0.5):
 
 def demo_detect_in_video(clf, hcoords, threshold, computations="simple", postprocess="avg", n_jobs=4, verbose_loop=True, verbose_detect=False):
     print("DEMO OF DETECT IN VIDEO...")
+    gpu_name = gpu_props()["name"]
     features_indexes = clf.features_indexes_
     video = cv2.VideoCapture(CV2_VIDEO_CAPTURE_CAMERA_INDEX + (cv2.CAP_DSHOW if CV2_VIDEO_CAPTURE_IS_IT_MSWINDOWS else 0))
     video.set(cv2.CAP_PROP_FRAME_WIDTH, 640)
@@ -898,8 +957,9 @@ def demo_detect_in_video(clf, hcoords, threshold, computations="simple", postpro
         time_comps += t2_comps - t1_comps
         text_shift = 16
         cv2.putText(frame, f"FRAME: {n_frames}", (0, 0 + text_shift), cv2.FONT_HERSHEY_PLAIN, 1.0, (255, 255, 255), 1)        
-        cv2.putText(frame, f"WINDOWS PER FRAME: {windows.shape[0]}", (0, frame_h - 1 - 3 * text_shift), cv2.FONT_HERSHEY_PLAIN, 1.0, (255, 255, 255), 1)
-        cv2.putText(frame, f"TERMS PER WINDOW: {clf.T_}", (0, frame_h - 1 - 2 * text_shift), cv2.FONT_HERSHEY_PLAIN, 1.0, (255, 255, 255), 1)
+        cv2.putText(frame, f"WINDOWS PER FRAME: {windows.shape[0]}", (0, frame_h - 1 - 4 * text_shift), cv2.FONT_HERSHEY_PLAIN, 1.0, (255, 255, 255), 1)
+        cv2.putText(frame, f"TERMS PER WINDOW: {clf.T_}", (0, frame_h - 1 - 3 * text_shift), cv2.FONT_HERSHEY_PLAIN, 1.0, (255, 255, 255), 1)
+        cv2.putText(frame, f"GPU: {gpu_name}", (0, frame_h - 1 - 2 * text_shift), cv2.FONT_HERSHEY_PLAIN, 1.0, (255, 255, 255), 1)
         comps_details = ""
         if times["haar"] and times["frbb"]:
             comps_details += f"[HAAR: {times['haar'] * 1000:05.1f} ms"            
@@ -970,7 +1030,7 @@ if __name__ == "__main__":
     hinds = haar_indexes(S, P)
     hcoords = haar_coords(S, P, hinds)
     
-    data_suffix = f"{KIND}_n_{n}_S_{S}_P_{P}_NPI_{NPI}_AUG_{AUG}_SEED_{SEED}" 
+    data_suffix = f"{KIND}_n_{n}_S_{S}_P_{P}_AUG_{np.int8(AUG)}_KOP_{KOP}_NPI_{NPI}_SEED_{SEED}" 
     DATA_NAME = f"data_{data_suffix}.bin"
     CLF_NAME = f"clf_frbb_{data_suffix}_T_{T}_B_{B}.bin"    
     print(f"DATA_NAME: {DATA_NAME}")
@@ -980,26 +1040,25 @@ if __name__ == "__main__":
     if DEMO_HAAR_FEATURES:
         demo_haar_features(hinds, hcoords, n)      
     
-    if REGENERATE_DATA_FROM_FDDB:
-        X_train, y_train, X_test, y_test = fddb_data(FOLDER_RAW_DATA_FDDB, hcoords, NPI, n, SEED, data_augmentation=(AUG == 1))
-        pickle_all(FOLDER_DATA + DATA_NAME, [X_train, y_train, X_test, y_test])
+    if REGENERATE_DATA:
+        if KIND == "face":
+            X_train, y_train, X_test, y_test = fddb_data(FOLDER_RAW_DATA_FDDB, hcoords, n, AUG, NPI, seed=SEED, verbose=False)
+        elif KIND == "hand":
+            X_train, y_train, X_test, y_test = synthetic_data(FOLDER_RAW_DATA_HAND + "backgrounds/", FOLDER_RAW_DATA_HAND + "targets/", hcoords, n, AUG, KOP * 1000, NPI, seed=SEED, verbose=False)
+        pickle_objects(FOLDER_DATA + DATA_NAME, [X_train, y_train, X_test, y_test])
     
-    if REGENERATE_DATA_SYNTHETIC:
-        X_train, y_train, X_test, y_test = synthetic_data(FOLDER_RAW_DATA_HAND + "backgrounds/", FOLDER_RAW_DATA_HAND + "targets/", 10000, NPI, hcoords, n, train_ratio=0.75, seed=0, verbose=False)
-        pickle_all(FOLDER_DATA + DATA_NAME, [X_train, y_train, X_test, y_test])    
-
     if FIT_OR_REFIT_MODEL or MEASURE_ACCS_OF_MODEL:
-        [X_train, y_train, X_test, y_test] = unpickle_all(FOLDER_DATA + DATA_NAME)
+        [X_train, y_train, X_test, y_test] = unpickle_objects(FOLDER_DATA + DATA_NAME)
         print(f"[X_train.shape: {X_train.shape} (positives: {np.sum(y_train == 1)}), X_test.shape: {X_test.shape} (positives: {np.sum(y_test == 1)})]")
     
     if FIT_OR_REFIT_MODEL: 
         clf = FastRealBoostBins(T=T, B=B, fit_mode="numba_cuda", decision_function_mode="numba_cuda", verbose=True, debug_verbose=False)
         clf.fit(X_train, y_train)
-        pickle_all(FOLDER_CLFS + CLF_NAME, [clf])
+        pickle_objects(FOLDER_CLFS + CLF_NAME, [clf])
         
     clf = None
     if MEASURE_ACCS_OF_MODEL or DEMO_DETECT_IN_VIDEO:
-        [clf] = unpickle_all(FOLDER_CLFS + CLF_NAME)
+        [clf] = unpickle_objects(FOLDER_CLFS + CLF_NAME)
         
     if MEASURE_ACCS_OF_MODEL:
         measure_accs_of_model(clf, X_train, y_train, X_test, y_test)
@@ -1008,6 +1067,9 @@ if __name__ == "__main__":
         demo_detect_in_video(clf, hcoords, threshold=DETECTION_THRESHOLD, computations="cuda", postprocess=DETECTION_POSTPROCESS, n_jobs=8, verbose_loop=True, verbose_detect=True)
 
     print("ALL DONE.")
+    
+    
+    
     
 if __name__ == "__roc__":        
     print("ROCS...")
@@ -1036,12 +1098,12 @@ if __name__ == "__roc__":
         #DATA_NAME = "data_face_n_18225_S_5_P_5_NPI_50_AUG_0_SEED_0.bin"
         #DATA_NAME = "data_face_n_18225_S_5_P_5_NPI_100_AUG_0_SEED_0.bin"                                     
         DATA_NAME = "data_face_n_18225_S_5_P_5_NPI_200_AUG_0_SEED_0.bin"
-        [X_train, y_train, X_test, y_test] = unpickle_all(FOLDER_DATA + DATA_NAME)        
+        [X_train, y_train, X_test, y_test] = unpickle_objects(FOLDER_DATA + DATA_NAME)        
         CLF_NAME = f"clf_frbb_{data_suffix}_T_{T}_B_{B}.bin"            
         print("---")
         print(f"DATA_NAME: {DATA_NAME}")
         print(f"CLF_NAME: {CLF_NAME}")                            
-        [clf] = unpickle_all(FOLDER_CLFS + CLF_NAME)                
+        [clf] = unpickle_objects(FOLDER_CLFS + CLF_NAME)                
         responses_test = clf.decision_function(X_test)
         roc = roc_curve(y_test, responses_test)
         best_thr, best_prec = best_prec_threshold(roc, y_test) 
