@@ -563,37 +563,6 @@ class FastRealBoostBins(BaseEstimator, ClassifierMixin):
             stride >>= 1
         if tx == 0:
             responses[i] = shared_logits[0]
-            
-    @staticmethod
-    @cuda.jit(void(int16[:, :], int16[:], int16[:], float32[:, :], float32[:]))
-    def decision_function_numba_cuda_job2(X_selected, mins_selected, maxes_selected, logits, responses):
-        shared_logits = cuda.shared.array(4096, dtype=float32) # 4096 - assumed limit of features used at detection stage           
-        i = cuda.blockIdx.x
-        tpb = cuda.blockDim.x
-        tx = cuda.threadIdx.x
-        T, B = logits.shape
-        fpt = int((T + tpb - 1) / tpb) # features per thread to be translated onto appropriate logits and stored in shared memory (summed if fpt > 1)
-        t = tx # feature index
-        shared_logits[tx] = float32(0.0)
-        cuda.syncthreads()
-        for _ in range(fpt):
-            if t < 1:
-                b = int8((X_selected[i, t] - mins_selected[t]) / float32(maxes_selected[t] - mins_selected[t]) * B)
-                if b < 0:
-                    b = 0
-                elif b >= B:
-                    b = b - 1
-                shared_logits[tx] += logits[t, b]
-            t += tpb
-        cuda.syncthreads()
-        stride = tpb >> 1 # half of tpb
-        while stride > 0: # sum-reduction pattern
-            if tx < stride:
-                shared_logits[tx] += shared_logits[tx + stride]
-            cuda.syncthreads()
-            stride >>= 1
-        if tx == 0:
-            responses[i] = shared_logits[0]            
-    
+                
     def predict(self, X):
         return self.class_labels_[1 * (self.decision_function(X) > 0.0)]

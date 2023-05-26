@@ -24,20 +24,20 @@ np.set_printoptions(linewidth=512)
 
 
 # main settings
-KIND = "face"
+KIND = "hand"
 S = 5 # parameter "scales" to generete Haar-like features
 P = 5 # parameter "positions" to generete Haar-like features
-AUG = False # data augmentation (0 -> none or 1 -> present)
-KOP = 0 # "kilos of positives " - no. of thousands of positives (positive windows) to generate (in case of synthetic data only; 0 value for real data, meaning 'not applicable')
-NPI = 100 # "negatives per image" - no. of negatives (negative windows) to sample per image (image real or generated synthetically) 
+AUG = True # data augmentation (0 -> none or 1 -> present)
+KOP = 5 # "kilos of positives " - no. of thousands of positives (positive windows) to generate (in case of synthetic data only; 0 value for real data, meaning 'not applicable')
+NPI = 10 # "negatives per image" - no. of negatives (negative windows) to sample per image (image real or generated synthetically) 
 T = 1024 # size of ensemble in FastRealBoostBins (equivalently, no. of boosting rounds when fitting)
 B = 8 # no. of bins
 SEED = 0 # randomization seed
 DEMO_HAAR_FEATURES = False
-REGENERATE_DATA = False
-FIT_OR_REFIT_MODEL = False
-MEASURE_ACCS_OF_MODEL = False
-DEMO_DETECT_IN_VIDEO = True
+REGENERATE_DATA = True
+FIT_OR_REFIT_MODEL = True
+MEASURE_ACCS_OF_MODEL = True
+DEMO_DETECT_IN_VIDEO = False
 
 # cv2 camera settings
 CV2_VIDEO_CAPTURE_CAMERA_INDEX = 0
@@ -45,11 +45,11 @@ CV2_VIDEO_CAPTURE_IS_IT_MSWINDOWS = False
 
 # detection procedure settings
 DETECTION_SCALES = 10
-DETECTION_WINDOW_HEIGHT_MIN = 64
-DETECTION_WINDOW_WIDTH_MIN = 64
+DETECTION_WINDOW_HEIGHT_MIN = 96
+DETECTION_WINDOW_WIDTH_MIN = 96
 DETECTION_WINDOW_GROWTH = 1.2
 DETECTION_WINDOW_JUMP = 0.05
-DETECTION_THRESHOLD = 6.5
+DETECTION_THRESHOLD = 5.0
 DETECTION_POSTPROCESS = "avg" # possible values: None, "nms", "avg"
 
 # folders
@@ -343,7 +343,8 @@ def synthetic_data(folder_backgrounds, folder_targets, hcoords, n, data_augmenta
     augmentations_extras = []
     if data_augmentation: 
         augmentations += ["sharpen", "blur", "random_brightness", "random_channel_shift"]
-        augmentations_extras += ["random_window_distort", "random_horizontal_flip"]
+        #augmentations_extras += ["random_window_distort", "random_horizontal_flip"]
+        augmentations_extras += ["random_window_distort"]
     imshow_title = "SYNTHETIC IMAGE [press ESC to continue]"
     m = n_poss    
     aug_str = " (with data augmentation)" if data_augmentation else ""
@@ -355,8 +356,6 @@ def synthetic_data(folder_backgrounds, folder_targets, hcoords, n, data_augmenta
         t_fname = folder_targets + t_names[np.random.randint(n_t)]
         t = cv2.imread(t_fname)                
         print(f"[{index + 1}/{m}: background: {b_fname}, target: {t_fname}{aug_str}]")
-        if index == 3256:
-            print("HERE")
         for aug in augmentations:
             b = np.copy(b_original)
             if verbose:
@@ -380,6 +379,9 @@ def synthetic_data(folder_backgrounds, folder_targets, hcoords, n, data_augmenta
                 angle_deg = 0.0
             ts = rotate_bound(ts, np.random.uniform(-angle_deg, angle_deg))
             hr, wr = ts.shape[:2]
+            h = (h + hr) // 2
+            w = (w + hr) // 2
+            c = np.array([h, w]) / 2.0
             ts[ts == 0] = 255        
             ts = cv2.medianBlur(ts, 3)
             cr = np.array([hr, wr]) / 2.0
@@ -1041,7 +1043,7 @@ if __name__ == "__main__":
     
     if REGENERATE_DATA:
         if KIND == "face":
-            X_train, y_train, X_test, y_test = fddb_data(FOLDER_RAW_DATA_FDDB, hcoords, n, AUG, NPI, seed=SEED, verbose=True)
+            X_train, y_train, X_test, y_test = fddb_data(FOLDER_RAW_DATA_FDDB, hcoords, n, AUG, NPI, seed=SEED, verbose=False)
         elif KIND == "hand":
             X_train, y_train, X_test, y_test = synthetic_data(FOLDER_RAW_DATA_HAND + "backgrounds/", FOLDER_RAW_DATA_HAND + "targets/", hcoords, n, AUG, KOP * 1000, NPI, seed=SEED, verbose=False)
         pickle_objects(FOLDER_DATA + DATA_NAME, [X_train, y_train, X_test, y_test])
@@ -1070,33 +1072,27 @@ if __name__ == "__main__":
     
     
     
-if __name__ == "__roc__":        
+if __name__ == "__rocs__":        
     print("ROCS...")
     
-    clfs_settings = [#{"S": 5, "P": 5, "NPI": 50, "AUG": 0, "SEED": 0, "T": 512, "B": 8},
-                     #{"S": 5, "P": 5, "NPI": 50, "AUG": 0, "SEED": 0, "T": 1024, "B": 8},
-                     {"S": 5, "P": 5, "NPI": 100, "AUG": 0, "SEED": 0, "T": 1024, "B": 8},
-                     #{"S": 5, "P": 5, "NPI": 100, "AUG": 0, "SEED": 0, "T": 2048, "B": 8},
-                     {"S": 5, "P": 5, "NPI": 200, "AUG": 0, "SEED": 0, "T": 1024, "B": 8}
+    clfs_settings = [{"S": 5, "P": 5, "AUG": 1, "KOP": 5, "NPI": 10, "SEED": 0, "T": 1024, "B": 8},
+                     {"S": 5, "P": 5, "AUG": 1, "KOP": 5, "NPI": 20, "SEED": 0, "T": 1024, "B": 8}
                      ]
     
     for s in clfs_settings:
         S = s["S"]
         P = s["P"]
-        NPI = s["NPI"]
         AUG = s["AUG"]
+        KOP = s["KOP"]
+        NPI = s["NPI"]        
         SEED = s["SEED"]
         T = s["T"]
         B = s["B"] 
         n = HAAR_TEMPLATES.shape[0] * S**2 * (2 * P - 1)**2    
         hinds = haar_indexes(S, P)
         hcoords = haar_coords(S, P, hinds)            
-        data_suffix = f"{KIND}_n_{n}_S_{S}_P_{P}_NPI_{NPI}_AUG_{AUG}_SEED_{SEED}" 
-        #DATA_NAME = f"data_{data_suffix}.bin"
-        #DATA_NAME = "data_face_n_18225_S_5_P_5_NPI_10_AUG_1_SEED_0.bin"
-        #DATA_NAME = "data_face_n_18225_S_5_P_5_NPI_50_AUG_0_SEED_0.bin"
-        #DATA_NAME = "data_face_n_18225_S_5_P_5_NPI_100_AUG_0_SEED_0.bin"                                     
-        DATA_NAME = "data_face_n_18225_S_5_P_5_NPI_200_AUG_0_SEED_0.bin"
+        data_suffix = f"{KIND}_n_{n}_S_{S}_P_{P}_AUG_{AUG}_KOP_{KOP}_NPI_{NPI}_SEED_{SEED}"                                      
+        DATA_NAME = "data_hand_n_18225_S_5_P_5_AUG_1_KOP_5_NPI_10_SEED_0.bin"
         [X_train, y_train, X_test, y_test] = unpickle_objects(FOLDER_DATA + DATA_NAME)        
         CLF_NAME = f"clf_frbb_{data_suffix}_T_{T}_B_{B}.bin"            
         print("---")
