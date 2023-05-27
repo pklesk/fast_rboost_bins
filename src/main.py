@@ -28,13 +28,13 @@ KIND = "hand"
 S = 5 # parameter "scales" to generete Haar-like features
 P = 5 # parameter "positions" to generete Haar-like features
 AUG = True # data augmentation (0 -> none or 1 -> present)
-KOP = 5 # "kilos of positives " - no. of thousands of positives (positive windows) to generate (in case of synthetic data only; 0 value for real data, meaning 'not applicable')
-NPI = 20 # "negatives per image" - no. of negatives (negative windows) to sample per image (image real or generated synthetically) 
-T = 2048 # size of ensemble in FastRealBoostBins (equivalently, no. of boosting rounds when fitting)
-B = 16 # no. of bins
+KOP = 1 # "kilos of positives " - no. of thousands of positives (positive windows) to generate (in case of synthetic data only; 0 value for real data, meaning 'not applicable')
+NPI = 50 # "negatives per image" - no. of negatives (negative windows) to sample per image (image real or generated synthetically) 
+T = 1024 # size of ensemble in FastRealBoostBins (equivalently, no. of boosting rounds when fitting)
+B = 8 # no. of bins
 SEED = 0 # randomization seed
 DEMO_HAAR_FEATURES = False
-REGENERATE_DATA = False
+REGENERATE_DATA = True
 FIT_OR_REFIT_MODEL = True
 MEASURE_ACCS_OF_MODEL = True
 DEMO_DETECT_IN_VIDEO = False
@@ -49,7 +49,7 @@ DETECTION_WINDOW_HEIGHT_MIN = 96
 DETECTION_WINDOW_WIDTH_MIN = 96
 DETECTION_WINDOW_GROWTH = 1.2
 DETECTION_WINDOW_JUMP = 0.05
-DETECTION_THRESHOLD = 7.0
+DETECTION_THRESHOLD = 7.5
 DETECTION_POSTPROCESS = "avg" # possible values: None, "nms", "avg"
 
 # folders
