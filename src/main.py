@@ -38,7 +38,7 @@ DEMO_HAAR_FEATURES_SELECTED = False
 REGENERATE_DATA = True
 FIT_OR_REFIT_MODEL = True
 MEASURE_ACCS_OF_MODEL = True
-DEMO_DETECT_IN_VIDEO = False
+DEMO_DETECT_IN_VIDEO = True
 
 # cv2 camera settings
 CV2_VIDEO_CAPTURE_CAMERA_INDEX = 0
@@ -50,7 +50,7 @@ DETECTION_WINDOW_HEIGHT_MIN = 96
 DETECTION_WINDOW_WIDTH_MIN = 96
 DETECTION_WINDOW_GROWTH = 1.2
 DETECTION_WINDOW_JUMP = 0.05
-DETECTION_THRESHOLD = 5.5
+DETECTION_THRESHOLD = 7.0
 DETECTION_POSTPROCESS = "avg" # possible values: None, "nms", "avg"
 
 # folders
@@ -1086,7 +1086,8 @@ if __name__ == "__rocs__":
     clfs_settings = [#{"KIND": "hand", "S": 5, "P": 5, "AUG": 1, "KOP": 5, "NPI": 20, "SEED": 0, "T": 1024, "B": 8},
                      #{"KIND": "hand", "S": 5, "P": 5, "AUG": 1, "KOP": 5, "NPI": 20, "SEED": 0, "T": 2048, "B": 16},
                      {"KIND": "hand", "S": 5, "P": 5, "AUG": 1, "KOP": 2, "NPI": 20, "SEED": 0, "T": 1024, "B": 8},
-                     {"KIND": "hand", "S": 5, "P": 5, "AUG": 1, "KOP": 2, "NPI": 50, "SEED": 0, "T": 1024, "B": 8}
+                     {"KIND": "hand", "S": 5, "P": 5, "AUG": 1, "KOP": 2, "NPI": 50, "SEED": 0, "T": 1024, "B": 8},
+                     {"KIND": "hand", "S": 5, "P": 5, "AUG": 0, "KOP": 10, "NPI": 50, "SEED": 0, "T": 1024, "B": 8}
                      ]
     
     for s in clfs_settings:
