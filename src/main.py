@@ -27,8 +27,8 @@ np.set_printoptions(linewidth=512)
 KIND = "hand"
 S = 5 # parameter "scales" to generete Haar-like features
 P = 5 # parameter "positions" to generete Haar-like features
-AUG = True# data augmentation (0 -> none or 1 -> present)
-KOP = 2 # "kilos of positives " - no. of thousands of positives (positive windows) to generate (in case of synthetic data only; 0 value for real data, meaning 'not applicable')
+AUG = False # data augmentation (0 -> none or 1 -> present)
+KOP = 10 # "kilos of positives " - no. of thousands of positives (positive windows) to generate (in case of synthetic data only; 0 value for real data, meaning 'not applicable')
 NPI = 50 # "negatives per image" - no. of negatives (negative windows) to sample per image (image real or generated synthetically) 
 T = 1024 # size of ensemble in FastRealBoostBins (equivalently, no. of boosting rounds when fitting)
 B = 8 # no. of bins
@@ -50,7 +50,7 @@ DETECTION_WINDOW_HEIGHT_MIN = 96
 DETECTION_WINDOW_WIDTH_MIN = 96
 DETECTION_WINDOW_GROWTH = 1.2
 DETECTION_WINDOW_JUMP = 0.05
-DETECTION_THRESHOLD = 7.0
+DETECTION_THRESHOLD = 5.5
 DETECTION_POSTPROCESS = "avg" # possible values: None, "nms", "avg"
 
 # folders
@@ -1083,10 +1083,10 @@ if __name__ == "__main__":
 if __name__ == "__rocs__":        
     print("ROCS...")
     
-    clfs_settings = [{"KIND": "hand", "S": 5, "P": 5, "AUG": 1, "KOP": 5, "NPI": 20, "SEED": 0, "T": 1024, "B": 8},
-                     {"KIND": "hand", "S": 5, "P": 5, "AUG": 1, "KOP": 5, "NPI": 20, "SEED": 0, "T": 2048, "B": 16},
+    clfs_settings = [#{"KIND": "hand", "S": 5, "P": 5, "AUG": 1, "KOP": 5, "NPI": 20, "SEED": 0, "T": 1024, "B": 8},
+                     #{"KIND": "hand", "S": 5, "P": 5, "AUG": 1, "KOP": 5, "NPI": 20, "SEED": 0, "T": 2048, "B": 16},
                      {"KIND": "hand", "S": 5, "P": 5, "AUG": 1, "KOP": 2, "NPI": 20, "SEED": 0, "T": 1024, "B": 8},
-                     #{"KIND": "face", "S": 5, "P": 5, "AUG": 0, "KOP": 0, "NPI": 200, "SEED": 0, "T": 1024, "B": 8}
+                     {"KIND": "hand", "S": 5, "P": 5, "AUG": 1, "KOP": 2, "NPI": 50, "SEED": 0, "T": 1024, "B": 8}
                      ]
     
     for s in clfs_settings:
