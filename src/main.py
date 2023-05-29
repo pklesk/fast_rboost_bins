@@ -27,13 +27,14 @@ np.set_printoptions(linewidth=512)
 KIND = "hand"
 S = 5 # parameter "scales" to generete Haar-like features
 P = 5 # parameter "positions" to generete Haar-like features
-AUG = True # data augmentation (0 -> none or 1 -> present)
-KOP = 1 # "kilos of positives " - no. of thousands of positives (positive windows) to generate (in case of synthetic data only; 0 value for real data, meaning 'not applicable')
-NPI = 50 # "negatives per image" - no. of negatives (negative windows) to sample per image (image real or generated synthetically) 
-T = 2048 # size of ensemble in FastRealBoostBins (equivalently, no. of boosting rounds when fitting)
+AUG = True# data augmentation (0 -> none or 1 -> present)
+KOP = 2 # "kilos of positives " - no. of thousands of positives (positive windows) to generate (in case of synthetic data only; 0 value for real data, meaning 'not applicable')
+NPI = 20 # "negatives per image" - no. of negatives (negative windows) to sample per image (image real or generated synthetically) 
+T = 1024 # size of ensemble in FastRealBoostBins (equivalently, no. of boosting rounds when fitting)
 B = 8 # no. of bins
 SEED = 0 # randomization seed
-DEMO_HAAR_FEATURES = False
+DEMO_HAAR_FEATURES_ALL = False
+DEMO_HAAR_FEATURES_SELECTED = False
 REGENERATE_DATA = True
 FIT_OR_REFIT_MODEL = True
 MEASURE_ACCS_OF_MODEL = True
@@ -49,7 +50,7 @@ DETECTION_WINDOW_HEIGHT_MIN = 96
 DETECTION_WINDOW_WIDTH_MIN = 96
 DETECTION_WINDOW_GROWTH = 1.2
 DETECTION_WINDOW_JUMP = 0.05
-DETECTION_THRESHOLD = 7.5
+DETECTION_THRESHOLD = 7.0
 DETECTION_POSTPROCESS = "avg" # possible values: None, "nms", "avg"
 
 # folders
@@ -60,7 +61,7 @@ FOLDER_RAW_DATA_FDDB = "../raw_data_fddb/"
 FOLDER_RAW_DATA_HAND = "../raw_data_hand/"
 
 # synthetic data generation constants
-SYNTHETIC_ROTATION_RANGE = np.pi / 4
+SYNTHETIC_ROTATION_RANGE = np.pi / 16
 SYNTHETIC_TRAIN_RATIO = 0.75
 
 
@@ -328,8 +329,8 @@ def synthetic_data(folder_backgrounds, folder_targets, hcoords, n, data_augmenta
                    rotation_range=SYNTHETIC_ROTATION_RANGE, train_ratio=SYNTHETIC_TRAIN_RATIO):
     print("SYNTHETIC DATA...")
     t1 = time.time()
-    relative_min = 0.1 # for both positives and negatives
-    relative_max = 0.5 # for both positives and negatives
+    relative_min = 0.25 # for both positives and negatives
+    relative_max = 0.75 # for both positives and negatives
     neg_max_iou = 0.5
     margin_pixels = 8
     np.random.seed(seed)    
@@ -344,7 +345,7 @@ def synthetic_data(folder_backgrounds, folder_targets, hcoords, n, data_augmenta
     if data_augmentation: 
         augmentations += ["sharpen", "blur", "random_brightness", "random_channel_shift"]
         #augmentations_extras += ["random_window_distort", "random_horizontal_flip"]
-        augmentations_extras += ["random_window_distort"]
+        augmentations_extras += ["random_horizontal_flip"]
     imshow_title = "SYNTHETIC IMAGE [press ESC to continue]"
     m = n_poss    
     aug_str = " (with data augmentation)" if data_augmentation else ""
@@ -379,12 +380,12 @@ def synthetic_data(folder_backgrounds, folder_targets, hcoords, n, data_augmenta
                 angle_deg = 0.0
             ts = rotate_bound(ts, np.random.uniform(-angle_deg, angle_deg))
             hr, wr = ts.shape[:2]
+            cr = np.array([hr, wr]) / 2.0
             h = (h + hr) // 2
-            w = (w + hr) // 2
+            w = (w + hr) // 2            
             c = np.array([h, w]) / 2.0
             ts[ts == 0] = 255        
-            ts = cv2.medianBlur(ts, 3)
-            cr = np.array([hr, wr]) / 2.0
+            ts = cv2.medianBlur(ts, 3)            
             correction_shift = (np.round(cr - c)).astype(np.int16)
             j0 = margin_pixels + correction_shift[0] + np.random.randint(bh - hr - 2 * margin_pixels - correction_shift[0])
             k0 = margin_pixels + correction_shift[1] + np.random.randint(bw - wr - 2 * margin_pixels - correction_shift[1])
@@ -569,14 +570,17 @@ def draw_feature_at(i, j0, k0, shcoords_one_feature):
 
 def demo_haar_features(hinds, hcoords, n):
     print(f"DEMO OF HAAR FEATURES... [hcoords.shape: {hcoords.shape}]")
-    i = cv2.imread(FOLDER_EXTRAS + "photo_for_features_demo.jpg")
+    i = cv2.imread(FOLDER_EXTRAS + "photo_for_face_features_demo.jpg")
+    j0, k0 = 116, 100
+    w = h = 221
+    # i = cv2.imread(FOLDER_EXTRAS + "photo_for_hand_features_demo.jpg")
+    # j0, k0 = 86, 52
+    # w = h = 221
     i_resized = resize_image(i)
     i_gray = cv2.cvtColor(i_resized, cv2.COLOR_BGR2GRAY)
     ii = integral_image_numba_jit(i_gray)
-    j0, k0 = 116, 100
-    w = h = 221
     cv2.rectangle(i_resized, (k0, j0), (k0 + w - 1, j0 + h - 1), (0, 0, 255), 1)
-    title = "DEMO OF FEATURES [press any key to continue or ESC to quit]"    
+    title = "DEMO OF FEATURES [press ESC to quit or any other key to continue]"    
     cv2.imshow(title, i_resized)
     cv2.waitKey()    
     for ord_ind, (ind, c) in enumerate(zip(hinds, hcoords)):
@@ -1038,7 +1042,7 @@ if __name__ == "__main__":
     print(f"CLF_NAME: {CLF_NAME}")
     print(f"GPU_PROPS: {gpu_props()}")
     
-    if DEMO_HAAR_FEATURES:
+    if DEMO_HAAR_FEATURES_ALL:
         demo_haar_features(hinds, hcoords, n)      
     
     if REGENERATE_DATA:
@@ -1060,9 +1064,16 @@ if __name__ == "__main__":
     clf = None
     if MEASURE_ACCS_OF_MODEL or DEMO_DETECT_IN_VIDEO:
         [clf] = unpickle_objects(FOLDER_CLFS + CLF_NAME)
+    
+    if DEMO_HAAR_FEATURES_SELECTED and clf is not None:
+        selected = features_indexes_
+        demo_haar_features(hinds[selected], hcoords[selected], selected.size)
         
     if MEASURE_ACCS_OF_MODEL:
         measure_accs_of_model(clf, X_train, y_train, X_test, y_test)
+        
+    
+    demo_haar_features(hinds[clf.features_indexes_], hcoords[clf.features_indexes_], clf.features_indexes_.size)
     
     if DEMO_DETECT_IN_VIDEO:
         demo_detect_in_video(clf, hcoords, threshold=DETECTION_THRESHOLD, computations="cuda", postprocess=DETECTION_POSTPROCESS, n_jobs=8, verbose_loop=True, verbose_detect=True)
@@ -1075,11 +1086,14 @@ if __name__ == "__main__":
 if __name__ == "__rocs__":        
     print("ROCS...")
     
-    clfs_settings = [{"S": 5, "P": 5, "AUG": 1, "KOP": 5, "NPI": 10, "SEED": 0, "T": 1024, "B": 8},
-                     {"S": 5, "P": 5, "AUG": 1, "KOP": 5, "NPI": 20, "SEED": 0, "T": 1024, "B": 8}
+    clfs_settings = [{"KIND": "hand", "S": 5, "P": 5, "AUG": 1, "KOP": 5, "NPI": 20, "SEED": 0, "T": 1024, "B": 8},
+                     {"KIND": "hand", "S": 5, "P": 5, "AUG": 1, "KOP": 5, "NPI": 20, "SEED": 0, "T": 2048, "B": 16}
+                     #{"KIND": "face", "S": 5, "P": 5, "AUG": 0, "KOP": 0, "NPI": 100, "SEED": 0, "T": 1024, "B": 8},
+                     #{"KIND": "face", "S": 5, "P": 5, "AUG": 0, "KOP": 0, "NPI": 200, "SEED": 0, "T": 1024, "B": 8}
                      ]
     
     for s in clfs_settings:
+        KIND = s["KIND"]
         S = s["S"]
         P = s["P"]
         AUG = s["AUG"]
@@ -1092,6 +1106,7 @@ if __name__ == "__rocs__":
         hinds = haar_indexes(S, P)
         hcoords = haar_coords(S, P, hinds)            
         data_suffix = f"{KIND}_n_{n}_S_{S}_P_{P}_AUG_{AUG}_KOP_{KOP}_NPI_{NPI}_SEED_{SEED}"                                      
+        #DATA_NAME = "data_face_n_18225_S_5_P_5_AUG_0_KOP_0_NPI_100_SEED_0.bin"
         DATA_NAME = "data_hand_n_18225_S_5_P_5_AUG_1_KOP_5_NPI_10_SEED_0.bin"
         [X_train, y_train, X_test, y_test] = unpickle_objects(FOLDER_DATA + DATA_NAME)        
         CLF_NAME = f"clf_frbb_{data_suffix}_T_{T}_B_{B}.bin"            
