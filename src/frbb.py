@@ -108,11 +108,11 @@ class FastRealBoostBins(BaseEstimator, ClassifierMixin):
         if self.verbose:
             print("[binning...]")
         t1_binning = time.time()
-        X_binned = np.clip(np.int8((X - self.mins_) / (self.maxes_ - self.mins_) * self.B_), 0, self.B_ - 1)
+        #X_binned = np.clip(np.int8((X - self.mins_) / (self.maxes_ - self.mins_) * self.B_), 0, self.B_ - 1)
+        X_binned = np.clip(np.int8((X - self.mins_) * self.B_ // (self.maxes_ - self.mins_)), 0, self.B_ - 1)
         t2_binning = time.time()
         if self.verbose:
-            print(f"[binning done; time: {t2_binning - t1_binning} s]")
-                
+            print(f"[binning done; time: {t2_binning - t1_binning} s]")                
         if self.verbose:
             print(f"[preparing indexing helpers...]")
         t1_indexer = time.time()
@@ -212,7 +212,8 @@ class FastRealBoostBins(BaseEstimator, ClassifierMixin):
         t1_binning = time.time()
         if self.verbose:
             print("[binning...]")
-        X_binned = np.clip(np.int8((X - self.mins_) / (self.maxes_ - self.mins_) * self.B_), 0, self.B_ - 1)
+        #X_binned = np.clip(np.int8((X - self.mins_) / (self.maxes_ - self.mins_) * self.B_), 0, self.B_ - 1)
+        X_binned = np.clip(np.int8((X - self.mins_) * self.B_ // (self.maxes_ - self.mins_)), 0, self.B_ - 1)
         t2_binning = time.time()
         if self.verbose:
             print(f"[binning done; time: {t2_binning - t1_binning} s]")    
@@ -494,7 +495,8 @@ class FastRealBoostBins(BaseEstimator, ClassifierMixin):
         
     def decision_function_numpy(self, X):
         X_selected = X[:, self.features_indexes_]
-        X_binned = np.clip(np.int8((X_selected - self.mins_selected_) / (self.maxes_selected_ - self.mins_selected_) * self.B_), 0, self.B_ - 1)
+        #X_binned = np.clip(np.int8((X_selected - self.mins_selected_) / (self.maxes_selected_ - self.mins_selected_) * self.B_), 0, self.B_ - 1)
+        X_binned = np.clip(np.int8((X_selected - self.mins_selected_) * self.B_ // (self.maxes_selected_ - self.mins_selected_)), 0, self.B_ - 1)
         m = X_binned.shape[0]
         responses = np.zeros(m)
         for i in range(m):
@@ -503,7 +505,8 @@ class FastRealBoostBins(BaseEstimator, ClassifierMixin):
 
     def decision_function_numba_jit(self, X):
         X_selected = X[:, self.features_indexes_]
-        X_binned = np.clip(np.int8((X_selected - self.mins_selected_) / (self.maxes_selected_ - self.mins_selected_) * self.B_), 0, self.B_ - 1)
+        #X_binned = np.clip(np.int8((X_selected - self.mins_selected_) / (self.maxes_selected_ - self.mins_selected_) * self.B_), 0, self.B_ - 1)
+        X_binned = np.clip(np.int8((X_selected - self.mins_selected_) * self.B_ // (self.maxes_selected_ - self.mins_selected_)), 0, self.B_ - 1)
         return FastRealBoostBins.decision_function_numba_jit_job(X_binned, self.logits_)
     
     @staticmethod
