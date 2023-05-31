@@ -55,7 +55,7 @@ class FastRealBoostBins(BaseEstimator, ClassifierMixin):
         self.fit_mode = fit_mode
         self.decision_function_mode = decision_function_mode
         if self.fit_mode == "numba_cuda" and not self.cuda_available:
-            self.fit_mode = "numba_numpy"
+            self.fit_mode = "numpy"
             print(f"[changing fit mode to \"{self.fit_mode}\" due to cuda functionality not available on this machine]")
         if self.decision_function_mode == "numba_cuda" and not self.cuda_available:
             self.decision_function_mode = "numba_jit"
@@ -108,8 +108,7 @@ class FastRealBoostBins(BaseEstimator, ClassifierMixin):
         if self.verbose:
             print("[binning...]")
         t1_binning = time.time()
-        #X_binned = np.clip(np.int8((X - self.mins_) / (self.maxes_ - self.mins_) * self.B_), 0, self.B_ - 1)
-        X_binned = np.clip(np.int8((X - self.mins_) * self.B_ // (self.maxes_ - self.mins_)), 0, self.B_ - 1)
+        X_binned = np.clip(np.int8(self.B_ * (X - self.mins_) // (self.maxes_ - self.mins_)), 0, self.B_ - 1)
         t2_binning = time.time()
         if self.verbose:
             print(f"[binning done; time: {t2_binning - t1_binning} s]")                
@@ -212,8 +211,7 @@ class FastRealBoostBins(BaseEstimator, ClassifierMixin):
         t1_binning = time.time()
         if self.verbose:
             print("[binning...]")
-        #X_binned = np.clip(np.int8((X - self.mins_) / (self.maxes_ - self.mins_) * self.B_), 0, self.B_ - 1)
-        X_binned = np.clip(np.int8((X - self.mins_) * self.B_ // (self.maxes_ - self.mins_)), 0, self.B_ - 1)
+        X_binned = np.clip(np.int8(self.B_ * (X - self.mins_) // (self.maxes_ - self.mins_)), 0, self.B_ - 1)
         t2_binning = time.time()
         if self.verbose:
             print(f"[binning done; time: {t2_binning - t1_binning} s]")    
@@ -352,9 +350,8 @@ class FastRealBoostBins(BaseEstimator, ClassifierMixin):
 
     @staticmethod
     @cuda.jit(void(int8[:, :], int8[:], float32[:], float32[:, :], float32[:, :], int32[:, :]))
-    def bin_add_weights_numba_cuda(X_binned_sub, yy_sub, w_sub, W_p, W_n, mutexes):
-        # assumed max constants for shared memory: 128 - subsample size (equal to self.cuda_tpb_bin_add_weights), 32 - no. of bins
-        shared_w_p = cuda.shared.array((128, 32), dtype=float32) 
+    def bin_add_weights_numba_cuda(X_binned_sub, yy_sub, w_sub, W_p, W_n, mutexes):        
+        shared_w_p = cuda.shared.array((128, 32), dtype=float32) # assumed max constants for shared memory: 128 - subsample size (equal to self.cuda_tpb_bin_add_weights), 32 - no. of bins
         shared_w_n = cuda.shared.array((128, 32), dtype=float32) 
         m, _ = X_binned_sub.shape        
         j = cuda.blockIdx.y
@@ -495,8 +492,7 @@ class FastRealBoostBins(BaseEstimator, ClassifierMixin):
         
     def decision_function_numpy(self, X):
         X_selected = X[:, self.features_indexes_]
-        #X_binned = np.clip(np.int8((X_selected - self.mins_selected_) / (self.maxes_selected_ - self.mins_selected_) * self.B_), 0, self.B_ - 1)
-        X_binned = np.clip(np.int8((X_selected - self.mins_selected_) * self.B_ // (self.maxes_selected_ - self.mins_selected_)), 0, self.B_ - 1)
+        X_binned = np.clip(np.int8(self.B_ * (X_selected - self.mins_selected_) // (self.maxes_selected_ - self.mins_selected_)), 0, self.B_ - 1)
         m = X_binned.shape[0]
         responses = np.zeros(m)
         for i in range(m):
@@ -505,8 +501,7 @@ class FastRealBoostBins(BaseEstimator, ClassifierMixin):
 
     def decision_function_numba_jit(self, X):
         X_selected = X[:, self.features_indexes_]
-        #X_binned = np.clip(np.int8((X_selected - self.mins_selected_) / (self.maxes_selected_ - self.mins_selected_) * self.B_), 0, self.B_ - 1)
-        X_binned = np.clip(np.int8((X_selected - self.mins_selected_) * self.B_ // (self.maxes_selected_ - self.mins_selected_)), 0, self.B_ - 1)
+        X_binned = np.clip(np.int8(self.B_ * (X_selected - self.mins_selected_) // (self.maxes_selected_ - self.mins_selected_)), 0, self.B_ - 1)
         return FastRealBoostBins.decision_function_numba_jit_job(X_binned, self.logits_)
     
     @staticmethod
@@ -550,7 +545,7 @@ class FastRealBoostBins(BaseEstimator, ClassifierMixin):
         cuda.syncthreads()
         for _ in range(fpt):
             if t < T:
-                b = int8((X_selected[i, t] - mins_selected[t]) / float32(maxes_selected[t] - mins_selected[t]) * B)
+                b = int8(B * (X_selected[i, t] - mins_selected[t]) / float32(maxes_selected[t] - mins_selected[t]))
                 if b < 0:
                     b = 0
                 elif b >= B:

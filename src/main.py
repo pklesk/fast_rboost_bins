@@ -29,13 +29,13 @@ S = 5 # parameter "scales" to generete Haar-like features
 P = 5 # parameter "positions" to generete Haar-like features
 AUG = False # data augmentation (0 -> none or 1 -> present)
 KOP = 10 # "kilos of positives " - no. of thousands of positives (positive windows) to generate (in case of synthetic data only; 0 value for real data, meaning 'not applicable')
-NPI = 80 # "negatives per image" - no. of negatives (negative windows) to sample per image (image real or generated synthetically) 
+NPI = 100 # "negatives per image" - no. of negatives (negative windows) to sample per image (image real or generated synthetically) 
 T = 2048 # size of ensemble in FastRealBoostBins (equivalently, no. of boosting rounds when fitting)
-B = 16 # no. of bins
+B = 8 # no. of bins
 SEED = 0 # randomization seed
 DEMO_HAAR_FEATURES_ALL = False
 DEMO_HAAR_FEATURES_SELECTED = False
-REGENERATE_DATA = False
+REGENERATE_DATA = True
 FIT_OR_REFIT_MODEL = True
 MEASURE_ACCS_OF_MODEL = True
 DEMO_DETECT_IN_VIDEO = False
@@ -57,13 +57,14 @@ DETECTION_POSTPROCESS = "avg" # possible values: None, "nms", "avg"
 FOLDER_DATA = "../data/"
 FOLDER_CLFS = "../models/"
 FOLDER_EXTRAS = "../extras/"
-FOLDER_RAW_DATA_FDDB = "../raw_data_fddb/"
-FOLDER_RAW_DATA_HAND = "../raw_data_hand/"
+FOLDER_DATA_RAW_FDDB = "../data_raw_fddb/"
+FOLDER_DATA_RAW_HAND = "../data_raw_hand/"
 
 # synthetic data generation constants
-SYNTHETIC_ROTATION_RANGE = np.pi / 16
+SYNTHETIC_ROTATION_RANGE = np.pi / 8
 SYNTHETIC_TRAIN_RATIO = 0.75
-
+SYNTHETIC_FORCE_RANDOM_ROTATIONS = True
+SYNTHETIC_FORCE_RANDOM_HORIZONTAL_FLIPS = True
 
 def gpu_props():
     gpu = cuda.get_current_device()
@@ -326,13 +327,14 @@ def rotate_bound(image, angle):
     return cv2.warpAffine(image, M, (nW, nH))
 
 def synthetic_data(folder_backgrounds, folder_targets, hcoords, n, data_augmentation=False, n_poss=1, n_negs_per_img=10, seed=0, verbose=False,
-                   rotation_range=SYNTHETIC_ROTATION_RANGE, train_ratio=SYNTHETIC_TRAIN_RATIO):
+                   rotation_range=SYNTHETIC_ROTATION_RANGE, train_ratio=SYNTHETIC_TRAIN_RATIO, 
+                   force_random_rotations=SYNTHETIC_FORCE_RANDOM_ROTATIONS, force_random_horizontal_flips=SYNTHETIC_FORCE_RANDOM_HORIZONTAL_FLIPS):
     print("SYNTHETIC DATA...")
     t1 = time.time()
-    relative_min = 0.25 # for both positives and negatives
-    relative_max = 0.75 # for both positives and negatives
+    relative_min = 0.2 # for both positives and negatives
+    relative_max = 0.7 # for both positives and negatives
     neg_max_iou = 0.5
-    margin_pixels = 8
+    margin_pixels = 4
     np.random.seed(seed)    
     b_names = os.listdir(folder_backgrounds)
     n_b = len(b_names)
@@ -344,7 +346,6 @@ def synthetic_data(folder_backgrounds, folder_targets, hcoords, n, data_augmenta
     augmentations_extras = []
     if data_augmentation: 
         augmentations += ["sharpen", "blur", "random_brightness", "random_channel_shift"]
-        #augmentations_extras += ["random_window_distort", "random_horizontal_flip"]
         augmentations_extras += ["random_horizontal_flip"]
     imshow_title = "SYNTHETIC IMAGE [press ESC to continue]"
     m = n_poss    
@@ -361,7 +362,7 @@ def synthetic_data(folder_backgrounds, folder_targets, hcoords, n, data_augmenta
             b = np.copy(b_original)
             if verbose:
                 print(f"[augmentation: {aug}]")
-            if aug is not None and "random_horizontal_flip" in augmentations_extras:
+            if (aug is not None and "random_horizontal_flip" in augmentations_extras) or force_random_horizontal_flips:
                 if np.random.rand() < 0.5:
                     t = np.fliplr(t)
                 if np.random.rand() < 0.5:
@@ -376,7 +377,7 @@ def synthetic_data(folder_backgrounds, folder_targets, hcoords, n, data_augmenta
             h, w = ts.shape[:2]
             c = np.array([h, w]) / 2.0
             angle_deg = 0.5 * rotation_range * 180.0 / np.pi
-            if aug is None:
+            if aug is None and not force_random_rotations:
                 angle_deg = 0.0
             ts = rotate_bound(ts, np.random.uniform(-angle_deg, angle_deg))
             hr, wr = ts.shape[:2]
@@ -1047,9 +1048,9 @@ if __name__ == "__main__":
     
     if REGENERATE_DATA:
         if KIND == "face":
-            X_train, y_train, X_test, y_test = fddb_data(FOLDER_RAW_DATA_FDDB, hcoords, n, AUG, NPI, seed=SEED, verbose=False)
+            X_train, y_train, X_test, y_test = fddb_data(FOLDER_DATA_RAW_FDDB, hcoords, n, AUG, NPI, seed=SEED, verbose=False)
         elif KIND == "hand":
-            X_train, y_train, X_test, y_test = synthetic_data(FOLDER_RAW_DATA_HAND + "backgrounds/", FOLDER_RAW_DATA_HAND + "targets/", hcoords, n, AUG, KOP * 1000, NPI, seed=SEED, verbose=False)
+            X_train, y_train, X_test, y_test = synthetic_data(FOLDER_DATA_RAW_HAND + "backgrounds/", FOLDER_DATA_RAW_HAND + "targets/", hcoords, n, AUG, KOP * 1000, NPI, seed=SEED, verbose=False)
         pickle_objects(FOLDER_DATA + DATA_NAME, [X_train, y_train, X_test, y_test])
     
     if FIT_OR_REFIT_MODEL or MEASURE_ACCS_OF_MODEL:
@@ -1062,8 +1063,8 @@ if __name__ == "__main__":
         clf.fit(X_train, y_train)
         pickle_objects(FOLDER_CLFS + CLF_NAME, [clf])        
     
-    if MEASURE_ACCS_OF_MODEL or DEMO_DETECT_IN_VIDEO:
-        [clf] = unpickle_objects(FOLDER_CLFS + CLF_NAME)
+    if (MEASURE_ACCS_OF_MODEL or DEMO_DETECT_IN_VIDEO) and not FIT_OR_REFIT_MODEL:
+        [clf] = unpickle_objects(FOLDER_CLFS + CLF_NAME)        
     
     if DEMO_HAAR_FEATURES_SELECTED and clf is not None:
         selected = features_indexes_
@@ -1089,7 +1090,9 @@ if __name__ == "__rocs__":
                      # {"KIND": "hand", "S": 5, "P": 5, "AUG": 1, "KOP": 2, "NPI": 50, "SEED": 0, "T": 1024, "B": 8},
                      # {"KIND": "hand", "S": 5, "P": 5, "AUG": 0, "KOP": 10, "NPI": 50, "SEED": 0, "T": 1024, "B": 8},
                      {"KIND": "hand", "S": 5, "P": 5, "AUG": 0, "KOP": 10, "NPI": 80, "SEED": 0, "T": 1024, "B": 8},
-                     {"KIND": "hand", "S": 5, "P": 5, "AUG": 0, "KOP": 10, "NPI": 80, "SEED": 0, "T": 2048, "B": 8}
+                     {"KIND": "hand", "S": 5, "P": 5, "AUG": 0, "KOP": 10, "NPI": 80, "SEED": 0, "T": 2048, "B": 8},
+                     {"KIND": "hand", "S": 5, "P": 5, "AUG": 0, "KOP": 10, "NPI": 80, "SEED": 0, "T": 2048, "B": 16},
+                     {"KIND": "hand", "S": 5, "P": 5, "AUG": 0, "KOP": 10, "NPI": 80, "SEED": 0, "T": 1024, "B": 16},                  
                      ]
     
     for s in clfs_settings:

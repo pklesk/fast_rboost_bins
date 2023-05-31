@@ -327,5 +327,5 @@ sympy-plots-for-*.tex/
 __pycache__
 data/*
 !data/readme.txt
-raw_data_fddb/*
-!raw_data_fddb/readme.txt
+data_raw_fddb/*
+!data_raw_fddb/readme.txt
