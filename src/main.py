@@ -50,7 +50,7 @@ DETECTION_WINDOW_HEIGHT_MIN = 96
 DETECTION_WINDOW_WIDTH_MIN = 96
 DETECTION_WINDOW_GROWTH = 1.2
 DETECTION_WINDOW_JUMP = 0.05
-DETECTION_THRESHOLD = 6.0
+DETECTION_THRESHOLD = 5.0
 DETECTION_POSTPROCESS = "avg" # possible values: None, "nms", "avg"
 
 # folders
@@ -1061,7 +1061,7 @@ if __name__ == "__main__":
     if FIT_OR_REFIT_MODEL: 
         clf = FastRealBoostBins(T=T, B=B, fit_mode="numba_cuda", decision_function_mode="numba_cuda", verbose=True, debug_verbose=False)
         clf.fit(X_train, y_train)
-        pickle_objects(FOLDER_CLFS + CLF_NAME, [clf])        
+        pickle_objects(FOLDER_CLFS + CLF_NAME, [clf])
     
     if (MEASURE_ACCS_OF_MODEL or DEMO_DETECT_IN_VIDEO) and not FIT_OR_REFIT_MODEL:
         [clf] = unpickle_objects(FOLDER_CLFS + CLF_NAME)        
@@ -1091,8 +1091,7 @@ if __name__ == "__rocs__":
                      # {"KIND": "hand", "S": 5, "P": 5, "AUG": 0, "KOP": 10, "NPI": 50, "SEED": 0, "T": 1024, "B": 8},
                      {"KIND": "hand", "S": 5, "P": 5, "AUG": 0, "KOP": 10, "NPI": 80, "SEED": 0, "T": 1024, "B": 8},
                      {"KIND": "hand", "S": 5, "P": 5, "AUG": 0, "KOP": 10, "NPI": 80, "SEED": 0, "T": 2048, "B": 8},
-                     {"KIND": "hand", "S": 5, "P": 5, "AUG": 0, "KOP": 10, "NPI": 80, "SEED": 0, "T": 2048, "B": 16},
-                     {"KIND": "hand", "S": 5, "P": 5, "AUG": 0, "KOP": 10, "NPI": 80, "SEED": 0, "T": 1024, "B": 16},                  
+                     {"KIND": "hand", "S": 5, "P": 5, "AUG": 0, "KOP": 10, "NPI": 80, "SEED": 0, "T": 2048, "B": 16}                  
                      ]
     
     for s in clfs_settings:

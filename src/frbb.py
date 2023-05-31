@@ -227,8 +227,7 @@ class FastRealBoostBins(BaseEstimator, ClassifierMixin):
             if self.verbose:
                 print(f"{t + 1}/{self.T_}")
         
-            t1_bin_add_weights = time.time()            
-            tpb =  self.cuda_tpb_bin_add_weights
+            t1_bin_add_weights = time.time()                        
             memory = X_binned.nbytes + yy.nbytes + w.nbytes 
             ratio = memory / self.CUDA_MAX_MEMORY_PER_CALL
             if ratio < 1.0:
@@ -238,7 +237,8 @@ class FastRealBoostBins(BaseEstimator, ClassifierMixin):
             for _ in range(min(self.cuda_n_streams, n_calls)):
                 streams.append(cuda.stream())
             dev_W_p = cuda.to_device(np.zeros((n, self.B_), dtype=np.float32))
-            dev_W_n = cuda.to_device(np.zeros((n, self.B_), dtype=np.float32))                                
+            dev_W_n = cuda.to_device(np.zeros((n, self.B_), dtype=np.float32))
+            tpb =  self.cuda_tpb_bin_add_weights                                
             with cuda.pinned(X_binned, yy, w):                
                 for i in range(n_calls):     
                     stream = streams[i % self.cuda_n_streams]
@@ -248,7 +248,7 @@ class FastRealBoostBins(BaseEstimator, ClassifierMixin):
                     dev_yy_sub = cuda.to_device(yy[call_slice], stream=stream)
                     dev_w_sub = cuda.to_device(w[call_slice], stream=stream)
                     bpg = ((X_binned_sub.shape[0] + tpb - 1) // tpb, n)
-                    FastRealBoostBins.bin_add_weights_numba_cuda[bpg, (tpb), stream](dev_X_binned_sub, dev_yy_sub, dev_w_sub, dev_W_p, dev_W_n, dev_mutexes)
+                    FastRealBoostBins.bin_add_weights_numba_cuda[bpg, tpb, stream](dev_X_binned_sub, dev_yy_sub, dev_w_sub, dev_W_p, dev_W_n, dev_mutexes)
                 cuda.synchronize()
             t2_bin_add_weights = time.time()
             if self.debug_verbose:
@@ -263,9 +263,8 @@ class FastRealBoostBins(BaseEstimator, ClassifierMixin):
             if self.debug_verbose:
                 print(f"[logits_numba_cuda done; time: {t2_logits - t1_logits} s]")
 
-            t1_errs_exp = time.time()
-            tpb = self.cuda_tpb_default
-            memory = X_binned.nbytes + yy.nbytes + w.nbytes 
+            t1_errs_exp = time.time()            
+            memory = X_binned.nbytes + yy.nbytes + w.nbytes
             ratio = memory / self.CUDA_MAX_MEMORY_PER_CALL
             if ratio < 1.0:
                 ratio = 1.0
@@ -273,7 +272,8 @@ class FastRealBoostBins(BaseEstimator, ClassifierMixin):
             streams = []            
             for _ in range(min(self.cuda_n_streams, n_calls)):
                 streams.append(cuda.stream()) 
-            dev_errs_exp = cuda.to_device(np.zeros(n, dtype=np.float32))              
+            dev_errs_exp = cuda.to_device(np.zeros(n, dtype=np.float32))
+            tpb = self.cuda_tpb_default              
             with cuda.pinned(X_binned, yy, w):                                
                 for i in range(n_calls):     
                     stream = streams[i % self.cuda_n_streams]
@@ -289,14 +289,14 @@ class FastRealBoostBins(BaseEstimator, ClassifierMixin):
             if self.debug_verbose:
                 print(f"[errs_exp_numba_cuda done; n_calls: {n_calls}; time: {t2_errs_exp - t1_errs_exp} s]")
 
-            t1_argmin_errs_exp = time.time()                        
-            tpb = self.cuda_tpb_default
+            t1_argmin_errs_exp = time.time()                                    
             best_err_exp = np.inf * np.ones(1, dtype=np.float32)
             best_j = -1 * np.ones(1, dtype=np.int32)
             best_logits = np.zeros(self.B_, dtype=np.float32)
             dev_best_err_exp = cuda.to_device(best_err_exp)
             dev_best_j = cuda.to_device(best_j)
             dev_best_logits = cuda.to_device(best_logits)
+            tpb = self.cuda_tpb_default
             bpg = (n + tpb - 1) // tpb
             FastRealBoostBins.argmin_errs_exp_numba_cuda[bpg, tpb](dev_errs_exp, dev_logits, dev_best_err_exp, dev_best_j, dev_best_logits, dev_mutexes)
             dev_best_err_exp.copy_to_host(ary=best_err_exp)
@@ -309,8 +309,7 @@ class FastRealBoostBins(BaseEstimator, ClassifierMixin):
             if self.debug_verbose:
                 print(f"[argmin_errs_exp_numba_cuda done; time: {t2_argmin_errs_exp - t1_argmin_errs_exp} s]")
 
-            t1_reweight = time.time()    
-            tpb = self.cuda_tpb_default
+            t1_reweight = time.time()                
             memory = X_binned.nbytes + yy.nbytes + w.nbytes
             ratio = memory / self.CUDA_MAX_MEMORY_PER_CALL
             if ratio < 1.0:
@@ -318,7 +317,8 @@ class FastRealBoostBins(BaseEstimator, ClassifierMixin):
             n_calls, call_ranges = FastRealBoostBins.prepare_cuda_call_ranges(m, int(np.ceil(ratio)))
             streams = []            
             for _ in range(min(self.cuda_n_streams, n_calls)):
-                streams.append(cuda.stream())            
+                streams.append(cuda.stream())
+            tpb = self.cuda_tpb_default          
             with cuda.pinned(X_binned, yy, w):
                 for i in range(n_calls):
                     stream = streams[i % self.cuda_n_streams]
