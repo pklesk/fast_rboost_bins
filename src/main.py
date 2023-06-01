@@ -25,11 +25,11 @@ np.set_printoptions(linewidth=512)
 
 # main settings
 KIND = "hand"
-S = 5 # parameter "scales" to generete Haar-like features
-P = 5 # parameter "positions" to generete Haar-like features
+S = 6 # parameter "scales" to generete Haar-like features
+P = 6 # parameter "positions" to generete Haar-like features
 AUG = False # data augmentation (0 -> none or 1 -> present)
 KOP = 10 # "kilos of positives " - no. of thousands of positives (positive windows) to generate (in case of synthetic data only; 0 value for real data, meaning 'not applicable')
-NPI = 80 # "negatives per image" - no. of negatives (negative windows) to sample per image (image real or generated synthetically) 
+NPI = 30 # "negatives per image" - no. of negatives (negative windows) to sample per image (image real or generated synthetically) 
 T = 2048 # size of ensemble in FastRealBoostBins (equivalently, no. of boosting rounds when fitting)
 B = 8 # no. of bins
 SEED = 0 # randomization seed
@@ -42,15 +42,15 @@ DEMO_DETECT_IN_VIDEO = False
 
 # cv2 camera settings
 CV2_VIDEO_CAPTURE_CAMERA_INDEX = 0
-CV2_VIDEO_CAPTURE_IS_IT_MSWINDOWS = True
+CV2_VIDEO_CAPTURE_IS_IT_MSWINDOWS = False
 
 # detection procedure settings
 DETECTION_SCALES = 10
-DETECTION_WINDOW_HEIGHT_MIN = 96
-DETECTION_WINDOW_WIDTH_MIN = 96
+DETECTION_WINDOW_HEIGHT_MIN = 64
+DETECTION_WINDOW_WIDTH_MIN = 64
 DETECTION_WINDOW_GROWTH = 1.2
 DETECTION_WINDOW_JUMP = 0.05
-DETECTION_THRESHOLD = 5.0
+DETECTION_THRESHOLD = 6.0
 DETECTION_POSTPROCESS = "avg" # possible values: None, "nms", "avg"
 
 # folders
@@ -1085,13 +1085,12 @@ if __name__ == "__rocs__":
     print("ROCS...")
     
     clfs_settings = [
-                     # {"KIND": "face", "S": 5, "P": 5, "AUG": 0, "KOP": 0, "NPI": 100, "SEED": 0, "T": 1024, "B": 8}                     
-                     # {"KIND": "hand", "S": 5, "P": 5, "AUG": 1, "KOP": 2, "NPI": 20, "SEED": 0, "T": 1024, "B": 8},
-                     # {"KIND": "hand", "S": 5, "P": 5, "AUG": 1, "KOP": 2, "NPI": 50, "SEED": 0, "T": 1024, "B": 8},
-                     # {"KIND": "hand", "S": 5, "P": 5, "AUG": 0, "KOP": 10, "NPI": 50, "SEED": 0, "T": 1024, "B": 8},
-                     {"KIND": "hand", "S": 5, "P": 5, "AUG": 0, "KOP": 10, "NPI": 80, "SEED": 0, "T": 1024, "B": 8},
-                     {"KIND": "hand", "S": 5, "P": 5, "AUG": 0, "KOP": 10, "NPI": 80, "SEED": 0, "T": 2048, "B": 8},
-                     {"KIND": "hand", "S": 5, "P": 5, "AUG": 0, "KOP": 10, "NPI": 80, "SEED": 0, "T": 2048, "B": 16}                  
+                     {"KIND": "face", "S": 5, "P": 5, "AUG": 0, "KOP": 0, "NPI": 100, "SEED": 0, "T": 1024, "B": 8},
+                     {"KIND": "face", "S": 5, "P": 5, "AUG": 0, "KOP": 0, "NPI": 100, "SEED": 0, "T": 2048, "B": 8},
+                     {"KIND": "face", "S": 5, "P": 5, "AUG": 0, "KOP": 0, "NPI": 200, "SEED": 0, "T": 1024, "B": 8}                     
+                     # {"KIND": "hand", "S": 5, "P": 5, "AUG": 0, "KOP": 10, "NPI": 80, "SEED": 0, "T": 1024, "B": 8},
+                     # {"KIND": "hand", "S": 5, "P": 5, "AUG": 0, "KOP": 10, "NPI": 80, "SEED": 0, "T": 2048, "B": 8},
+                     # {"KIND": "hand", "S": 5, "P": 5, "AUG": 0, "KOP": 10, "NPI": 80, "SEED": 0, "T": 2048, "B": 16}                  
                      ]
     
     for s in clfs_settings:
@@ -1108,8 +1107,8 @@ if __name__ == "__rocs__":
         hinds = haar_indexes(S, P)
         hcoords = haar_coords(S, P, hinds)            
         data_suffix = f"{KIND}_n_{n}_S_{S}_P_{P}_AUG_{AUG}_KOP_{KOP}_NPI_{NPI}_SEED_{SEED}"                                      
-        #DATA_NAME = "data_face_n_18225_S_5_P_5_AUG_0_KOP_0_NPI_100_SEED_0.bin"
-        DATA_NAME = "data_hand_n_18225_S_5_P_5_AUG_1_KOP_5_NPI_10_SEED_0.bin"
+        DATA_NAME = "data_face_n_18225_S_5_P_5_AUG_0_KOP_0_NPI_200_SEED_0.bin"
+        #DATA_NAME = "data_hand_n_18225_S_5_P_5_AUG_0_KOP_10_NPI_80_SEED_0.bin"
         [X_train, y_train, X_test, y_test] = unpickle_objects(FOLDER_DATA + DATA_NAME)        
         CLF_NAME = f"clf_frbb_{data_suffix}_T_{T}_B_{B}.bin"            
         print("---")
