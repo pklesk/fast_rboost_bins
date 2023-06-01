@@ -319,7 +319,7 @@ def synthetic_data(folder_backgrounds, folder_targets, hcoords, n, data_augmenta
     print("SYNTHETIC DATA...")
     t1 = time.time()
     relative_min = 0.2 # for both positives and negatives
-    relative_max = 0.7 # for both positives and negatives
+    relative_max = 0.6 # for both positives and negatives
     neg_max_iou = 0.5
     margin_pixels = 4
     np.random.seed(seed)    
