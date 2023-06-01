@@ -24,13 +24,13 @@ np.set_printoptions(linewidth=512)
 
 
 # main settings
-KIND = "hand"
+KIND = "face"
 S = 5 # parameter "scales" to generete Haar-like features
 P = 5 # parameter "positions" to generete Haar-like features
-AUG = False # data augmentation (0 -> none or 1 -> present)
-KOP = 10 # "kilos of positives " - no. of thousands of positives (positive windows) to generate (in case of synthetic data only; 0 value for real data, meaning 'not applicable')
-NPI = 80 # "negatives per image" - no. of negatives (negative windows) to sample per image (image real or generated synthetically) 
-T = 2048 # size of ensemble in FastRealBoostBins (equivalently, no. of boosting rounds when fitting)
+AUG = False # data augmentation
+KOP = 0 # "kilos of positives " - no. of thousands of positives (positive windows) to generate (in case of synthetic data only; 0 value for real data, meaning 'not applicable')
+NPI = 200 # "negatives per image" - no. of negatives (negative windows) to sample per image (image real or generated synthetically) 
+T = 1024 # size of ensemble in FastRealBoostBins (equivalently, no. of boosting rounds when fitting)
 B = 8 # no. of bins
 SEED = 0 # randomization seed
 DEMO_HAAR_FEATURES_ALL = False
@@ -50,7 +50,7 @@ DETECTION_WINDOW_HEIGHT_MIN = 96
 DETECTION_WINDOW_WIDTH_MIN = 96
 DETECTION_WINDOW_GROWTH = 1.2
 DETECTION_WINDOW_JUMP = 0.05
-DETECTION_THRESHOLD = 5.0
+DETECTION_THRESHOLD = 5.5
 DETECTION_POSTPROCESS = "avg" # possible values: None, "nms", "avg"
 
 # folders
@@ -1064,7 +1064,7 @@ if __name__ == "__main__":
         pickle_objects(FOLDER_CLFS + CLF_NAME, [clf])
     
     if (MEASURE_ACCS_OF_MODEL or DEMO_DETECT_IN_VIDEO) and not FIT_OR_REFIT_MODEL:
-        [clf] = unpickle_objects(FOLDER_CLFS + CLF_NAME)        
+        [clf] = unpickle_objects(FOLDER_CLFS + CLF_NAME)
     
     if DEMO_HAAR_FEATURES_SELECTED and clf is not None:
         selected = features_indexes_
