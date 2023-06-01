@@ -35,10 +35,10 @@ B = 8 # no. of bins
 SEED = 0 # randomization seed
 DEMO_HAAR_FEATURES_ALL = False
 DEMO_HAAR_FEATURES_SELECTED = False
-REGENERATE_DATA = True
-FIT_OR_REFIT_MODEL = True
-MEASURE_ACCS_OF_MODEL = True
-DEMO_DETECT_IN_VIDEO = False
+REGENERATE_DATA = False
+FIT_OR_REFIT_MODEL = False
+MEASURE_ACCS_OF_MODEL = False
+DEMO_DETECT_IN_VIDEO = True
 
 # cv2 camera settings
 CV2_VIDEO_CAPTURE_CAMERA_INDEX = 0
@@ -1064,7 +1064,7 @@ if __name__ == "__main__":
         pickle_objects(FOLDER_CLFS + CLF_NAME, [clf])
     
     if (MEASURE_ACCS_OF_MODEL or DEMO_DETECT_IN_VIDEO) and not FIT_OR_REFIT_MODEL:
-        [clf] = unpickle_objects(FOLDER_CLFS + CLF_NAME)        
+        [clf] = unpickle_objects(FOLDER_CLFS + CLF_NAME)
     
     if DEMO_HAAR_FEATURES_SELECTED and clf is not None:
         selected = features_indexes_
