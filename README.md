@@ -12,7 +12,7 @@ The GPU-based predict is computed by a single CUDA kernel.
 We apply suitable reduction patterns to carry out summations and `argmin' operations. For reductions 
 that spread beyond the scope of a single block of threads, we introduce appropriate mutex mechanisms. 
 To test the performance of the predict stage, we make our ensemble classifiers operate as object 
-detectors under heavy computational load (e.g.~over $20$k queries per a video frame using ensembles of size $1024$).
+detectors under heavy computational load (e.g. over $20$k queries per a video frame using ensembles of size $1024$).
 
 
 ## Software description
