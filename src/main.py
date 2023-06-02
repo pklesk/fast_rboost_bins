@@ -36,10 +36,10 @@ B = 8 # no. of bins
 SEED = 0 # randomization seed
 DEMO_HAAR_FEATURES_ALL = False
 DEMO_HAAR_FEATURES_SELECTED = False
-REGENERATE_DATA = True
-FIT_OR_REFIT_MODEL = True
-MEASURE_ACCS_OF_MODEL = True
-DEMO_DETECT_IN_VIDEO = False
+REGENERATE_DATA = False
+FIT_OR_REFIT_MODEL = False
+MEASURE_ACCS_OF_MODEL = False
+DEMO_DETECT_IN_VIDEO = True
 
 # cv2 camera settings
 CV2_VIDEO_CAPTURE_CAMERA_INDEX = 0
@@ -51,7 +51,7 @@ DETECTION_WINDOW_HEIGHT_MIN = 96
 DETECTION_WINDOW_WIDTH_MIN = 96
 DETECTION_WINDOW_GROWTH = 1.2
 DETECTION_WINDOW_JUMP = 0.05
-DETECTION_THRESHOLD = 8.0 
+DETECTION_THRESHOLD = 8.5 
 DETECTION_POSTPROCESS = "avg" # possible values: None, "nms", "avg"
 
 # folders
@@ -654,7 +654,7 @@ if __name__ == "__main__":
             X_train, y_train, X_test, y_test = gendata.fddb_data(FOLDER_DATA_RAW_FDDB, hcoords, n, AUG, NPI, seed=SEED, verbose=False)
         elif KIND == "hand":
             #X_train, y_train, X_test, y_test = gendata.synthetic_data(FOLDER_DATA_RAW_HAND + "backgrounds/", FOLDER_DATA_RAW_HAND + "targets/", hcoords, n, AUG, KOP * 1000, NPI, seed=SEED, verbose=False)                        
-            X_train, y_train, X_test, y_test = gendata.hagrid_data(hcoords, n, NPI, seed=SEED, verbose=True)
+            X_train, y_train, X_test, y_test = gendata.hagrid_data(hcoords, n, NPI, seed=SEED, verbose=False)
         pickle_objects(FOLDER_DATA + DATA_NAME, [X_train, y_train, X_test, y_test])
     
     if FIT_OR_REFIT_MODEL or MEASURE_ACCS_OF_MODEL:
@@ -692,10 +692,7 @@ if __name__ == "__rocs__":
                      #{"KIND": "face", "S": 5, "P": 5, "AUG": 0, "KOP": 0, "NPI": 100, "SEED": 0, "T": 1024, "B": 8},
                      #{"KIND": "face", "S": 5, "P": 5, "AUG": 0, "KOP": 0, "NPI": 100, "SEED": 0, "T": 2048, "B": 8},
                      #{"KIND": "face", "S": 5, "P": 5, "AUG": 0, "KOP": 0, "NPI": 200, "SEED": 0, "T": 1024, "B": 8}                     
-                      {"KIND": "hand", "S": 5, "P": 5, "AUG": 0, "KOP": 10, "NPI": 80, "SEED": 0, "T": 1024, "B": 8},
-                      {"KIND": "hand", "S": 5, "P": 5, "AUG": 0, "KOP": 10, "NPI": 80, "SEED": 0, "T": 2048, "B": 8},
-                      # {"KIND": "hand", "S": 6, "P": 6, "AUG": 0, "KOP": 10, "NPI": 30, "SEED": 0, "T": 1024, "B": 8},
-                      # {"KIND": "hand", "S": 6, "P": 6, "AUG": 0, "KOP": 10, "NPI": 30, "SEED": 0, "T": 2048, "B": 8}                  
+                      {"KIND": "hand", "S": 5, "P": 5, "AUG": 0, "KOP": 0, "NPI": 10, "SEED": 0, "T": 2048, "B": 8}                  
                      ]
     
     for s in clfs_settings:
@@ -713,7 +710,7 @@ if __name__ == "__rocs__":
         hcoords = haar_coords(S, P, hinds)            
         data_suffix = f"{KIND}_n_{n}_S_{S}_P_{P}_AUG_{AUG}_KOP_{KOP}_NPI_{NPI}_SEED_{SEED}"                                      
         #DATA_NAME = "data_face_n_18225_S_5_P_5_AUG_0_KOP_0_NPI_200_SEED_0.bin"
-        DATA_NAME = "data_hand_n_18225_S_5_P_5_AUG_1_KOP_5_NPI_10_SEED_0.bin"
+        DATA_NAME = "data_hand_n_18225_S_5_P_5_AUG_0_KOP_0_NPI_10_SEED_0.bin"
         [X_train, y_train, X_test, y_test] = unpickle_objects(FOLDER_DATA + DATA_NAME)        
         CLF_NAME = f"clf_frbb_{data_suffix}_T_{T}_B_{B}.bin"            
         print("---")
