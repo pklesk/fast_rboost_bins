@@ -15,22 +15,3 @@ We apply suitable reduction patterns to carry out summations and `argmin' operat
 that spread beyond the scope of a single block of threads, we introduce appropriate mutex mechanisms. 
 To test the performance of the predict stage, we make our ensemble classifiers operate as object 
 detectors under heavy computational load (e.g. over 20k queries per a video frame using ensembles of size 1024).
-
-
-## Software description
-TODO
-
-### Contents and high-level functionality
-TODO
-
-### CUDA reductions (for summations and argmin operations)
-TODO
-
-### Mutex mechanisms
-TODO
-
-### GPU-based fit with numba.cuda
-TODO
-
-### Available variants of decision function
-TODO
