@@ -16,9 +16,9 @@ that spread beyond the scope of a single block of threads, we introduce appropri
 To test the performance of the predict stage, we make our ensemble classifiers operate as object 
 detectors under heavy computational load (e.g. over 20k queries per a video frame using ensembles of size 1024).
 
+## License
+This work is licensed under <a rel="license" href="http://creativecommons.org/licenses/by-sa/4.0/">Creative Commons Attribution-ShareAlike 4.0 International License</a>.
+
 ## Acknowledgments and credits
 - [Numba](https://numba.pydata.org) - a high-performance just-in-time Python compiler
 - [HaGRID](https://github.com/hukenovs/hagrid) - HAnd Gesture Recognition Image Dataset (Kapitanov, Makhlyarchuk, Kvanchiani, Nagaev: [arXiv](https://arxiv.org/abs/2206.08219))
-
-## License
-This work is licensed under <a rel="license" href="http://creativecommons.org/licenses/by-sa/4.0/">Creative Commons Attribution-ShareAlike 4.0 International License</a>.
