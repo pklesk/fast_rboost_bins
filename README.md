@@ -18,7 +18,7 @@ detectors under heavy computational load (e.g. over 20k queries per a video fram
 
 ## Acknowledgments and credits
 - [Numba](https://numba.pydata.org/) - a high-performance just-in-time Python compiler
-- [HaGRID](https://github.com/hukenovs/hagrid/) repository with annotated images of hand gestures (Kapitanov, Makhlyarchuk, Kvanchiani, Nagaev: [arXiv](https://arxiv.org/abs/2206.08219))
+- [HaGRID](https://github.com/hukenovs/hagrid/) (HAnd Gesture Recognition Image Dataset) - repository with annotated images of hand gestures (Kapitanov, Makhlyarchuk, Kvanchiani, Nagaev: [arXiv](https://arxiv.org/abs/2206.08219))
 
 ## License
 This work is licensed under <a rel="license" href="http://creativecommons.org/licenses/by-sa/4.0/">Creative Commons Attribution-ShareAlike 4.0 International License</a>.
