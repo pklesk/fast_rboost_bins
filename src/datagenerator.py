@@ -5,7 +5,7 @@ import haar
 import time
 import json
 
-__version__ = "1.0.0"
+__version__ = "0.8.0"
 __author__ = "Przemysław Klęsk"
 __email__ = "pklesk@zut.edu.pl"
 
