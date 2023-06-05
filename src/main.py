@@ -819,7 +819,7 @@ if __name__ == "__main__":
         if KIND == "face":
             X_train, y_train, X_test, y_test = datagenerator.fddb_data_to_haar(hcoords, n, NPI, seed=SEED, verbose=False)
         elif KIND == "hand":                        
-            X_train, y_train, X_test, y_test = datagenerator.hagrid_data(hcoords, n, NPI, seed=SEED, verbose=True)
+            X_train, y_train, X_test, y_test = datagenerator.hagrid_data(hcoords, n, NPI, seed=SEED, verbose=False)
         pickle_objects(FOLDER_DATA + DATA_NAME, [X_train, y_train, X_test, y_test])
     
     if FIT_OR_REFIT_MODEL or MEASURE_ACCS_OF_MODEL:
