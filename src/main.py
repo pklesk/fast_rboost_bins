@@ -18,10 +18,10 @@ __email__ = "pklesk@zut.edu.pl"
 
 
 # main settings
-KIND = "face"
+KIND = "hand"
 S = 5 # parameter "scales" to generete Haar-like features
 P = 5 # parameter "positions" to generete Haar-like features
-NPI = 200 # "negatives per image" - no. of negatives (negative windows) to sample per image (image real or generated synthetically) 
+NPI = 20 # "negatives per image" - no. of negatives (negative windows) to sample per image (image real or generated synthetically) 
 T = 1024 # size of ensemble in FastRealBoostBins (equivalently, no. of boosting rounds when fitting)
 B = 8 # no. of bins
 SEED = 0 # randomization seed
@@ -43,7 +43,7 @@ DETECTION_WINDOW_HEIGHT_MIN = 96
 DETECTION_WINDOW_WIDTH_MIN = 96
 DETECTION_WINDOW_GROWTH = 1.2
 DETECTION_WINDOW_JUMP = 0.05
-DETECTION_THRESHOLD = 5.0 
+DETECTION_THRESHOLD = 6.0 
 DETECTION_POSTPROCESS = "avg" # possible values: None, "nms", "avg"
 
 # folders
@@ -305,7 +305,7 @@ def detect_simple(i, clf, hcoords, n, features_indexes, threshold=0.0, windows=N
     if verbose:
         print(f"[detect_simple: haar_features_multiple_windows done; time: {dt_haar} s]")
     t1_frbb = time.time()    
-    responses = clf.decision_function(X)
+    responses = clf.decision_function_numba_jit(X)
     t2_frbb = time.time()
     dt_frbb = t2_frbb - t1_frbb 
     times["frbb"] = dt_frbb 
@@ -366,7 +366,7 @@ def detect_parallel(i, clf, hcoords, n, features_indexes, threshold=0.0, windows
             job_slice = slice(job_ranges[job_index], job_ranges[job_index + 1])
             job_windows = windows[job_slice]
             X = haar.haar_features_multiple_windows_numba_jit_tf(ii, job_windows, shcoords_multiple_scales, n, features_indexes)
-            job_responses = clf.decision_function(X)         
+            job_responses = clf.decision_function_numba_jit(X)         
             return job_responses 
         workers_results = parallel((delayed(worker)(job_index) for job_index in range(n_calls)))
         responses =  reduce(lambda a, b: np.r_[a, b], [jr for jr in workers_results])
@@ -554,10 +554,12 @@ def postprocess_avg(detections, responses, threshold=0.5):
         r_final.append(r_avg)
     return d_final, r_final
 
-def demo_detect_in_video(clf, hcoords, threshold, computations="cuda", postprocess="avg", n_jobs=8, verbose_loop=True, verbose_detect=False):
+def demo_detect_in_video(clf, hcoords, threshold, computations="cuda", postprocess="avg", n_jobs=8, detector_title=None, verbose_loop=True, verbose_detect=False):
     print("DEMO OF DETECT IN VIDEO...")
     color_detect = (0, 255, 255)
     color_info = (255, 255, 255)
+    font_size = 1.0
+    text_shift = int(font_size * 16)
     gpu_name = gpu_props()["name"]
     features_indexes = clf.features_indexes_
     video = cv2.VideoCapture(CV2_VIDEO_CAPTURE_CAMERA_INDEX + (cv2.CAP_DSHOW if CV2_VIDEO_CAPTURE_IS_IT_MSWINDOWS else 0))
@@ -645,7 +647,7 @@ def demo_detect_in_video(clf, hcoords, threshold, computations="cuda", postproce
             ws = int(np.round(w * w_scale))
             cv2.rectangle(frame, (ks, js), (ks + ws - 1, js + hs - 1), color_detect, draw_thickness)
             if postprocess:
-                cv2.putText(frame, f"{responses[index]:.1f}", (k0, j0 + ws - 2), cv2.FONT_HERSHEY_PLAIN, 1.0, color_detect, draw_thickness)
+                cv2.putText(frame, f"{responses[index]:.1f}", (k0, j0 + ws - 2), cv2.FONT_HERSHEY_PLAIN, font_size, color_detect, draw_thickness)
         normalizer_ma = 1.0 / (1.0 - ma_decay**(n_frames + 1))
         if n_frames > 0:
             fps_disp_ma = ma_decay * fps_disp_ma + (1.0 - ma_decay) * 1.0 / tpf_prev
@@ -653,20 +655,24 @@ def demo_detect_in_video(clf, hcoords, threshold, computations="cuda", postproce
         fps_comps_ma = ma_decay * fps_comps_ma + (1.0 - ma_decay) * 1.0 / (t2_comps - t1_comps)
         fps_comps = fps_comps_ma * normalizer_ma            
         time_comps += t2_comps - t1_comps
-        text_shift = 16
-        cv2.putText(frame, f"FRAME: {n_frames}", (0, 0 + text_shift), cv2.FONT_HERSHEY_PLAIN, 1.0, color_info, 1)        
-        cv2.putText(frame, f"WINDOWS PER FRAME: {windows.shape[0]}", (0, frame_h - 1 - 4 * text_shift), cv2.FONT_HERSHEY_PLAIN, 1.0, color_info, 1)
-        cv2.putText(frame, f"TERMS PER WINDOW: {clf.T_}", (0, frame_h - 1 - 3 * text_shift), cv2.FONT_HERSHEY_PLAIN, 1.0, color_info, 1)
-        cv2.putText(frame, f"GPU: {gpu_name}", (0, frame_h - 1 - 2 * text_shift), cv2.FONT_HERSHEY_PLAIN, 1.0, color_info, 1)
+        cv2.putText(frame, "DEMO: FAST REAL BOOST BINS VIA NUMBA (+HAAR FEATURES)", (0, 0 + 1 * text_shift), cv2.FONT_HERSHEY_PLAIN, font_size, color_info, 2)
+        cv2.putText(frame, f"DETECTOR: {detector_title}", (0, 0 + 2 * text_shift), cv2.FONT_HERSHEY_PLAIN, 1.0, color_info, 1)
+        cv2.putText(frame, f"FRAME: {n_frames}", (0, 0 + 3 * text_shift), cv2.FONT_HERSHEY_PLAIN, 1.0, color_info, 1)
+        cv2.putText(frame, f"WINDOWS PER FRAME: {windows.shape[0]}", (0, frame_h - 1 - 4 * text_shift), cv2.FONT_HERSHEY_PLAIN, font_size, color_info, 1)
+        cv2.putText(frame, f"TERMS PER WINDOW: {clf.T_}", (0, frame_h - 1 - 3 * text_shift), cv2.FONT_HERSHEY_PLAIN, font_size, color_info, 1)
+        computations_str = f"COMPUTATIONS: {computations.upper()}"
+        if computations == "cuda":
+            computations_str += f" [GPU: {gpu_name.upper()}]"
+        cv2.putText(frame, f"{computations_str}", (0, frame_h - 1 - 2 * text_shift), cv2.FONT_HERSHEY_PLAIN, font_size, color_info, 1)
         comps_details = ""
-        if times["haar"] and times["frbb"]:
+        if "haar" in times and "frbb" in times:
             comps_details += f"[HAAR: {times['haar'] * 1000:06.2f} ms"            
             comps_details += f", FRBB: {times['frbb'] * 1000:06.2f} ms]"
             time_comps_haar += times["haar"]
             time_comps_frbb += times["frbb"]
-        cv2.putText(frame, f"FPS (COMPUTATIONS): {fps_comps:.2f} {comps_details}", (0, frame_h - 1 - 1 * text_shift), cv2.FONT_HERSHEY_PLAIN, 1.0, color_info, 1)
-        cv2.putText(frame, f"FPS (DISPLAY): {fps_disp:.2f}", (0, frame_h - 1), cv2.FONT_HERSHEY_PLAIN, 1.0, color_info, 1)                    
-        imshow_name = "DEMO: FAST REAL-BOOST WITH BINS WORKING ON HAAR-LIKE FEATURES [press ESC to quit]"             
+        cv2.putText(frame, f"FPS (COMPUTATIONS): {fps_comps:.2f} {comps_details}", (0, frame_h - 1 - 1 * text_shift), cv2.FONT_HERSHEY_PLAIN, font_size, color_info, 1)
+        cv2.putText(frame, f"FPS (DISPLAY): {fps_disp:.2f}", (0, frame_h - 1), cv2.FONT_HERSHEY_PLAIN, font_size, color_info, 1)                    
+        imshow_name = "FAST REAL BOOST BINS ['esc' to quit]"             
         cv2.imshow(imshow_name, frame)
         cv2.namedWindow(imshow_name)
         if cv2.waitKey(1) & 0xFF == 27: # esc key
@@ -691,10 +697,12 @@ def demo_detect_in_video(clf, hcoords, threshold, computations="cuda", postproce
     avg_fps_disp = n_frames / (t2_loop - t1_loop)
     print(f"DEMO OF DETECT IN VIDEO DONE. [avg fps (computations): {avg_fps_comps:.2f}, avg time haar: {avg_time_comps_haar * 1000:.2f} ms, avg time frbb: {avg_time_comps_frbb * 1000:.2f} ms; avg fps (display): {avg_fps_disp:.2f}]")
         
-def demo_detect_in_video_multiple_clfs(clfs, hcoords, thresholds, postprocess="avg", verbose_loop=True, verbose_detect=False):
+def demo_detect_in_video_multiple_clfs(clfs, hcoords, thresholds, postprocess="avg", detector_title=None, verbose_loop=True, verbose_detect=False):
     print("DEMO OF DETECT IN VIDEO  (MULTIPLE CLFS)...")
     colors_detect = [(0, 255, 255), (255, 255, 0), (255, 0, 255), (255, 0, 0), (0, 0, 255), (255, 0, 0)]
     color_info = (255, 255, 255)
+    font_size = 1.0
+    text_shift = int(font_size * 16)        
     gpu_name = gpu_props()["name"]
     video = cv2.VideoCapture(CV2_VIDEO_CAPTURE_CAMERA_INDEX + (cv2.CAP_DSHOW if CV2_VIDEO_CAPTURE_IS_IT_MSWINDOWS else 0))
     video.set(cv2.CAP_PROP_FRAME_WIDTH, 640)
@@ -772,7 +780,7 @@ def demo_detect_in_video_multiple_clfs(clfs, hcoords, thresholds, postprocess="a
             print(f"[preprocessing done; time: {t2_preprocess - t1_preprocess} s; i_gray.shape: {i_gray.shape}]")
             print(f"[integral image done; time: {t2_ii - t1_ii} s]")            
             print(f"[windows per frame: {windows.shape[0]}]")
-            print(f"[terms per window for particular clfs: {[clf.T_ for clf in clfs]}]")        
+            print(f"[terms per window per clfs: {[clf.T_ for clf in clfs]}]")        
         for i in range(len(clfs)):
             t1_comps = time.time()  
             detections, responses, times = detect_cuda_within_multiple_clfs(ii, clfs[i], hcoords, features_indexes[i], thresholds[i], windows, shcoords_multiple_scales[i], 
@@ -798,7 +806,7 @@ def demo_detect_in_video_multiple_clfs(clfs, hcoords, thresholds, postprocess="a
                 ws = int(np.round(w * w_scale))
                 cv2.rectangle(frame, (ks, js), (ks + ws - 1, js + hs - 1), colors_detect[i], draw_thickness)
                 if postprocess:
-                    cv2.putText(frame, f"{responses[index]:.1f}", (k0, j0 + ws - 2), cv2.FONT_HERSHEY_PLAIN, 1.0, colors_detect[i], draw_thickness)            
+                    cv2.putText(frame, f"{responses[index]:.1f}", (k0, j0 + ws - 2), cv2.FONT_HERSHEY_PLAIN, font_size, colors_detect[i], draw_thickness)            
         normalizer_ma = 1.0 / (1.0 - ma_decay**(n_frames + 1))
         if n_frames > 0:
             fps_disp_ma = ma_decay * fps_disp_ma + (1.0 - ma_decay) * 1.0 / tpf_prev
@@ -806,20 +814,23 @@ def demo_detect_in_video_multiple_clfs(clfs, hcoords, thresholds, postprocess="a
         fps_comps_ma = ma_decay * fps_comps_ma + (1.0 - ma_decay) * 1.0 / tpf_comps
         fps_comps = fps_comps_ma * normalizer_ma
         time_comps += tpf_comps
-        text_shift = 16
-        cv2.putText(frame, f"FRAME: {n_frames}", (0, 0 + text_shift), cv2.FONT_HERSHEY_PLAIN, 1.0, color_info, 1)        
-        cv2.putText(frame, f"WINDOWS PER FRAME: {windows.shape[0]}", (0, frame_h - 1 - 4 * text_shift), cv2.FONT_HERSHEY_PLAIN, 1.0, color_info, 1)
-        cv2.putText(frame, f"TERMS PER WINDOW FOR ALL CLFS: {[clf.T_ for clf in clfs]}", (0, frame_h - 1 - 3 * text_shift), cv2.FONT_HERSHEY_PLAIN, 1.0, color_info, 1)
-        cv2.putText(frame, f"GPU: {gpu_name}", (0, frame_h - 1 - 2 * text_shift), cv2.FONT_HERSHEY_PLAIN, 1.0, color_info, 1)
+        cv2.putText(frame, "DEMO: FAST REAL BOOST BINS VIA NUMBA (+HAAR FEATURES)", (0, 0 + 1 * text_shift), cv2.FONT_HERSHEY_PLAIN, font_size, color_info, 2)
+        cv2.putText(frame, f"DETECTOR: {detector_title}", (0, 0 + 2 * text_shift), cv2.FONT_HERSHEY_PLAIN, 1.0, color_info, 1)
+        cv2.putText(frame, f"FRAME: {n_frames}", (0, 0 + 3 * text_shift), cv2.FONT_HERSHEY_PLAIN, font_size, color_info, 1)        
+        cv2.putText(frame, f"WINDOWS PER FRAME: {windows.shape[0]}", (0, frame_h - 1 - 4 * text_shift), cv2.FONT_HERSHEY_PLAIN, font_size, color_info, 1)
+        cv2.putText(frame, f"TERMS PER WINDOW PER CLFS: {[clf.T_ for clf in clfs]}", (0, frame_h - 1 - 3 * text_shift), cv2.FONT_HERSHEY_PLAIN, font_size, color_info, 1)
+        computations_str = f"COMPUTATIONS: CUDA"
+        computations_str += f" [GPU: {gpu_name.upper()}]"
+        cv2.putText(frame, f"{computations_str}", (0, frame_h - 1 - 2 * text_shift), cv2.FONT_HERSHEY_PLAIN, font_size, color_info, 1)
         comps_details = ""
         if times_haar > 0.0 and times_frbb > 0.0:
             comps_details += f"[HAAR: {times_haar * 1000:06.2f} ms"            
             comps_details += f", FRBB: {times_frbb * 1000:06.2f} ms]"
             time_comps_haar += times_haar
             time_comps_frbb += times_frbb
-        cv2.putText(frame, f"FPS (COMPUTATIONS): {fps_comps:.2f} {comps_details}", (0, frame_h - 1 - 1 * text_shift), cv2.FONT_HERSHEY_PLAIN, 1.0, color_info, 1)
-        cv2.putText(frame, f"FPS (DISPLAY): {fps_disp:.2f}", (0, frame_h - 1), cv2.FONT_HERSHEY_PLAIN, 1.0, color_info, 1)                    
-        imshow_name = "DEMO: FAST REAL-BOOST WITH BINS WORKING ON HAAR-LIKE FEATURES [press ESC to quit]"             
+        cv2.putText(frame, f"FPS (COMPUTATIONS): {fps_comps:.2f} {comps_details}", (0, frame_h - 1 - 1 * text_shift), cv2.FONT_HERSHEY_PLAIN, font_size, color_info, 1)
+        cv2.putText(frame, f"FPS (DISPLAY): {fps_disp:.2f}", (0, frame_h - 1), cv2.FONT_HERSHEY_PLAIN, font_size, color_info, 1)                    
+        imshow_name = "FAST REAL BOOST BINS ['esc' to quit]"             
         cv2.imshow(imshow_name, frame)
         cv2.namedWindow(imshow_name)
         if cv2.waitKey(1) & 0xFF == 27: # esc key
@@ -890,14 +901,15 @@ if __name__ == "__main__":
     if MEASURE_ACCS_OF_MODEL:
         measure_accs_of_model(clf, X_train, y_train, X_test, y_test)        
         
-    if DEMO_DETECT_IN_VIDEO:
-        demo_detect_in_video(clf, hcoords, threshold=DETECTION_THRESHOLD, computations="cuda", postprocess=DETECTION_POSTPROCESS, n_jobs=8, verbose_loop=True, verbose_detect=True)
+    if DEMO_DETECT_IN_VIDEO:            
+        demo_detect_in_video(clf, hcoords, threshold=DETECTION_THRESHOLD, computations="cuda", postprocess=DETECTION_POSTPROCESS, n_jobs=8, detector_title=KIND.upper(), verbose_loop=True, verbose_detect=True)
         
     if DEMO_DETECT_IN_VIDEO_MULTIPLE_CLFS:        
         clfs_names = ["clf_frbb_face_n_18225_S_5_P_5_NPI_200_SEED_0_T_1024_B_8.bin", "clf_frbb_hand_n_18225_S_5_P_5_NPI_10_SEED_0_T_1024_B_8.bin"]
         clfs = [unpickle_objects(FOLDER_CLFS + clf_name)[0] for clf_name in clfs_names]
-        thresholds = [5.0, 7.0] # TODO make thresholds within clfs
-        demo_detect_in_video_multiple_clfs(clfs, hcoords, thresholds, postprocess=DETECTION_POSTPROCESS, verbose_loop=True, verbose_detect=True)
+        thresholds = [7.5, 7.5] # TODO make thresholds within clfs
+        detector_title = "face, hand"
+        demo_detect_in_video_multiple_clfs(clfs, hcoords, thresholds, postprocess=DETECTION_POSTPROCESS, detector_title=detector_title.upper(), verbose_loop=True, verbose_detect=True)
 
     print("ALL DONE.")
 
