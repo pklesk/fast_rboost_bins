@@ -111,7 +111,7 @@ def fddb_data_to_haar_single_fold(fddb_root, fold_name, hcoords, n, negs_per_img
             li += 1
             r_major, _, _, center_x, center_y, _ = list(map(float, line.split()))
             h = int(1.5 * r_major)
-            w = h                
+            w = h # forcing square window
             j0 = int(center_y - 0.5 * h) 
             k0 = int(center_x - 0.5 * w)
             target_coords = np.array([j0, k0, j0 + h - 1, k0 + w - 1])
@@ -176,13 +176,13 @@ def fddb_data_to_haar_single_fold(fddb_root, fold_name, hcoords, n, negs_per_img
     y = np.stack(y_list)
     return X, y
 
-def hagrid_data(hcoords, n, n_negs_per_img, train_ratio=0.75, seed=0, verbose=False):
+def hagrid_data(hcoords, n, negs_per_img, train_ratio=0.75, seed=0, verbose=False):
     print(f"HAGRID DATA...")
-    t1 = time.time()    
-    relative_min = 0.1 # when sampling negatives
-    relative_max = 0.35 # when sampling negatives
-    relative_spread = relative_max - relative_min
+    t1 = time.time()        
+    neg_rel_min = 0.1
+    neg_rel_max = 0.5    
     neg_max_iou = 0.5
+    pos_rel_min = 0.075
     np.random.seed(seed)     
     f = open(FOLDER_DATA_RAW_HAGRID + "palm.json", "r") # only "palm gesture" hands take part in this material
     data_dict = json.load(f)
@@ -196,7 +196,7 @@ def hagrid_data(hcoords, n, n_negs_per_img, train_ratio=0.75, seed=0, verbose=Fa
         log_line = f"[{index + 1}/{len(keys)}: {file_name}]"
         print(log_line)
         i0_original = cv2.imread(file_name)        
-        i0 = resize_image(i0_original)
+        i0 = haar.resize_image(i0_original)
         H, W, _ = i0.shape
         i = cv2.cvtColor(i0, cv2.COLOR_BGR2GRAY)               
         ii = haar.integral_image_numba_jit(i)
@@ -223,7 +223,7 @@ def hagrid_data(hcoords, n, n_negs_per_img, train_ratio=0.75, seed=0, verbose=Fa
                 if verbose:
                     print(f"[window {target_coords} out of bounds -> ignored]")
                 continue
-            if (h / H < 0.075): # min relative size of positive window (smaller may lead to division by zero when white regions in haar features have no area)
+            if (h / H < pos_rel_min): # min relative size of positive window (smaller may lead to division by zero when white regions in haar features have no area)
                 if verbose:
                     print(f"[window {target_coords} too small -> ignored]")
                 continue                            
@@ -234,15 +234,15 @@ def hagrid_data(hcoords, n, n_negs_per_img, train_ratio=0.75, seed=0, verbose=Fa
                 print(f"[positive window {target_coords} accepted; features: {feats}]")
                 p1 = (k0, j0)
                 p2 = (k0 + w - 1, j0 + h - 1)    
-                cv2.rectangle(i0, p1, p2, (0, 0, 255), 1)                    
+                cv2.rectangle(i0, p1, p2, (0, 0, 255), 1)               
                 cv2.imshow("HAGRID IMAGE [press ESC to continue]", i0)
                 cv2.waitKey(0)
             X_list.append(feats)
             y_list.append(1)
-        for _ in range(n_negs_per_img):            
+        for _ in range(negs_per_img):            
             while True:
-                h = int((np.random.random() * relative_spread + relative_min) * i.shape[0])
-                w = h
+                h = int(np.round(np.random.uniform(neg_rel_min, neg_rel_max) * i.shape[0]))
+                w = h # forcing square window
                 j0 = int(np.random.random() * (H - h + 1))
                 k0 = int(np.random.random() * (W - w + 1))                 
                 patch = np.array([j0, k0, j0 + h - 1, k0 + w - 1])

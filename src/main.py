@@ -18,19 +18,19 @@ __email__ = "pklesk@zut.edu.pl"
 
 
 # main settings
-KIND = "face"
+KIND = "hand"
 S = 5 # parameter "scales" to generete Haar-like features
 P = 5 # parameter "positions" to generete Haar-like features
-NPI = 200 # "negatives per image" - no. of negatives (negative windows) to sample per image (image real or generated synthetically) 
-T = 1024 # size of ensemble in FastRealBoostBins (equivalently, no. of boosting rounds when fitting)
+NPI = 20 # "negatives per image" - no. of negatives (negative windows) to sample per image (image real or generated synthetically) 
+T = 2048 # size of ensemble in FastRealBoostBins (equivalently, no. of boosting rounds when fitting)
 B = 8 # no. of bins
 SEED = 0 # randomization seed
 DEMO_HAAR_FEATURES_ALL = False
 DEMO_HAAR_FEATURES_SELECTED = False
-REGENERATE_DATA = False
-FIT_OR_REFIT_MODEL = False
-MEASURE_ACCS_OF_MODEL = False
-DEMO_DETECT_IN_VIDEO = True
+REGENERATE_DATA = True
+FIT_OR_REFIT_MODEL = True
+MEASURE_ACCS_OF_MODEL = True
+DEMO_DETECT_IN_VIDEO = False
 
 # cv2 camera settings
 CV2_VIDEO_CAPTURE_CAMERA_INDEX = 0
@@ -38,8 +38,8 @@ CV2_VIDEO_CAPTURE_IS_IT_MSWINDOWS = False
 
 # detection procedure settings
 DETECTION_SCALES = 10
-DETECTION_WINDOW_HEIGHT_MIN = 96
-DETECTION_WINDOW_WIDTH_MIN = 96
+DETECTION_WINDOW_HEIGHT_MIN = 64
+DETECTION_WINDOW_WIDTH_MIN = 64
 DETECTION_WINDOW_GROWTH = 1.2
 DETECTION_WINDOW_JUMP = 0.05
 DETECTION_THRESHOLD = 7.0 
@@ -817,9 +817,9 @@ if __name__ == "__main__":
     
     if REGENERATE_DATA:
         if KIND == "face":
-            X_train, y_train, X_test, y_test = datagenerator.fddb_data_to_haar(hcoords, n, NPI, seed=SEED, verbose=True)
+            X_train, y_train, X_test, y_test = datagenerator.fddb_data_to_haar(hcoords, n, NPI, seed=SEED, verbose=False)
         elif KIND == "hand":                        
-            X_train, y_train, X_test, y_test = datagenerator.hagrid_data(hcoords, n, NPI, seed=SEED, verbose=False)
+            X_train, y_train, X_test, y_test = datagenerator.hagrid_data(hcoords, n, NPI, seed=SEED, verbose=True)
         pickle_objects(FOLDER_DATA + DATA_NAME, [X_train, y_train, X_test, y_test])
     
     if FIT_OR_REFIT_MODEL or MEASURE_ACCS_OF_MODEL:
@@ -846,7 +846,7 @@ if __name__ == "__main__":
         #demo_detect_in_video(clf, hcoords, threshold=DETECTION_THRESHOLD, computations="cuda", postprocess=DETECTION_POSTPROCESS, n_jobs=8, verbose_loop=True, verbose_detect=True)
         clfs_names = ["clf_frbb_face_n_18225_S_5_P_5_NPI_200_SEED_0_T_1024_B_8.bin", "clf_frbb_hand_n_18225_S_5_P_5_NPI_10_SEED_0_T_2048_B_8.bin"]
         clfs = [unpickle_objects(FOLDER_CLFS + clf_name)[0] for clf_name in clfs_names]
-        thresholds = [7.0, 9.0]
+        thresholds = [7.0, 10.0]
         demo_detect_in_video_multiple_clfs(clfs, hcoords, thresholds, computations="cuda", postprocess=DETECTION_POSTPROCESS, n_jobs=8, verbose_loop=True, verbose_detect=False)
 
     print("ALL DONE.")
