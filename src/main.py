@@ -242,6 +242,31 @@ def prepare_detection_windows_and_scaled_haar_coords(image_height, image_width, 
     shcoords_multiple_scales = np.array(shcoords_multiple_scales) 
     return windows, shcoords_multiple_scales
 
+def prepare_detection_windows(image_height, image_width):
+    windows = []
+    for s in range(DETECTION_SCALES):
+        h = int(round(DETECTION_WINDOW_HEIGHT_MIN * DETECTION_WINDOW_GROWTH**s))
+        w = int(round(DETECTION_WINDOW_WIDTH_MIN * DETECTION_WINDOW_GROWTH**s))        
+        dj = int(round(h * DETECTION_WINDOW_JUMP))
+        dk = int(round(w * DETECTION_WINDOW_JUMP))     
+        j_start = ((image_height - h) % dj) // 2
+        k_start = ((image_width - w) % dk) // 2
+        for j0 in range(j_start, image_height - h + 1, dj):
+            for k0 in range(k_start, image_width - w + 1, dk):
+                windows.append(np.array([s, j0, k0, h, w], dtype=np.int16))
+    windows = np.array(windows)  
+    return windows
+
+def prepare_scaled_haar_coords(hcoords, features_indexes):
+    hcoords_subset = hcoords[features_indexes]
+    shcoords_multiple_scales = []
+    for s in range(DETECTION_SCALES):
+        h = int(round(DETECTION_WINDOW_HEIGHT_MIN * DETECTION_WINDOW_GROWTH**s))
+        w = int(round(DETECTION_WINDOW_WIDTH_MIN * DETECTION_WINDOW_GROWTH**s))        
+        shcoords_multiple_scales.append((np.array([h, w, h, w]) * hcoords_subset).astype(np.int16))
+    shcoords_multiple_scales = np.array(shcoords_multiple_scales) 
+    return shcoords_multiple_scales
+
 def detect_simple(i, clf, hcoords, n, features_indexes, threshold=0.0, windows=None, shcoords_multiple_scales=None, verbose=False):
     if verbose:
         print("[detect_simple...]")
@@ -299,7 +324,7 @@ def detect_simple(i, clf, hcoords, n, features_indexes, threshold=0.0, windows=N
         print(f"[detect_simple done; time: {t2 - t1} s]")                    
     return detections, responses, times
 
-def detect_parallel(i, clf, hcoords, n, features_indexes, threshold=0.0, windows=None, shcoords_multiple_scales=None, n_jobs=4, verbose=False):
+def detect_parallel(i, clf, hcoords, n, features_indexes, threshold=0.0, windows=None, shcoords_multiple_scales=None, n_jobs=8, verbose=False):
     if verbose:
         print("[detect_parallel...]")
     t1 = time.time()
@@ -486,7 +511,7 @@ def postprocess_avg(detections, responses, threshold=0.5):
         r_final.append(r_avg)
     return d_final, r_final
 
-def demo_detect_in_video(clf, hcoords, threshold, computations="simple", postprocess="avg", n_jobs=4, verbose_loop=True, verbose_detect=False):
+def demo_detect_in_video(clf, hcoords, threshold, computations="cuda", postprocess="avg", n_jobs=8, verbose_loop=True, verbose_detect=False):
     print("DEMO OF DETECT IN VIDEO...")
     gpu_name = gpu_props()["name"]
     features_indexes = clf.features_indexes_
@@ -620,6 +645,155 @@ def demo_detect_in_video(clf, hcoords, threshold, computations="simple", postpro
     avg_fps_disp = n_frames / (t2_loop - t1_loop)
     print(f"DEMO OF DETECT IN VIDEO DONE. [avg fps (computations): {avg_fps_comps:.2f}, avg time haar: {avg_time_comps_haar * 1000:.2f} ms, avg time frbb: {avg_time_comps_frbb * 1000:.2f} ms; avg fps (display): {avg_fps_disp:.2f}]")
         
+def demo_detect_in_video_multiple_clfs(clfs, hcoords, thresholds, computations="cuda", postprocess="avg", n_jobs=8, verbose_loop=True, verbose_detect=False):
+    print("DEMO OF DETECT IN VIDEO...")
+    colors = [(0, 0, 255), (255, 0, 0), (0, 255, 0)] # TODO longer palette
+    gpu_name = gpu_props()["name"]
+    video = cv2.VideoCapture(CV2_VIDEO_CAPTURE_CAMERA_INDEX + (cv2.CAP_DSHOW if CV2_VIDEO_CAPTURE_IS_IT_MSWINDOWS else 0))
+    video.set(cv2.CAP_PROP_FRAME_WIDTH, 640)
+    video.set(cv2.CAP_PROP_FRAME_HEIGHT, 480)
+    video.set(cv2.CAP_PROP_FPS, 30)    
+    _, frame = video.read()
+    frame_h, frame_w, _ = frame.shape
+    resized_height = haar.HEIGHT    
+    resized_width = int(np.round(frame.shape[1] / frame.shape[0] * resized_height))
+    
+    windows = prepare_detection_windows(resized_height, resized_width)    
+    shcoords_multiple_scales = []
+    features_indexes = []
+    for clf in clfs:
+        features_indexes.append(clf.features_indexes_)
+        shcoords_multiple_scales.append(prepare_scaled_haar_coords(hcoords, clf.features_indexes_))
+            
+    print(f"[frame shape: {frame.shape}]")
+    print(f"[windows per frame: {windows.shape[0]}]")
+    print(f"[terms per window: {clf.T_}]")
+    print(f"[about to start a camera...]")
+    h_scale = frame_h / resized_height
+    w_scale = frame_w / resized_width 
+    n_frames = 0
+    ma_decay = 0.9
+    fps_disp_ma = 0.0    
+    fps_disp = 0.0
+    fps_comps_ma = 0.0    
+    fps_comps = 0.0   
+    draw_thickness = 1 if postprocess == None else 2
+    # device side arrays in case of cuda method
+    dev_windows = None 
+    dev_shcoords_multiple_scales = []    
+    dev_X_selected = []
+    dev_mins_selected = []
+    dev_maxes_selected = []
+    dev_logits = []
+    dev_responses = []
+    if computations == "cuda":
+        dev_windows = cuda.to_device(windows)
+        for i, clf in enumerate(clfs):
+            m, T = windows.shape[0], features_indexes[i].size        
+            dev_shcoords_multiple_scales.append(cuda.to_device(shcoords_multiple_scales[i]))        
+            dev_X_selected.append(cuda.device_array((m, T), dtype=np.int16))
+            dev_mins_selected.append(cuda.to_device(clf.mins_selected_))
+            dev_maxes_selected.append(cuda.to_device(clf.maxes_selected_))
+            dev_logits.append(cuda.to_device(clf.logits_))
+            dev_responses.append(cuda.device_array(m, dtype=np.float32))
+    tpf_prev = 0.0
+    time_comps = 0.0
+    time_comps_haar = 0.0
+    time_comps_frbb = 0.0
+    t1_loop = time.time()
+    while(True):
+        t1 = time.time()
+        if verbose_loop:
+            print(f"----------------------------------------------------------------")
+            print(f"[frame: {n_frames}]")        
+        t1_read = time.time()
+        _, frame = video.read()
+        t2_read = time.time()
+        t1_flip = time.time()
+        frame = cv2.flip(frame, 1)
+        t2_flip = time.time()        
+        tpf_comps = 0.0
+        tpf_post = 0.0
+        times_haar = 0.0
+        times_frbb = 0.0
+        for i in range(len(clfs)):
+            t1_comps = time.time()        
+            if computations == "simple":
+                detections, responses, times = detect_simple(frame, clfs[i], hcoords, n, features_indexes[i], thresholds[i], windows, shcoords_multiple_scales[i], verbose=verbose_detect)
+            elif computations == "parallel":
+                detections, responses, times = detect_parallel(frame, clfs[i], hcoords, n, features_indexes[i], thresholds[i], windows, shcoords_multiple_scales[i], n_jobs=n_jobs, verbose=verbose_detect)        
+            elif computations == "cuda":
+                detections, responses, times = detect_cuda(frame, clfs[i], hcoords, features_indexes[i], thresholds[i], windows, shcoords_multiple_scales[i], 
+                                                           dev_windows, dev_shcoords_multiple_scales[i], dev_X_selected[i], dev_mins_selected[i], dev_maxes_selected[i], dev_logits[i], dev_responses[i], 
+                                                           verbose=verbose_detect)
+            t2_comps = time.time()
+            tpf_comps += t2_comps - t1_comps            
+            t1_post = time.time()
+            if postprocess is not None:
+                if postprocess == "nms":
+                    detections, responses = postprocess_nms(detections, responses, 0.25)
+                if postprocess == "avg":
+                    detections, responses = postprocess_avg(detections, responses, 0.25)
+            t2_post = time.time()
+            tpf_post += t2_post - t1_post
+            if times["haar"] and times["frbb"]:
+                times_haar += times["haar"]
+                times_frbb += times["frbb"] 
+            for index, (j0, k0, h, w) in enumerate(detections):
+                js = int(np.round(j0 * h_scale))
+                ks = int(np.round(k0 * w_scale))
+                hs = int(np.round(h * h_scale))
+                ws = int(np.round(w * w_scale))
+                cv2.rectangle(frame, (ks, js), (ks + ws - 1, js + hs - 1), colors[i], draw_thickness)
+                if postprocess:
+                    cv2.putText(frame, f"{responses[index]:.1f}", (k0, j0 + ws - 2), cv2.FONT_HERSHEY_PLAIN, 1.0, colors[i], draw_thickness)            
+        normalizer_ma = 1.0 / (1.0 - ma_decay**(n_frames + 1))
+        if n_frames > 0:
+            fps_disp_ma = ma_decay * fps_disp_ma + (1.0 - ma_decay) * 1.0 / tpf_prev
+            fps_disp = fps_disp_ma * normalizer_ma
+        fps_comps_ma = ma_decay * fps_comps_ma + (1.0 - ma_decay) * 1.0 / tpf_comps
+        fps_comps = fps_comps_ma * normalizer_ma
+        time_comps += tpf_comps
+        text_shift = 16
+        cv2.putText(frame, f"FRAME: {n_frames}", (0, 0 + text_shift), cv2.FONT_HERSHEY_PLAIN, 1.0, (255, 255, 255), 1)        
+        cv2.putText(frame, f"WINDOWS PER FRAME: {windows.shape[0]}", (0, frame_h - 1 - 4 * text_shift), cv2.FONT_HERSHEY_PLAIN, 1.0, (255, 255, 255), 1)
+        cv2.putText(frame, f"TERMS PER WINDOW: {clf.T_}", (0, frame_h - 1 - 3 * text_shift), cv2.FONT_HERSHEY_PLAIN, 1.0, (255, 255, 255), 1)
+        cv2.putText(frame, f"GPU: {gpu_name}", (0, frame_h - 1 - 2 * text_shift), cv2.FONT_HERSHEY_PLAIN, 1.0, (255, 255, 255), 1)
+        comps_details = ""
+        if times_haar > 0.0 and times_frbb > 0.0:
+            comps_details += f"[HAAR: {times_haar * 1000:06.2f} ms"            
+            comps_details += f", FRBB: {times_frbb * 1000:06.2f} ms]"
+            time_comps_haar += times_haar
+            time_comps_frbb += times_frbb
+        cv2.putText(frame, f"FPS (COMPUTATIONS): {fps_comps:.2f} {comps_details}", (0, frame_h - 1 - 1 * text_shift), cv2.FONT_HERSHEY_PLAIN, 1.0, (255, 255, 255), 1)
+        cv2.putText(frame, f"FPS (DISPLAY): {fps_disp:.2f}", (0, frame_h - 1), cv2.FONT_HERSHEY_PLAIN, 1.0, (255, 255, 255), 1)                    
+        imshow_name = "DEMO: FAST REAL-BOOST WITH BINS WORKING ON HAAR-LIKE FEATURES [press ESC to quit]"             
+        cv2.imshow(imshow_name, frame)
+        cv2.namedWindow(imshow_name)
+        if cv2.waitKey(1) & 0xFF == 27: # esc key
+            break
+        n_frames += 1
+        if verbose_loop:
+            print(f"[read time: {t2_read - t1_read} s]")
+            print(f"[flip time: {t2_flip - t1_flip} s]")
+            print(f"[windows per frame: {windows.shape[0]}]")
+            print(f"[terms per window for all clfs: {[clf.T_ for clf in clfs]}]")
+            print(f"[computations time: {tpf_comps} s]")
+            print(f"[postprocess time: {tpf_post} s]")
+            print(f"[fps (computations): {fps_comps:.2f}]")
+            print(f"[fps (display): {fps_disp:.2f}]")
+            print(f"[detections in this frame: {len(detections)}]")           
+        t2 = time.time()
+        tpf_prev = t2 - t1        
+    t2_loop = time.time()
+    cv2.destroyAllWindows()
+    video.release()    
+    avg_fps_comps = n_frames / time_comps
+    avg_time_comps_haar = time_comps_haar / n_frames
+    avg_time_comps_frbb = time_comps_frbb / n_frames
+    avg_fps_disp = n_frames / (t2_loop - t1_loop)
+    print(f"DEMO OF DETECT IN VIDEO DONE. [avg fps (computations): {avg_fps_comps:.2f}, avg time haar: {avg_time_comps_haar * 1000:.2f} ms, avg time frbb: {avg_time_comps_frbb * 1000:.2f} ms; avg fps (display): {avg_fps_disp:.2f}]")
+
         
 # ----------------------------------------------------------------------------------------------------------------------------------------------------------------
 # MAIN
@@ -669,7 +843,11 @@ if __name__ == "__main__":
         measure_accs_of_model(clf, X_train, y_train, X_test, y_test)        
     
     if DEMO_DETECT_IN_VIDEO:
-        demo_detect_in_video(clf, hcoords, threshold=DETECTION_THRESHOLD, computations="cuda", postprocess=DETECTION_POSTPROCESS, n_jobs=8, verbose_loop=True, verbose_detect=True)
+        #demo_detect_in_video(clf, hcoords, threshold=DETECTION_THRESHOLD, computations="cuda", postprocess=DETECTION_POSTPROCESS, n_jobs=8, verbose_loop=True, verbose_detect=True)
+        clfs_names = ["clf_frbb_face_n_18225_S_5_P_5_NPI_200_SEED_0_T_1024_B_8.bin", "clf_frbb_hand_n_18225_S_5_P_5_NPI_10_SEED_0_T_1024_B_8.bin"]
+        clfs = [unpickle_objects(FOLDER_CLFS + clf_name)[0] for clf_name in clfs_names]
+        thresholds = [7.0, 6.0]
+        demo_detect_in_video_multiple_clfs(clfs, hcoords, thresholds, computations="cuda", postprocess=DETECTION_POSTPROCESS, n_jobs=8, verbose_loop=True, verbose_detect=False)
 
     print("ALL DONE.")
     
