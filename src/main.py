@@ -1,37 +1,28 @@
 import sys
-import os
 import numpy as np
 from frbb import FastRealBoostBins
-from numba import cuda, jit
-from numba import void, int8, int16, int32, float32, uint8
-from numba.core.errors import NumbaPerformanceWarning
+from numba import cuda
 import cv2
-from haar import *
+import haar
+import datagenerator
 import time
 import pickle
 from joblib import Parallel, delayed
 from functools import reduce
-import warnings
 from sklearn.metrics import roc_curve
 from matplotlib import pyplot as plt
-import gendata
 
-__version__ = "1.0.0"
+__version__ = "0.8.0"
 __author__ = "Przemysław Klęsk"
 __email__ = "pklesk@zut.edu.pl"
 
-warnings.simplefilter("ignore", category=NumbaPerformanceWarning)
-np.set_printoptions(linewidth=512)
-
 
 # main settings
-KIND = "hand"
+KIND = "face"
 S = 5 # parameter "scales" to generete Haar-like features
 P = 5 # parameter "positions" to generete Haar-like features
-AUG = 0 # data augmentation (0 -> none or 1 -> present)
-KOP = 0 # "kilos of positives " - no. of thousands of positives (positive windows) to generate (in case of synthetic data only; 0 value for real data, meaning 'not applicable')
-NPI = 10 # "negatives per image" - no. of negatives (negative windows) to sample per image (image real or generated synthetically) 
-T = 2048 # size of ensemble in FastRealBoostBins (equivalently, no. of boosting rounds when fitting)
+NPI = 200 # "negatives per image" - no. of negatives (negative windows) to sample per image (image real or generated synthetically) 
+T = 1024 # size of ensemble in FastRealBoostBins (equivalently, no. of boosting rounds when fitting)
 B = 8 # no. of bins
 SEED = 0 # randomization seed
 DEMO_HAAR_FEATURES_ALL = False
@@ -43,7 +34,7 @@ DEMO_DETECT_IN_VIDEO = True
 
 # cv2 camera settings
 CV2_VIDEO_CAPTURE_CAMERA_INDEX = 0
-CV2_VIDEO_CAPTURE_IS_IT_MSWINDOWS = False
+CV2_VIDEO_CAPTURE_IS_IT_MSWINDOWS = True
 
 # detection procedure settings
 DETECTION_SCALES = 10
@@ -51,7 +42,7 @@ DETECTION_WINDOW_HEIGHT_MIN = 96
 DETECTION_WINDOW_WIDTH_MIN = 96
 DETECTION_WINDOW_GROWTH = 1.2
 DETECTION_WINDOW_JUMP = 0.05
-DETECTION_THRESHOLD = 8.2
+DETECTION_THRESHOLD = 7.0 
 DETECTION_POSTPROCESS = "avg" # possible values: None, "nms", "avg"
 
 # folders
@@ -164,6 +155,27 @@ def measure_accs_of_model(clf, X_train, y_train, X_test, y_test):
     print(f"[test far: {far_test}; data shape: {X_test_neg.shape}, time: {t2 - t1} s]")
     t2_accs = time.time()
     print("MEASURE ACCS DONE. [time: " + str(t2_accs - t1_accs) + " s]")
+    
+def best_threshold_via_prec(roc, y_test):
+    py = np.zeros(2)
+    py[0] = np.mean(y_test == -1)
+    py[1] = np.mean(y_test == 1)
+    fprs, tprs, dts = roc
+    sub = fprs > 0.0
+    fprs_sub = fprs[sub]
+    tprs_sub = tprs[sub]
+    dts_sub = dts[sub]
+    tp = tprs_sub * py[1]
+    fp = fprs_sub * py[0]
+    precs = tp / (tp + fp)
+    best_index = np.argmax(precs)
+    best_thr = dts_sub[best_index]
+    best_prec = precs[best_index]    
+    if best_index > 0:
+        best_thr = 0.5 * (best_thr + dts_sub[best_index - 1]) 
+        best_prec = 0.5 * (best_prec + precs[best_index - 1])
+    print(f"[best_threshold_via_prec -> best_thr: {best_thr}, best_prec: {best_prec}; py: {py}, fprs_sub[best_index]: {fprs_sub[best_index]}, tprs_sub[best_index]: {tprs_sub[best_index]}]")
+    return best_thr, best_prec
 
 def draw_feature_at(i, j0, k0, shcoords_one_feature):
     i_copy = i.copy()
@@ -181,9 +193,9 @@ def demo_haar_features(hinds, hcoords, n):
     # i = cv2.imread(FOLDER_EXTRAS + "photo_for_hand_features_demo.jpg")
     # j0, k0 = 86, 52
     # w = h = 221
-    i_resized = resize_image(i)
+    i_resized = haar.resize_image(i)
     i_gray = cv2.cvtColor(i_resized, cv2.COLOR_BGR2GRAY)
-    ii = integral_image_numba_jit(i_gray)
+    ii = haar.integral_image_numba_jit(i_gray)
     cv2.rectangle(i_resized, (k0, j0), (k0 + w - 1, j0 + h - 1), (0, 0, 255), 1)
     title = "DEMO OF FEATURES [press ESC to quit or any other key to continue]"    
     cv2.imshow(title, i_resized)
@@ -205,7 +217,7 @@ def demo_haar_features(hinds, hcoords, n):
     cv2.destroyAllWindows()
     hcoords_window_subset = (np.array([h, w, h, w]) * hcoords).astype(np.int16) 
     t1 = time.time()
-    features = haar_features_one_window_numba_jit(ii, j0, k0, hcoords_window_subset, n, np.arange(n))
+    features = haar.haar_features_one_window_numba_jit(ii, j0, k0, hcoords_window_subset, n, np.arange(n))
     t2 = time.time()
     print(f"[time of extraction of all {n} haar features for this window (in one call): {t2 - t1} s]")
     print(f"[features: {features}]") 
@@ -230,13 +242,38 @@ def prepare_detection_windows_and_scaled_haar_coords(image_height, image_width, 
     shcoords_multiple_scales = np.array(shcoords_multiple_scales) 
     return windows, shcoords_multiple_scales
 
+def prepare_detection_windows(image_height, image_width):
+    windows = []
+    for s in range(DETECTION_SCALES):
+        h = int(round(DETECTION_WINDOW_HEIGHT_MIN * DETECTION_WINDOW_GROWTH**s))
+        w = int(round(DETECTION_WINDOW_WIDTH_MIN * DETECTION_WINDOW_GROWTH**s))        
+        dj = int(round(h * DETECTION_WINDOW_JUMP))
+        dk = int(round(w * DETECTION_WINDOW_JUMP))     
+        j_start = ((image_height - h) % dj) // 2
+        k_start = ((image_width - w) % dk) // 2
+        for j0 in range(j_start, image_height - h + 1, dj):
+            for k0 in range(k_start, image_width - w + 1, dk):
+                windows.append(np.array([s, j0, k0, h, w], dtype=np.int16))
+    windows = np.array(windows)  
+    return windows
+
+def prepare_scaled_haar_coords(hcoords, features_indexes):
+    hcoords_subset = hcoords[features_indexes]
+    shcoords_multiple_scales = []
+    for s in range(DETECTION_SCALES):
+        h = int(round(DETECTION_WINDOW_HEIGHT_MIN * DETECTION_WINDOW_GROWTH**s))
+        w = int(round(DETECTION_WINDOW_WIDTH_MIN * DETECTION_WINDOW_GROWTH**s))        
+        shcoords_multiple_scales.append((np.array([h, w, h, w]) * hcoords_subset).astype(np.int16))
+    shcoords_multiple_scales = np.array(shcoords_multiple_scales) 
+    return shcoords_multiple_scales
+
 def detect_simple(i, clf, hcoords, n, features_indexes, threshold=0.0, windows=None, shcoords_multiple_scales=None, verbose=False):
     if verbose:
         print("[detect_simple...]")
     t1 = time.time()
     times = {}
     t1_preprocess = time.time()
-    i_resized = resize_image(i)
+    i_resized = haar.resize_image(i)
     i_gray = cv2.cvtColor(i_resized, cv2.COLOR_BGR2GRAY)
     i_h, i_w = i_gray.shape
     t2_preprocess = time.time()
@@ -245,7 +282,7 @@ def detect_simple(i, clf, hcoords, n, features_indexes, threshold=0.0, windows=N
     if verbose:
         print(f"[detect_simple: preprocessing done; time: {dt_preprocess} s, i_gray.shape: {i_gray.shape}]")
     t1_ii = time.time()
-    ii = integral_image_numba_jit(i_gray)
+    ii = haar.integral_image_numba_jit(i_gray)
     t2_ii = time.time()
     dt_ii = t2_ii - t1_ii
     times["ii"] = dt_ii
@@ -260,7 +297,7 @@ def detect_simple(i, clf, hcoords, n, features_indexes, threshold=0.0, windows=N
         if verbose:
             print(f"[detect_simple: prepare_detection_windows_and_scaled_haar_coords done; time: {dt_prepare} s, windows to check: {windows.shape[0]}]")
     t1_haar = time.time()    
-    X = haar_features_multiple_windows_numba_jit(ii, windows, shcoords_multiple_scales, n, features_indexes)
+    X = haar.haar_features_multiple_windows_numba_jit(ii, windows, shcoords_multiple_scales, n, features_indexes)
     t2_haar = time.time()
     dt_haar = t2_haar - t1_haar
     times["haar"] = dt_haar
@@ -287,13 +324,13 @@ def detect_simple(i, clf, hcoords, n, features_indexes, threshold=0.0, windows=N
         print(f"[detect_simple done; time: {t2 - t1} s]")                    
     return detections, responses, times
 
-def detect_parallel(i, clf, hcoords, n, features_indexes, threshold=0.0, windows=None, shcoords_multiple_scales=None, n_jobs=4, verbose=False):
+def detect_parallel(i, clf, hcoords, n, features_indexes, threshold=0.0, windows=None, shcoords_multiple_scales=None, n_jobs=8, verbose=False):
     if verbose:
         print("[detect_parallel...]")
     t1 = time.time()
     times = {}
     t1_preprocess = time.time()
-    i_resized = resize_image(i)
+    i_resized = haar.resize_image(i)
     i_gray = cv2.cvtColor(i_resized, cv2.COLOR_BGR2GRAY)
     i_h, i_w = i_gray.shape
     t2_preprocess = time.time()
@@ -302,7 +339,7 @@ def detect_parallel(i, clf, hcoords, n, features_indexes, threshold=0.0, windows
     if verbose:
         print(f"[detect_parallel: preprocessing done; time: {dt_preprocess} s; i_gray.shape: {i_gray.shape}]")
     t1_ii = time.time()
-    ii = integral_image_numba_jit(i_gray)
+    ii = haar.integral_image_numba_jit(i_gray)
     t2_ii = time.time()
     dt_ii = t2_ii - t1_ii
     times["ii"] = dt_ii
@@ -327,7 +364,7 @@ def detect_parallel(i, clf, hcoords, n, features_indexes, threshold=0.0, windows
         def worker(job_index):
             job_slice = slice(job_ranges[job_index], job_ranges[job_index + 1])
             job_windows = windows[job_slice]
-            X = haar_features_multiple_windows_numba_jit_tf(ii, job_windows, shcoords_multiple_scales, n, features_indexes)
+            X = haar.haar_features_multiple_windows_numba_jit_tf(ii, job_windows, shcoords_multiple_scales, n, features_indexes)
             job_responses = clf.decision_function(X)         
             return job_responses 
         workers_results = parallel((delayed(worker)(job_index) for job_index in range(n_calls)))
@@ -353,7 +390,7 @@ def detect_cuda(i, clf, hcoords, features_indexes, threshold=0.0, windows=None, 
     t1 = time.time()
     times = {}
     t1_preprocess = time.time()
-    i_resized = resize_image(i)
+    i_resized = haar.resize_image(i)
     i_gray = cv2.cvtColor(i_resized, cv2.COLOR_BGR2GRAY)
     i_h, i_w = i_gray.shape
     t2_preprocess = time.time()
@@ -362,7 +399,7 @@ def detect_cuda(i, clf, hcoords, features_indexes, threshold=0.0, windows=None, 
     if verbose:
         print(f"[detect_cuda: preprocessing done; time: {dt_preprocess} s; i_gray.shape: {i_gray.shape}]")
     t1_ii = time.time()
-    ii = integral_image_numba_jit(i_gray)
+    ii = haar.integral_image_numba_jit(i_gray)
     t2_ii = time.time()
     dt_ii = t2_ii - t1_ii
     times["ii"] = dt_ii
@@ -392,7 +429,7 @@ def detect_cuda(i, clf, hcoords, features_indexes, threshold=0.0, windows=None, 
     tpb = cuda.get_current_device().MAX_THREADS_PER_BLOCK // 2
     bpg = windows.shape[0]
     dev_ii = cuda.to_device(ii)
-    haar_features_multiple_windows_numba_cuda[bpg, tpb](dev_ii, dev_windows, dev_shcoords_multiple_scales, dev_X_selected)
+    haar.haar_features_multiple_windows_numba_cuda[bpg, tpb](dev_ii, dev_windows, dev_shcoords_multiple_scales, dev_X_selected)
     cuda.synchronize()
     t2_haar = time.time()
     dt_haar = t2_haar - t1_haar
@@ -440,7 +477,7 @@ def postprocess_nms(detections, responses, threshold=0.5):
         for j in range(i + 1, len(detections)):
             if indexes[j] == False:
                 continue            
-            if iou2(d[i], d[j]) >= threshold:
+            if haar.iou2(d[i], d[j]) >= threshold:
                 indexes[j] = False
     return d_final, r_final
 
@@ -464,7 +501,7 @@ def postprocess_avg(detections, responses, threshold=0.5):
         for j in range(i + 1, len(detections)):
             if indexes[j] == False:
                 continue            
-            if iou2(d[i], d[j]) >= threshold:
+            if haar.iou2(d[i], d[j]) >= threshold:
                 indexes[j] = False
                 d_avg.append(d[j])
                 r_avg.append(r[j])
@@ -474,7 +511,7 @@ def postprocess_avg(detections, responses, threshold=0.5):
         r_final.append(r_avg)
     return d_final, r_final
 
-def demo_detect_in_video(clf, hcoords, threshold, computations="simple", postprocess="avg", n_jobs=4, verbose_loop=True, verbose_detect=False):
+def demo_detect_in_video(clf, hcoords, threshold, computations="cuda", postprocess="avg", n_jobs=8, verbose_loop=True, verbose_detect=False):
     print("DEMO OF DETECT IN VIDEO...")
     gpu_name = gpu_props()["name"]
     features_indexes = clf.features_indexes_
@@ -483,14 +520,15 @@ def demo_detect_in_video(clf, hcoords, threshold, computations="simple", postpro
     video.set(cv2.CAP_PROP_FRAME_HEIGHT, 480)
     video.set(cv2.CAP_PROP_FPS, 30)    
     _, frame = video.read()
-    frame_h, frame_w, _ = frame.shape    
-    resized_width = int(np.round(frame.shape[1] / frame.shape[0] * HEIGHT))
-    windows, shcoords_multiple_scales = prepare_detection_windows_and_scaled_haar_coords(HEIGHT, resized_width, hcoords, features_indexes)
+    frame_h, frame_w, _ = frame.shape
+    resized_height = haar.HEIGHT    
+    resized_width = int(np.round(frame.shape[1] / frame.shape[0] * resized_height))
+    windows, shcoords_multiple_scales = prepare_detection_windows_and_scaled_haar_coords(resized_height, resized_width, hcoords, features_indexes)
     print(f"[frame shape: {frame.shape}]")
     print(f"[windows per frame: {windows.shape[0]}]")
     print(f"[terms per window: {clf.T_}]")
     print(f"[about to start a camera...]")
-    h_scale = frame_h / HEIGHT
+    h_scale = frame_h / resized_height
     w_scale = frame_w / resized_width 
     n_frames = 0
     ma_decay = 0.9
@@ -572,12 +610,12 @@ def demo_detect_in_video(clf, hcoords, threshold, computations="simple", postpro
         cv2.putText(frame, f"GPU: {gpu_name}", (0, frame_h - 1 - 2 * text_shift), cv2.FONT_HERSHEY_PLAIN, 1.0, (255, 255, 255), 1)
         comps_details = ""
         if times["haar"] and times["frbb"]:
-            comps_details += f"[HAAR: {times['haar'] * 1000:05.1f} ms"            
-            comps_details += f", FRBB: {times['frbb'] * 1000:05.1f} ms]"
+            comps_details += f"[HAAR: {times['haar'] * 1000:06.2f} ms"            
+            comps_details += f", FRBB: {times['frbb'] * 1000:06.2f} ms]"
             time_comps_haar += times["haar"]
             time_comps_frbb += times["frbb"]
-        cv2.putText(frame, f"FPS (COMPUTATIONS): {fps_comps:.1f} {comps_details}", (0, frame_h - 1 - 1 * text_shift), cv2.FONT_HERSHEY_PLAIN, 1.0, (255, 255, 255), 1)
-        cv2.putText(frame, f"FPS (DISPLAY): {fps_disp:.1f}", (0, frame_h - 1), cv2.FONT_HERSHEY_PLAIN, 1.0, (255, 255, 255), 1)                    
+        cv2.putText(frame, f"FPS (COMPUTATIONS): {fps_comps:.2f} {comps_details}", (0, frame_h - 1 - 1 * text_shift), cv2.FONT_HERSHEY_PLAIN, 1.0, (255, 255, 255), 1)
+        cv2.putText(frame, f"FPS (DISPLAY): {fps_disp:.2f}", (0, frame_h - 1), cv2.FONT_HERSHEY_PLAIN, 1.0, (255, 255, 255), 1)                    
         imshow_name = "DEMO: FAST REAL-BOOST WITH BINS WORKING ON HAAR-LIKE FEATURES [press ESC to quit]"             
         cv2.imshow(imshow_name, frame)
         cv2.namedWindow(imshow_name)
@@ -593,8 +631,8 @@ def demo_detect_in_video(clf, hcoords, threshold, computations="simple", postpro
             print(f"[computations time: {t2_comps - t1_comps} s]")
             print(f"[postprocess time: {t2_post - t1_post} s]")
             print(f"[other time: {t2_other - t1_other} s]")
-            print(f"[fps (computations): {fps_comps:.1f}]")
-            print(f"[fps (display): {fps_disp:.1f}]")
+            print(f"[fps (computations): {fps_comps:.2f}]")
+            print(f"[fps (display): {fps_disp:.2f}]")
             print(f"[detections in this frame: {len(detections)}]")           
         t2 = time.time()
         tpf_prev = t2 - t1        
@@ -605,28 +643,156 @@ def demo_detect_in_video(clf, hcoords, threshold, computations="simple", postpro
     avg_time_comps_haar = time_comps_haar / n_frames
     avg_time_comps_frbb = time_comps_frbb / n_frames
     avg_fps_disp = n_frames / (t2_loop - t1_loop)
-    print(f"DEMO OF DETECT IN VIDEO DONE. [avg fps (computations): {avg_fps_comps:.1f}, avg time haar: {avg_time_comps_haar * 1000:.1f} ms, avg time frbb: {avg_time_comps_frbb * 1000:.1f} ms; avg fps (display): {avg_fps_disp:.1f}]")
-
-def best_prec_threshold(roc, y_test):
-    py = np.zeros(2)
-    py[0] = np.mean(y_test == -1)
-    py[1] = np.mean(y_test == 1)
-    fprs, tprs, dts = roc
-    sub = fprs > 0.0
-    fprs_sub = fprs[sub]
-    tprs_sub = tprs[sub]
-    dts_sub = dts[sub]
-    tp = tprs_sub * py[1]
-    fp = fprs_sub * py[0]
-    precs = tp / (tp + fp)
-    best_index = np.argmax(precs)
-    best_thr = dts_sub[best_index]
-    best_prec = precs[best_index]    
-    if best_index > 0:
-        best_thr = 0.5 * (best_thr + dts_sub[best_index - 1]) 
-        best_prec = 0.5 * (best_prec + precs[best_index - 1])
-    print(f"[best_prec_threshold -> best_thr: {best_thr}, best_prec: {best_prec}; py: {py}, fprs_sub[best_index]: {fprs_sub[best_index]}, tprs_sub[best_index]: {tprs_sub[best_index]}]")
-    return best_thr, best_prec
+    print(f"DEMO OF DETECT IN VIDEO DONE. [avg fps (computations): {avg_fps_comps:.2f}, avg time haar: {avg_time_comps_haar * 1000:.2f} ms, avg time frbb: {avg_time_comps_frbb * 1000:.2f} ms; avg fps (display): {avg_fps_disp:.2f}]")
+        
+def demo_detect_in_video_multiple_clfs(clfs, hcoords, thresholds, computations="cuda", postprocess="avg", n_jobs=8, verbose_loop=True, verbose_detect=False):
+    print("DEMO OF DETECT IN VIDEO...")
+    colors = [(0, 0, 255), (255, 0, 0), (0, 255, 0)] # TODO longer palette
+    gpu_name = gpu_props()["name"]
+    video = cv2.VideoCapture(CV2_VIDEO_CAPTURE_CAMERA_INDEX + (cv2.CAP_DSHOW if CV2_VIDEO_CAPTURE_IS_IT_MSWINDOWS else 0))
+    video.set(cv2.CAP_PROP_FRAME_WIDTH, 640)
+    video.set(cv2.CAP_PROP_FRAME_HEIGHT, 480)
+    video.set(cv2.CAP_PROP_FPS, 30)    
+    _, frame = video.read()
+    frame_h, frame_w, _ = frame.shape
+    resized_height = haar.HEIGHT    
+    resized_width = int(np.round(frame.shape[1] / frame.shape[0] * resized_height))
+    
+    windows = prepare_detection_windows(resized_height, resized_width)    
+    shcoords_multiple_scales = []
+    features_indexes = []
+    for clf in clfs:
+        features_indexes.append(clf.features_indexes_)
+        shcoords_multiple_scales.append(prepare_scaled_haar_coords(hcoords, clf.features_indexes_))
+            
+    print(f"[frame shape: {frame.shape}]")
+    print(f"[windows per frame: {windows.shape[0]}]")
+    print(f"[terms per window: {clf.T_}]")
+    print(f"[about to start a camera...]")
+    h_scale = frame_h / resized_height
+    w_scale = frame_w / resized_width 
+    n_frames = 0
+    ma_decay = 0.9
+    fps_disp_ma = 0.0    
+    fps_disp = 0.0
+    fps_comps_ma = 0.0    
+    fps_comps = 0.0   
+    draw_thickness = 1 if postprocess == None else 2
+    # device side arrays in case of cuda method
+    dev_windows = None 
+    dev_shcoords_multiple_scales = []    
+    dev_X_selected = []
+    dev_mins_selected = []
+    dev_maxes_selected = []
+    dev_logits = []
+    dev_responses = []
+    if computations == "cuda":
+        dev_windows = cuda.to_device(windows)
+        for i, clf in enumerate(clfs):
+            m, T = windows.shape[0], features_indexes[i].size        
+            dev_shcoords_multiple_scales.append(cuda.to_device(shcoords_multiple_scales[i]))        
+            dev_X_selected.append(cuda.device_array((m, T), dtype=np.int16))
+            dev_mins_selected.append(cuda.to_device(clf.mins_selected_))
+            dev_maxes_selected.append(cuda.to_device(clf.maxes_selected_))
+            dev_logits.append(cuda.to_device(clf.logits_))
+            dev_responses.append(cuda.device_array(m, dtype=np.float32))
+    tpf_prev = 0.0
+    time_comps = 0.0
+    time_comps_haar = 0.0
+    time_comps_frbb = 0.0
+    t1_loop = time.time()
+    while(True):
+        t1 = time.time()
+        if verbose_loop:
+            print(f"----------------------------------------------------------------")
+            print(f"[frame: {n_frames}]")        
+        t1_read = time.time()
+        _, frame = video.read()
+        t2_read = time.time()
+        t1_flip = time.time()
+        frame = cv2.flip(frame, 1)
+        t2_flip = time.time()        
+        tpf_comps = 0.0
+        tpf_post = 0.0
+        times_haar = 0.0
+        times_frbb = 0.0
+        for i in range(len(clfs)):
+            t1_comps = time.time()        
+            if computations == "simple":
+                detections, responses, times = detect_simple(frame, clfs[i], hcoords, n, features_indexes[i], thresholds[i], windows, shcoords_multiple_scales[i], verbose=verbose_detect)
+            elif computations == "parallel":
+                detections, responses, times = detect_parallel(frame, clfs[i], hcoords, n, features_indexes[i], thresholds[i], windows, shcoords_multiple_scales[i], n_jobs=n_jobs, verbose=verbose_detect)        
+            elif computations == "cuda":
+                detections, responses, times = detect_cuda(frame, clfs[i], hcoords, features_indexes[i], thresholds[i], windows, shcoords_multiple_scales[i], 
+                                                           dev_windows, dev_shcoords_multiple_scales[i], dev_X_selected[i], dev_mins_selected[i], dev_maxes_selected[i], dev_logits[i], dev_responses[i], 
+                                                           verbose=verbose_detect)
+            t2_comps = time.time()
+            tpf_comps += t2_comps - t1_comps            
+            t1_post = time.time()
+            if postprocess is not None:
+                if postprocess == "nms":
+                    detections, responses = postprocess_nms(detections, responses, 0.25)
+                if postprocess == "avg":
+                    detections, responses = postprocess_avg(detections, responses, 0.25)
+            t2_post = time.time()
+            tpf_post += t2_post - t1_post
+            if times["haar"] and times["frbb"]:
+                times_haar += times["haar"]
+                times_frbb += times["frbb"] 
+            for index, (j0, k0, h, w) in enumerate(detections):
+                js = int(np.round(j0 * h_scale))
+                ks = int(np.round(k0 * w_scale))
+                hs = int(np.round(h * h_scale))
+                ws = int(np.round(w * w_scale))
+                cv2.rectangle(frame, (ks, js), (ks + ws - 1, js + hs - 1), colors[i], draw_thickness)
+                if postprocess:
+                    cv2.putText(frame, f"{responses[index]:.1f}", (k0, j0 + ws - 2), cv2.FONT_HERSHEY_PLAIN, 1.0, colors[i], draw_thickness)            
+        normalizer_ma = 1.0 / (1.0 - ma_decay**(n_frames + 1))
+        if n_frames > 0:
+            fps_disp_ma = ma_decay * fps_disp_ma + (1.0 - ma_decay) * 1.0 / tpf_prev
+            fps_disp = fps_disp_ma * normalizer_ma
+        fps_comps_ma = ma_decay * fps_comps_ma + (1.0 - ma_decay) * 1.0 / tpf_comps
+        fps_comps = fps_comps_ma * normalizer_ma
+        time_comps += tpf_comps
+        text_shift = 16
+        cv2.putText(frame, f"FRAME: {n_frames}", (0, 0 + text_shift), cv2.FONT_HERSHEY_PLAIN, 1.0, (255, 255, 255), 1)        
+        cv2.putText(frame, f"WINDOWS PER FRAME: {windows.shape[0]}", (0, frame_h - 1 - 4 * text_shift), cv2.FONT_HERSHEY_PLAIN, 1.0, (255, 255, 255), 1)
+        cv2.putText(frame, f"TERMS PER WINDOW: {clf.T_}", (0, frame_h - 1 - 3 * text_shift), cv2.FONT_HERSHEY_PLAIN, 1.0, (255, 255, 255), 1)
+        cv2.putText(frame, f"GPU: {gpu_name}", (0, frame_h - 1 - 2 * text_shift), cv2.FONT_HERSHEY_PLAIN, 1.0, (255, 255, 255), 1)
+        comps_details = ""
+        if times_haar > 0.0 and times_frbb > 0.0:
+            comps_details += f"[HAAR: {times_haar * 1000:06.2f} ms"            
+            comps_details += f", FRBB: {times_frbb * 1000:06.2f} ms]"
+            time_comps_haar += times_haar
+            time_comps_frbb += times_frbb
+        cv2.putText(frame, f"FPS (COMPUTATIONS): {fps_comps:.2f} {comps_details}", (0, frame_h - 1 - 1 * text_shift), cv2.FONT_HERSHEY_PLAIN, 1.0, (255, 255, 255), 1)
+        cv2.putText(frame, f"FPS (DISPLAY): {fps_disp:.2f}", (0, frame_h - 1), cv2.FONT_HERSHEY_PLAIN, 1.0, (255, 255, 255), 1)                    
+        imshow_name = "DEMO: FAST REAL-BOOST WITH BINS WORKING ON HAAR-LIKE FEATURES [press ESC to quit]"             
+        cv2.imshow(imshow_name, frame)
+        cv2.namedWindow(imshow_name)
+        if cv2.waitKey(1) & 0xFF == 27: # esc key
+            break
+        n_frames += 1
+        if verbose_loop:
+            print(f"[read time: {t2_read - t1_read} s]")
+            print(f"[flip time: {t2_flip - t1_flip} s]")
+            print(f"[windows per frame: {windows.shape[0]}]")
+            print(f"[terms per window for all clfs: {[clf.T_ for clf in clfs]}]")
+            print(f"[computations time: {tpf_comps} s]")
+            print(f"[postprocess time: {tpf_post} s]")
+            print(f"[fps (computations): {fps_comps:.2f}]")
+            print(f"[fps (display): {fps_disp:.2f}]")
+            print(f"[detections in this frame: {len(detections)}]")           
+        t2 = time.time()
+        tpf_prev = t2 - t1        
+    t2_loop = time.time()
+    cv2.destroyAllWindows()
+    video.release()    
+    avg_fps_comps = n_frames / time_comps
+    avg_time_comps_haar = time_comps_haar / n_frames
+    avg_time_comps_frbb = time_comps_frbb / n_frames
+    avg_fps_disp = n_frames / (t2_loop - t1_loop)
+    print(f"DEMO OF DETECT IN VIDEO DONE. [avg fps (computations): {avg_fps_comps:.2f}, avg time haar: {avg_time_comps_haar * 1000:.2f} ms, avg time frbb: {avg_time_comps_frbb * 1000:.2f} ms; avg fps (display): {avg_fps_disp:.2f}]")
 
         
 # ----------------------------------------------------------------------------------------------------------------------------------------------------------------
@@ -635,11 +801,11 @@ def best_prec_threshold(roc, y_test):
 if __name__ == "__main__":        
     print("DEMONSTRATION OF \"FAST REAL-BOOST WITH BINS\" ALGORITHM IMPLEMENTED VIA NUMBA.JIT AND NUMBA.CUDA.")
 
-    n = HAAR_TEMPLATES.shape[0] * S**2 * (2 * P - 1)**2    
-    hinds = haar_indexes(S, P)
-    hcoords = haar_coords(S, P, hinds)
+    n = haar.HAAR_TEMPLATES.shape[0] * S**2 * (2 * P - 1)**2    
+    hinds = haar.haar_indexes(S, P)
+    hcoords = haar.haar_coords(S, P, hinds)
     
-    data_suffix = f"{KIND}_n_{n}_S_{S}_P_{P}_AUG_{np.int8(AUG)}_KOP_{KOP}_NPI_{NPI}_SEED_{SEED}" 
+    data_suffix = f"{KIND}_n_{n}_S_{S}_P_{P}_NPI_{NPI}_SEED_{SEED}" 
     DATA_NAME = f"data_{data_suffix}.bin"
     CLF_NAME = f"clf_frbb_{data_suffix}_T_{T}_B_{B}.bin"    
     print(f"DATA_NAME: {DATA_NAME}")
@@ -651,10 +817,9 @@ if __name__ == "__main__":
     
     if REGENERATE_DATA:
         if KIND == "face":
-            X_train, y_train, X_test, y_test = gendata.fddb_data(FOLDER_DATA_RAW_FDDB, hcoords, n, AUG, NPI, seed=SEED, verbose=False)
-        elif KIND == "hand":
-            #X_train, y_train, X_test, y_test = gendata.synthetic_data(FOLDER_DATA_RAW_HAND + "backgrounds/", FOLDER_DATA_RAW_HAND + "targets/", hcoords, n, AUG, KOP * 1000, NPI, seed=SEED, verbose=False)                        
-            X_train, y_train, X_test, y_test = gendata.hagrid_data(hcoords, n, NPI, seed=SEED, verbose=False)
+            X_train, y_train, X_test, y_test = datagenerator.fddb_data_to_haar(hcoords, n, NPI, seed=SEED, verbose=True)
+        elif KIND == "hand":                        
+            X_train, y_train, X_test, y_test = datagenerator.hagrid_data(hcoords, n, NPI, seed=SEED, verbose=False)
         pickle_objects(FOLDER_DATA + DATA_NAME, [X_train, y_train, X_test, y_test])
     
     if FIT_OR_REFIT_MODEL or MEASURE_ACCS_OF_MODEL:
@@ -678,7 +843,11 @@ if __name__ == "__main__":
         measure_accs_of_model(clf, X_train, y_train, X_test, y_test)        
     
     if DEMO_DETECT_IN_VIDEO:
-        demo_detect_in_video(clf, hcoords, threshold=DETECTION_THRESHOLD, computations="cuda", postprocess=DETECTION_POSTPROCESS, n_jobs=8, verbose_loop=True, verbose_detect=True)
+        #demo_detect_in_video(clf, hcoords, threshold=DETECTION_THRESHOLD, computations="cuda", postprocess=DETECTION_POSTPROCESS, n_jobs=8, verbose_loop=True, verbose_detect=True)
+        clfs_names = ["clf_frbb_face_n_18225_S_5_P_5_NPI_200_SEED_0_T_1024_B_8.bin", "clf_frbb_hand_n_18225_S_5_P_5_NPI_10_SEED_0_T_1024_B_8.bin"]
+        clfs = [unpickle_objects(FOLDER_CLFS + clf_name)[0] for clf_name in clfs_names]
+        thresholds = [7.0, 6.0]
+        demo_detect_in_video_multiple_clfs(clfs, hcoords, thresholds, computations="cuda", postprocess=DETECTION_POSTPROCESS, n_jobs=8, verbose_loop=True, verbose_detect=False)
 
     print("ALL DONE.")
     
@@ -719,7 +888,7 @@ if __name__ == "__rocs__":
         [clf] = unpickle_objects(FOLDER_CLFS + CLF_NAME)                
         responses_test = clf.decision_function(X_test)
         roc = roc_curve(y_test, responses_test)
-        best_thr, best_prec = best_prec_threshold(roc, y_test) 
+        best_thr, best_prec = best_threshold_via_prec(roc, y_test) 
         fars, sens, thrs = roc
         roc_arr = np.array([fars, sens, thrs]).T        
         plt.plot(fars, sens, label=CLF_NAME)
@@ -730,4 +899,4 @@ if __name__ == "__rocs__":
     plt.xlabel("FAR")
     plt.ylabel("SENSITIVITY")
     plt.legend(loc="lower right", fontsize=8)
-    plt.show()    
+    plt.show()

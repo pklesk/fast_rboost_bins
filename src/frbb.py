@@ -8,7 +8,7 @@ import math
 from numba.core.errors import NumbaPerformanceWarning
 import warnings
         
-__version__ = "1.0.0"
+__version__ = "0.8.0"
 __author__ = "Przemysław Klęsk"
 __email__ = "pklesk@zut.edu.pl"
         
