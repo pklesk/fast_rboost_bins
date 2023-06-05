@@ -34,7 +34,7 @@ DEMO_DETECT_IN_VIDEO = True
 
 # cv2 camera settings
 CV2_VIDEO_CAPTURE_CAMERA_INDEX = 0
-CV2_VIDEO_CAPTURE_IS_IT_MSWINDOWS = True
+CV2_VIDEO_CAPTURE_IS_IT_MSWINDOWS = False
 
 # detection procedure settings
 DETECTION_SCALES = 10
@@ -757,7 +757,7 @@ def demo_detect_in_video_multiple_clfs(clfs, hcoords, thresholds, computations="
         text_shift = 16
         cv2.putText(frame, f"FRAME: {n_frames}", (0, 0 + text_shift), cv2.FONT_HERSHEY_PLAIN, 1.0, (255, 255, 255), 1)        
         cv2.putText(frame, f"WINDOWS PER FRAME: {windows.shape[0]}", (0, frame_h - 1 - 4 * text_shift), cv2.FONT_HERSHEY_PLAIN, 1.0, (255, 255, 255), 1)
-        cv2.putText(frame, f"TERMS PER WINDOW: {clf.T_}", (0, frame_h - 1 - 3 * text_shift), cv2.FONT_HERSHEY_PLAIN, 1.0, (255, 255, 255), 1)
+        cv2.putText(frame, f"TERMS PER WINDOW FOR ALL CLFS: {[clf.T_ for clf in clfs]}", (0, frame_h - 1 - 3 * text_shift), cv2.FONT_HERSHEY_PLAIN, 1.0, (255, 255, 255), 1)
         cv2.putText(frame, f"GPU: {gpu_name}", (0, frame_h - 1 - 2 * text_shift), cv2.FONT_HERSHEY_PLAIN, 1.0, (255, 255, 255), 1)
         comps_details = ""
         if times_haar > 0.0 and times_frbb > 0.0:
@@ -844,9 +844,9 @@ if __name__ == "__main__":
     
     if DEMO_DETECT_IN_VIDEO:
         #demo_detect_in_video(clf, hcoords, threshold=DETECTION_THRESHOLD, computations="cuda", postprocess=DETECTION_POSTPROCESS, n_jobs=8, verbose_loop=True, verbose_detect=True)
-        clfs_names = ["clf_frbb_face_n_18225_S_5_P_5_NPI_200_SEED_0_T_1024_B_8.bin", "clf_frbb_hand_n_18225_S_5_P_5_NPI_10_SEED_0_T_1024_B_8.bin"]
+        clfs_names = ["clf_frbb_face_n_18225_S_5_P_5_NPI_200_SEED_0_T_1024_B_8.bin", "clf_frbb_hand_n_18225_S_5_P_5_NPI_10_SEED_0_T_2048_B_8.bin"]
         clfs = [unpickle_objects(FOLDER_CLFS + clf_name)[0] for clf_name in clfs_names]
-        thresholds = [7.0, 6.0]
+        thresholds = [7.0, 9.0]
         demo_detect_in_video_multiple_clfs(clfs, hcoords, thresholds, computations="cuda", postprocess=DETECTION_POSTPROCESS, n_jobs=8, verbose_loop=True, verbose_detect=False)
 
     print("ALL DONE.")
@@ -857,29 +857,23 @@ if __name__ == "__main__":
 if __name__ == "__rocs__":        
     print("ROCS...")
     
-    clfs_settings = [
-                     #{"KIND": "face", "S": 5, "P": 5, "AUG": 0, "KOP": 0, "NPI": 100, "SEED": 0, "T": 1024, "B": 8},
-                     #{"KIND": "face", "S": 5, "P": 5, "AUG": 0, "KOP": 0, "NPI": 100, "SEED": 0, "T": 2048, "B": 8},
-                     #{"KIND": "face", "S": 5, "P": 5, "AUG": 0, "KOP": 0, "NPI": 200, "SEED": 0, "T": 1024, "B": 8}                     
-                      {"KIND": "hand", "S": 5, "P": 5, "AUG": 0, "KOP": 0, "NPI": 10, "SEED": 0, "T": 2048, "B": 8}                  
+    clfs_settings = [                     
+                      {"KIND": "hand", "S": 5, "P": 5, "NPI": 10, "SEED": 0, "T": 2048, "B": 8}                  
                      ]
     
     for s in clfs_settings:
         KIND = s["KIND"]
         S = s["S"]
         P = s["P"]
-        AUG = s["AUG"]
-        KOP = s["KOP"]
         NPI = s["NPI"]        
         SEED = s["SEED"]
         T = s["T"]
         B = s["B"] 
-        n = HAAR_TEMPLATES.shape[0] * S**2 * (2 * P - 1)**2    
-        hinds = haar_indexes(S, P)
-        hcoords = haar_coords(S, P, hinds)            
-        data_suffix = f"{KIND}_n_{n}_S_{S}_P_{P}_AUG_{AUG}_KOP_{KOP}_NPI_{NPI}_SEED_{SEED}"                                      
-        #DATA_NAME = "data_face_n_18225_S_5_P_5_AUG_0_KOP_0_NPI_200_SEED_0.bin"
-        DATA_NAME = "data_hand_n_18225_S_5_P_5_AUG_0_KOP_0_NPI_10_SEED_0.bin"
+        n = haar.HAAR_TEMPLATES.shape[0] * S**2 * (2 * P - 1)**2    
+        hinds = haar.haar_indexes(S, P)
+        hcoords = haar.haar_coords(S, P, hinds)            
+        data_suffix = f"{KIND}_n_{n}_S_{S}_P_{P}_NPI_{NPI}_SEED_{SEED}"                                      
+        DATA_NAME = "data_hand_n_18225_S_5_P_5_NPI_10_SEED_0.bin"
         [X_train, y_train, X_test, y_test] = unpickle_objects(FOLDER_DATA + DATA_NAME)        
         CLF_NAME = f"clf_frbb_{data_suffix}_T_{T}_B_{B}.bin"            
         print("---")
