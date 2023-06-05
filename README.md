@@ -1,7 +1,7 @@
 # FastRealBoostBins: A fast ensemble classifier implemented in Python using numpy, numba.jit and numba.cuda
 
 Taking advantage of [Numba](https://numba.pydata.org/) (a high-performance just-in-time Python compiler) 
-and its `numba.jit` and `numba.cuda` amenities, we provide a fast implementation of a boosting algorithm variant 
+we provide a fast implementation of a boosting algorithm variant 
 in which bins with logit transform values play the role of "weak learners". 
 The implementation comes as a Python class compliant with the scheme of [scikit-learn](https://scikit-learn.org) library. 
 

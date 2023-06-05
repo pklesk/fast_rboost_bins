@@ -134,8 +134,9 @@ class FastRealBoostBins(BaseEstimator, ClassifierMixin):
             print("[main boosting loop...]")
         t1_loop = time.time()
         for t in range(self.T_):
+            t1_round = time.time()
             if self.verbose:
-                print(f"{t + 1}/{self.T_}")
+                print(f"[{t + 1}/{self.T_}...]")
             best_err_exp = np.inf
             best_j = -1
             for j in range(n):
@@ -151,10 +152,11 @@ class FastRealBoostBins(BaseEstimator, ClassifierMixin):
                     best_err_exp = err_exp_j
                     best_j = j
                     self.logits_[t] = logits_j
-            if self.verbose:
-                print(f"[best_j: {best_j}, best_err_exp: {best_err_exp:.8f}, best_logits: {self.logits_[t]}]")
             self.features_indexes_[t] = best_j
             w = w * np.exp(-yy * self.logits_[t, X_binned[:, best_j]]) / best_err_exp
+            t2_round = time.time()
+            if self.verbose:
+                print(f"[{t + 1}/{self.T_} done; best_j: {best_j}, best_err_exp: {best_err_exp:.8f}, best_logits: {self.logits_[t]}, time: {t2_round - t1_round} s]")
         t2_loop = time.time()
         if self.verbose:        
             print(f"[main boosting loop done; time: {t2_loop - t1_loop} s]")
@@ -224,8 +226,9 @@ class FastRealBoostBins(BaseEstimator, ClassifierMixin):
         dev_mutexes = cuda.to_device(np.zeros((n, 1), dtype=np.int32)) # in most cases per-feature mutexes  are applied (only in argmin case a single mutex)
         dev_logits = cuda.device_array((n, self.B_), dtype=np.float32)                                
         for t in range(self.T_):
+            t1_round = time.time()
             if self.verbose:
-                print(f"{t + 1}/{self.T_}")
+                print(f"[{t + 1}/{self.T_}...]")
         
             t1_bin_add_weights = time.time()                        
             memory = X_binned.nbytes + yy.nbytes + w.nbytes 
@@ -333,9 +336,10 @@ class FastRealBoostBins(BaseEstimator, ClassifierMixin):
                 cuda.synchronize()
             t2_reweight = time.time()
             if self.debug_verbose:
-                print(f"[reweight_numba_cuda done; n_calls: {n_calls}; time: {t2_reweight - t1_reweight} s]")            
+                print(f"[reweight_numba_cuda done; n_calls: {n_calls}; time: {t2_reweight - t1_reweight} s]")
+            t2_round = time.time()
             if self.verbose:
-                print(f"[best_j: {best_j[0]}, best_err_exp: {best_err_exp[0]:.8f}, best_logits: {best_logits}]")
+                print(f"[{t + 1}/{self.T_} done; best_j: {best_j[0]}, best_err_exp: {best_err_exp:.8f}, best_logits: {best_logits}, time: {t2_round - t1_round} s]")
                         
         t2_loop = time.time()
         if self.verbose:
