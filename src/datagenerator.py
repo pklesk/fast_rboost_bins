@@ -176,7 +176,7 @@ def fddb_data_to_haar_single_fold(fddb_root, fold_name, hcoords, n, negs_per_img
     y = np.stack(y_list)
     return X, y
 
-def hagrid_data(hcoords, n, negs_per_img, train_ratio=0.75, seed=0, verbose=False):
+def hagrid_data_to_haar(hcoords, n, negs_per_img, train_ratio=0.75, seed=0, verbose=False):
     print(f"HAGRID DATA...")
     t1 = time.time()        
     neg_rel_min = 0.1
@@ -278,13 +278,13 @@ def hagrid_data(hcoords, n, negs_per_img, train_ratio=0.75, seed=0, verbose=Fals
     print(f"HAGRID DATA DONE. [time: {t2 - t1} s; X_train.shape: {X_train.shape}, positives: {np.sum(y_train == 1)}; X_test.shape: {X_test.shape}, positives: {np.sum(y_test == 1)}]")    
     return X_train, y_train, X_test, y_test             
     
-def synthetic_data(folder_backgrounds, folder_targets, hcoords, n, data_augmentation=False, n_poss=1, n_negs_per_img=10, seed=0, verbose=False,
-                   rotation_range=SYNTHETIC_ROTATION_RANGE, train_ratio=SYNTHETIC_TRAIN_RATIO, 
-                   force_random_rotations=SYNTHETIC_FORCE_RANDOM_ROTATIONS, force_random_horizontal_flips=SYNTHETIC_FORCE_RANDOM_HORIZONTAL_FLIPS):
+def synthetic_data_to_haar(folder_backgrounds, folder_targets, hcoords, n, data_augmentation, positives_to_generate, negs_per_img, seed=0, verbose=False,
+                           rotation_range=SYNTHETIC_ROTATION_RANGE, train_ratio=SYNTHETIC_TRAIN_RATIO, 
+                           force_random_rotations=SYNTHETIC_FORCE_RANDOM_ROTATIONS, force_random_horizontal_flips=SYNTHETIC_FORCE_RANDOM_HORIZONTAL_FLIPS):
     print("SYNTHETIC DATA...")
     t1 = time.time()
-    relative_min = 0.2 # for both positives and negatives
-    relative_max = 0.6 # for both positives and negatives
+    rel_min = 0.1 # for both positives and negatives
+    rel_max = 0.5 # for both positives and negatives
     neg_max_iou = 0.5
     margin_pixels = 4
     np.random.seed(seed)    
@@ -298,9 +298,9 @@ def synthetic_data(folder_backgrounds, folder_targets, hcoords, n, data_augmenta
     augmentations_extras = []
     if data_augmentation: 
         augmentations += ["sharpen", "blur", "random_brightness", "random_channel_shift"]
-        augmentations_extras += ["random_horizontal_flip"]
+        augmentations_extras += ["random_horizontal_flip"] 
     imshow_title = "SYNTHETIC IMAGE [press ESC to continue]"
-    m = n_poss    
+    m = positives_to_generate
     aug_str = " (with data augmentation)" if data_augmentation else ""
     for index in range(m):
         b_fname = folder_backgrounds + b_names[np.random.randint(n_b)] 
@@ -320,7 +320,7 @@ def synthetic_data(folder_backgrounds, folder_targets, hcoords, n, data_augmenta
                 if np.random.rand() < 0.5:
                     b = np.fliplr(b)
             th, tw = t.shape[:2]
-            ratio = np.random.uniform(relative_min, relative_max)
+            ratio = np.random.uniform(rel_min, rel_max)
             rside = ratio * side
             if th < tw:
                 ts = cv2.resize(t, (round(rside), round(rside * th / tw)))
@@ -389,7 +389,7 @@ def synthetic_data(folder_backgrounds, folder_targets, hcoords, n, data_augmenta
                 cv2.waitKey(0)
             X_list.append(feats)
             y_list.append(1)
-            for _ in range(n_negs_per_img):            
+            for _ in range(negs_per_img):            
                 while True:
                     ratio = np.random.uniform(relative_min, relative_max)
                     rside = ratio * side
