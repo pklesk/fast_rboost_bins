@@ -3,7 +3,7 @@ import numpy as np
 from numpy import inf
 import time
 from numba import cuda, jit
-from numba import void, int8, int16, int32, float32
+from numba import void, int8, int16, int32, int64, float32, float64
 import math
 from numba.core.errors import NumbaPerformanceWarning
 import warnings
@@ -28,6 +28,7 @@ def unlock(mutex):
     cuda.atomic.exch(mutex, 0, 0)
 
 
+# the class
 class FastRealBoostBins(BaseEstimator, ClassifierMixin):
 
     # constants
@@ -52,16 +53,16 @@ class FastRealBoostBins(BaseEstimator, ClassifierMixin):
         self.set_modes(fit_mode, decision_function_mode)        
         
     def set_modes(self, fit_mode="numba_cuda", decision_function_mode="numba_cuda"):
-        self.fit_mode = fit_mode
-        self.decision_function_mode = decision_function_mode
+        self.fit_mode = fit_mode # possible values: "numpy", "numba_cuda" 
+        self.decision_function_mode = decision_function_mode # possible values: "numba_jit", "numba_cuda"
         if self.fit_mode == "numba_cuda" and not self.cuda_available:
             self.fit_mode = "numpy"
             print(f"[changing fit mode to \"{self.fit_mode}\" due to cuda functionality not available on this machine]")
         if self.decision_function_mode == "numba_cuda" and not self.cuda_available:
             self.decision_function_mode = "numba_jit"
             print(f"[changing decision function mode \"{self.decision_function_mode}\" to numba_jit due to cuda functionality not available on this machine]")
-        self.fit_attr = getattr(self, "fit_" + self.fit_mode)
-        self.decision_function_attr = getattr(self, "decision_function_" + self.decision_function_mode)            
+        self.fit_method = getattr(self, "fit_" + self.fit_mode)
+        self.decision_function_method = getattr(self, "decision_function_" + self.decision_function_mode)            
                                                            
     def logit(self, W_p, W_n):
         if W_p == W_n:
@@ -74,15 +75,48 @@ class FastRealBoostBins(BaseEstimator, ClassifierMixin):
                 
     def fit(self, X, y):
         self.fit_init()
-        self.fit_attr(X, y)
+        self.fit_method(X, y)
+        self.assign_decision_function_numba_cuda_job_by_dtype(X.dtype)
         return self
     
-    def fit_init(self):
+    def fit_init(self):        
         self.T_ = self.T
         self.B_ = self.B
         self.features_indexes_ = np.zeros(self.T_, dtype=np.int32) # indexes of selected features
         self.logits_ = np.zeros((self.T_, self.B_), dtype=np.float32)
+        self.decision_threshold_ = 0.0
     
+    def assign_decision_function_numba_cuda_job_by_dtype(self, dtype):
+        self.decision_function_numba_cuda_job_static_method = None
+        if dtype == np.int8:
+            self.decision_function_numba_cuda_job_static_method = FastRealBoostBins.decision_function_numba_cuda_job_int8
+        elif dtype == np.int16:
+            self.decision_function_numba_cuda_job_static_method = FastRealBoostBins.decision_function_numba_cuda_job_int16
+        elif dtype == np.int32:
+            self.decision_function_numba_cuda_job_static_method = FastRealBoostBins.decision_function_numba_cuda_job_int32
+        elif dtype == np.int64:
+            self.decision_function_numba_cuda_job_static_method = FastRealBoostBins.decision_function_numba_cuda_job_int64
+        elif dtype == np.float32:
+            self.decision_function_numba_cuda_job_static_method = FastRealBoostBins.decision_function_numba_cuda_job_float32
+        elif dtype == np.float64:
+            self.decision_function_numba_cuda_job_static_method = FastRealBoostBins.decision_function_numba_cuda_job_float64                        
+    
+    def bin_data(self, X, mins, maxes):
+        X_binned = None
+        spreads = maxes - mins
+        if np.issubdtype(X.dtype, np.integer):
+            info = np.iinfo(X.dtype)
+            spreads = maxes - mins         
+            if np.any(self.B_ * spreads.astype(np.int64) > info.max):
+                if self.verbose:
+                    print(f"[warning: temporarily extending dtype = {X.dtype} to int64 while binning due to possible of overflow]")                 
+                X_binned = np.clip(np.int8(self.B_ * (X - mins).astype(np.int64) // spreads), 0, self.B_ - 1)
+            else:
+                X_binned = np.clip(np.int8(self.B_ * (X - mins) // spreads), 0, self.B_ - 1)
+        else:
+            X_binned = np.clip(np.int8(self.B_ * (X - mins) / spreads), 0, self.B_ - 1)
+        return X_binned
+           
     def fit_numpy(self, X, y):
         if self.verbose:
             print(f"FIT... [fit_numpy, X.shape: {X.shape}, X.dtype={X.dtype}, T: {self.T_}, B: {self.B_}]")
@@ -108,7 +142,7 @@ class FastRealBoostBins(BaseEstimator, ClassifierMixin):
         if self.verbose:
             print("[binning...]")
         t1_binning = time.time()
-        X_binned = np.clip(np.int8(self.B_ * (X - self.mins_) // (self.maxes_ - self.mins_)), 0, self.B_ - 1)
+        X_binned = self.bin_data(X, self.mins_, self.maxes_)
         t2_binning = time.time()
         if self.verbose:
             print(f"[binning done; time: {t2_binning - t1_binning} s]")                
@@ -198,8 +232,8 @@ class FastRealBoostBins(BaseEstimator, ClassifierMixin):
         if self.verbose:
             print("[finding ranges of features...]")
         t1_ranges = time.time()
-        self.mins_ = np.zeros(n, dtype=np.int16)
-        self.maxes_ = np.zeros(n, dtype=np.int16)
+        self.mins_ = np.zeros(n, dtype=X.dtype)
+        self.maxes_ = np.zeros(n, dtype=X.dtype)        
         left = int(np.ceil(self.OUTLIERS_RATIO * m))
         right = int(np.floor((1.0 - self.OUTLIERS_RATIO) * m))
         for j in range(n):
@@ -213,7 +247,7 @@ class FastRealBoostBins(BaseEstimator, ClassifierMixin):
         t1_binning = time.time()
         if self.verbose:
             print("[binning...]")
-        X_binned = np.clip(np.int8(self.B_ * (X - self.mins_) // (self.maxes_ - self.mins_)), 0, self.B_ - 1)
+        X_binned = self.bin_data(X, self.mins_, self.maxes_)
         t2_binning = time.time()
         if self.verbose:
             print(f"[binning done; time: {t2_binning - t1_binning} s]")    
@@ -339,7 +373,7 @@ class FastRealBoostBins(BaseEstimator, ClassifierMixin):
                 print(f"[reweight_numba_cuda done; n_calls: {n_calls}; time: {t2_reweight - t1_reweight} s]")
             t2_round = time.time()
             if self.verbose:
-                print(f"[{t + 1}/{self.T_} done; best_j: {best_j[0]}, best_err_exp: {best_err_exp:.8f}, best_logits: {best_logits}, time: {t2_round - t1_round} s]")
+                print(f"[{t + 1}/{self.T_} done; best_j: {best_j[0]}, best_err_exp: {best_err_exp[0]:.8f}, best_logits: {best_logits}, time: {t2_round - t1_round} s]")
                         
         t2_loop = time.time()
         if self.verbose:
@@ -492,11 +526,11 @@ class FastRealBoostBins(BaseEstimator, ClassifierMixin):
         self.maxes_selected_ = self.maxes_selected_[:T]
 
     def decision_function(self, X):
-        return self.decision_function_attr(X)
+        return self.decision_function_method(X)
         
     def decision_function_numpy(self, X):
         X_selected = X[:, self.features_indexes_]
-        X_binned = np.clip(np.int8(self.B_ * (X_selected - self.mins_selected_) // (self.maxes_selected_ - self.mins_selected_)), 0, self.B_ - 1)
+        X_binned = self.bin_data(X_selected, self.mins_selected_, self.maxes_selected_)
         m = X_binned.shape[0]
         responses = np.zeros(m)
         for i in range(m):
@@ -505,7 +539,7 @@ class FastRealBoostBins(BaseEstimator, ClassifierMixin):
 
     def decision_function_numba_jit(self, X):
         X_selected = X[:, self.features_indexes_]
-        X_binned = np.clip(np.int8(self.B_ * (X_selected - self.mins_selected_) // (self.maxes_selected_ - self.mins_selected_)), 0, self.B_ - 1)
+        X_binned = self.bin_data(X_selected, self.mins_selected_, self.maxes_selected_)        
         return FastRealBoostBins.decision_function_numba_jit_job(X_binned, self.logits_)
     
     @staticmethod
@@ -529,15 +563,15 @@ class FastRealBoostBins(BaseEstimator, ClassifierMixin):
         dev_logits = cuda.to_device(self.logits_)                
         dev_responses = cuda.device_array(m, dtype=np.float32)
         tpb = self.cuda_tpb_default
-        bpg = m
-        FastRealBoostBins.decision_function_numba_cuda_job[bpg, tpb](dev_X_selected, dev_mins_selected, dev_maxes_selected, dev_logits, dev_responses)
+        bpg = m        
+        self.decision_function_numba_cuda_job_static_method[bpg, tpb](dev_X_selected, dev_mins_selected, dev_maxes_selected, dev_logits, dev_responses)
         cuda.synchronize()
         responses = dev_responses.copy_to_host()        
         return responses
-    
+
     @staticmethod
-    @cuda.jit(void(int16[:, :], int16[:], int16[:], float32[:, :], float32[:]))
-    def decision_function_numba_cuda_job(X_selected, mins_selected, maxes_selected, logits, responses):
+    @cuda.jit(void(int8[:, :], int8[:], int8[:], float32[:, :], float32[:]))
+    def decision_function_numba_cuda_job_int8(X_selected, mins_selected, maxes_selected, logits, responses):
         shared_logits = cuda.shared.array(4096, dtype=float32) # 4096 - assumed limit of features used at detection stage           
         i = cuda.blockIdx.x
         tpb = cuda.blockDim.x
@@ -549,7 +583,7 @@ class FastRealBoostBins(BaseEstimator, ClassifierMixin):
         cuda.syncthreads()
         for _ in range(fpt):
             if t < T:
-                b = int8(B * (X_selected[i, t] - mins_selected[t]) / float32(maxes_selected[t] - mins_selected[t]))
+                b = int8(B * (X_selected[i, t] - mins_selected[t]) // (maxes_selected[t] - mins_selected[t]))
                 if b < 0:
                     b = 0
                 elif b >= B:
@@ -565,6 +599,161 @@ class FastRealBoostBins(BaseEstimator, ClassifierMixin):
             stride >>= 1
         if tx == 0:
             responses[i] = shared_logits[0]
+    
+    @staticmethod
+    @cuda.jit(void(int16[:, :], int16[:], int16[:], float32[:, :], float32[:]))
+    def decision_function_numba_cuda_job_int16(X_selected, mins_selected, maxes_selected, logits, responses):
+        shared_logits = cuda.shared.array(4096, dtype=float32) # 4096 - assumed limit of features used at detection stage           
+        i = cuda.blockIdx.x
+        tpb = cuda.blockDim.x
+        tx = cuda.threadIdx.x
+        T, B = logits.shape
+        fpt = int((T + tpb - 1) / tpb) # features per thread to be translated onto appropriate logits and stored in shared memory (summed if fpt > 1)
+        t = tx # feature index
+        shared_logits[tx] = float32(0.0)
+        cuda.syncthreads()
+        for _ in range(fpt):
+            if t < T:
+                b = int8(B * (X_selected[i, t] - mins_selected[t]) // (maxes_selected[t] - mins_selected[t]))
+                if b < 0:
+                    b = 0
+                elif b >= B:
+                    b = B - 1
+                shared_logits[tx] += logits[t, b]
+            t += tpb
+        cuda.syncthreads()
+        stride = tpb >> 1 # half of tpb
+        while stride > 0: # sum-reduction pattern
+            if tx < stride:
+                shared_logits[tx] += shared_logits[tx + stride]
+            cuda.syncthreads()
+            stride >>= 1
+        if tx == 0:
+            responses[i] = shared_logits[0]
+            
+    @staticmethod
+    @cuda.jit(void(int32[:, :], int32[:], int32[:], float32[:, :], float32[:]))
+    def decision_function_numba_cuda_job_int32(X_selected, mins_selected, maxes_selected, logits, responses):
+        shared_logits = cuda.shared.array(4096, dtype=float32) # 4096 - assumed limit of features used at detection stage           
+        i = cuda.blockIdx.x
+        tpb = cuda.blockDim.x
+        tx = cuda.threadIdx.x
+        T, B = logits.shape
+        fpt = int((T + tpb - 1) / tpb) # features per thread to be translated onto appropriate logits and stored in shared memory (summed if fpt > 1)
+        t = tx # feature index
+        shared_logits[tx] = float32(0.0)
+        cuda.syncthreads()
+        for _ in range(fpt):
+            if t < T:
+                b = int8(B * (X_selected[i, t] - mins_selected[t]) // (maxes_selected[t] - mins_selected[t]))
+                if b < 0:
+                    b = 0
+                elif b >= B:
+                    b = B - 1
+                shared_logits[tx] += logits[t, b]
+            t += tpb
+        cuda.syncthreads()
+        stride = tpb >> 1 # half of tpb
+        while stride > 0: # sum-reduction pattern
+            if tx < stride:
+                shared_logits[tx] += shared_logits[tx + stride]
+            cuda.syncthreads()
+            stride >>= 1
+        if tx == 0:
+            responses[i] = shared_logits[0]            
+
+    @staticmethod
+    @cuda.jit(void(int64[:, :], int64[:], int64[:], float32[:, :], float32[:]))
+    def decision_function_numba_cuda_job_int64(X_selected, mins_selected, maxes_selected, logits, responses):
+        shared_logits = cuda.shared.array(4096, dtype=float32) # 4096 - assumed limit of features used at detection stage           
+        i = cuda.blockIdx.x
+        tpb = cuda.blockDim.x
+        tx = cuda.threadIdx.x
+        T, B = logits.shape
+        fpt = int((T + tpb - 1) / tpb) # features per thread to be translated onto appropriate logits and stored in shared memory (summed if fpt > 1)
+        t = tx # feature index
+        shared_logits[tx] = float32(0.0)
+        cuda.syncthreads()
+        for _ in range(fpt):
+            if t < T:
+                b = int8(B * (X_selected[i, t] - mins_selected[t]) // (maxes_selected[t] - mins_selected[t]))
+                if b < 0:
+                    b = 0
+                elif b >= B:
+                    b = B - 1
+                shared_logits[tx] += logits[t, b]
+            t += tpb
+        cuda.syncthreads()
+        stride = tpb >> 1 # half of tpb
+        while stride > 0: # sum-reduction pattern
+            if tx < stride:
+                shared_logits[tx] += shared_logits[tx + stride]
+            cuda.syncthreads()
+            stride >>= 1
+        if tx == 0:
+            responses[i] = shared_logits[0]
+            
+    @staticmethod
+    @cuda.jit(void(float32[:, :], float32[:], float32[:], float32[:, :], float32[:]))
+    def decision_function_numba_cuda_job_float32(X_selected, mins_selected, maxes_selected, logits, responses):
+        shared_logits = cuda.shared.array(4096, dtype=float32) # 4096 - assumed limit of features used at detection stage           
+        i = cuda.blockIdx.x
+        tpb = cuda.blockDim.x
+        tx = cuda.threadIdx.x
+        T, B = logits.shape
+        fpt = int((T + tpb - 1) / tpb) # features per thread to be translated onto appropriate logits and stored in shared memory (summed if fpt > 1)
+        t = tx # feature index
+        shared_logits[tx] = float32(0.0)
+        cuda.syncthreads()
+        for _ in range(fpt):
+            if t < T:
+                b = int8(B * (X_selected[i, t] - mins_selected[t]) / (maxes_selected[t] - mins_selected[t]))
+                if b < 0:
+                    b = 0
+                elif b >= B:
+                    b = B - 1
+                shared_logits[tx] += logits[t, b]
+            t += tpb
+        cuda.syncthreads()
+        stride = tpb >> 1 # half of tpb
+        while stride > 0: # sum-reduction pattern
+            if tx < stride:
+                shared_logits[tx] += shared_logits[tx + stride]
+            cuda.syncthreads()
+            stride >>= 1
+        if tx == 0:
+            responses[i] = shared_logits[0]            
+            
+    @staticmethod
+    @cuda.jit(void(float64[:, :], float64[:], float64[:], float32[:, :], float32[:]))
+    def decision_function_numba_cuda_job_float64(X_selected, mins_selected, maxes_selected, logits, responses):
+        shared_logits = cuda.shared.array(4096, dtype=float32) # 4096 - assumed limit of features used at detection stage           
+        i = cuda.blockIdx.x
+        tpb = cuda.blockDim.x
+        tx = cuda.threadIdx.x
+        T, B = logits.shape
+        fpt = int((T + tpb - 1) / tpb) # features per thread to be translated onto appropriate logits and stored in shared memory (summed if fpt > 1)
+        t = tx # feature index
+        shared_logits[tx] = float32(0.0)
+        cuda.syncthreads()
+        for _ in range(fpt):
+            if t < T:
+                b = int8(B * (X_selected[i, t] - mins_selected[t]) / (maxes_selected[t] - mins_selected[t]))
+                if b < 0:
+                    b = 0
+                elif b >= B:
+                    b = B - 1
+                shared_logits[tx] += logits[t, b]
+            t += tpb
+        cuda.syncthreads()
+        stride = tpb >> 1 # half of tpb
+        while stride > 0: # sum-reduction pattern
+            if tx < stride:
+                shared_logits[tx] += shared_logits[tx + stride]
+            cuda.syncthreads()
+            stride >>= 1
+        if tx == 0:
+            responses[i] = shared_logits[0]            
                 
     def predict(self, X):
-        return self.class_labels_[1 * (self.decision_function(X) > 0.0)]
+        return self.class_labels_[1 * (self.decision_function(X) > self.decision_threshold_)]

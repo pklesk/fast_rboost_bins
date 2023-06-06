@@ -43,7 +43,7 @@ DETECTION_WINDOW_HEIGHT_MIN = 96
 DETECTION_WINDOW_WIDTH_MIN = 96
 DETECTION_WINDOW_GROWTH = 1.2
 DETECTION_WINDOW_JUMP = 0.05
-DETECTION_THRESHOLD = 6.0 
+DETECTION_THRESHOLD = 6.0 # can be set to None (then classfiers' own thresholds are used)
 DETECTION_POSTPROCESS = "avg" # possible values: None, "nms", "avg"
 
 # folders
@@ -268,9 +268,9 @@ def prepare_scaled_haar_coords(hcoords, features_indexes):
     shcoords_multiple_scales = np.array(shcoords_multiple_scales) 
     return shcoords_multiple_scales
 
-def detect_simple(i, clf, hcoords, n, features_indexes, threshold=0.0, windows=None, shcoords_multiple_scales=None, verbose=False):
+def detect_cpu_simple(i, clf, hcoords, n, features_indexes, threshold=None, windows=None, shcoords_multiple_scales=None, verbose=False):
     if verbose:
-        print("[detect_simple...]")
+        print("[detect_cpu_simple...]")
     t1 = time.time()
     times = {}
     t1_preprocess = time.time()
@@ -281,14 +281,14 @@ def detect_simple(i, clf, hcoords, n, features_indexes, threshold=0.0, windows=N
     dt_preprocess = t2_preprocess - t1_preprocess
     times["preprocess"] = dt_preprocess
     if verbose:
-        print(f"[detect_simple: preprocessing done; time: {dt_preprocess} s, i_gray.shape: {i_gray.shape}]")
+        print(f"[detect_cpu_simple: preprocessing done; time: {dt_preprocess} s, i_gray.shape: {i_gray.shape}]")
     t1_ii = time.time()
     ii = haar.integral_image_numba_jit(i_gray)
     t2_ii = time.time()
     dt_ii = t2_ii - t1_ii
     times["ii"] = dt_ii
     if verbose:
-        print(f"[detect_simple: integral_image_numba_jit done; time: {dt_ii} s]")
+        print(f"[detect_cpu_simple: integral_image_numba_jit done; time: {dt_ii} s]")
     if windows is None:
         t1_prepare = time.time()
         windows, shcoords_multiple_scales = prepare_detection_windows_and_scaled_haar_coords(i_h, i_w, hcoords, features_indexes)
@@ -296,22 +296,24 @@ def detect_simple(i, clf, hcoords, n, features_indexes, threshold=0.0, windows=N
         dt_prepare = t2_prepare - t1_prepare
         times["prepare"] = dt_prepare    
         if verbose:
-            print(f"[detect_simple: prepare_detection_windows_and_scaled_haar_coords done; time: {dt_prepare} s, windows to check: {windows.shape[0]}]")
+            print(f"[detect_cpu_simple: prepare_detection_windows_and_scaled_haar_coords done; time: {dt_prepare} s, windows to check: {windows.shape[0]}]")
     t1_haar = time.time()    
     X = haar.haar_features_multiple_windows_numba_jit(ii, windows, shcoords_multiple_scales, n, features_indexes)
     t2_haar = time.time()
     dt_haar = t2_haar - t1_haar
     times["haar"] = dt_haar
     if verbose:
-        print(f"[detect_simple: haar_features_multiple_windows done; time: {dt_haar} s]")
+        print(f"[detect_cpu_simple: haar_features_multiple_windows done; time: {dt_haar} s]")
     t1_frbb = time.time()    
     responses = clf.decision_function_numba_jit(X)
     t2_frbb = time.time()
     dt_frbb = t2_frbb - t1_frbb 
     times["frbb"] = dt_frbb 
     if verbose:
-        print(f"[detect_simple: clf.decision_function done; time: {dt_frbb} s]")
-    t1_ti = time.time()                
+        print(f"[detect_cpu_simple: clf.decision_function done; time: {dt_frbb} s]")
+    t1_ti = time.time()
+    if threshold is None:
+        threshold = clf.decision_threshold_             
     detected = responses > threshold
     detections = windows[detected, 1:] # skipping scale index
     responses = responses[detected] 
@@ -319,15 +321,15 @@ def detect_simple(i, clf, hcoords, n, features_indexes, threshold=0.0, windows=N
     dt_ti = t2_ti - t1_ti
     times["ti"] = dt_ti
     if verbose:
-        print(f"[detect_simple: finding detections (thresholding and indexing) done; time: {dt_ti} s]")        
+        print(f"[detect_cpu_simple: finding detections (thresholding and indexing) done; time: {dt_ti} s]")        
     t2 = time.time()
     if verbose:
-        print(f"[detect_simple done; time: {t2 - t1} s]")                    
+        print(f"[detect_cpu_simple done; time: {t2 - t1} s]")                    
     return detections, responses, times
 
-def detect_parallel(i, clf, hcoords, n, features_indexes, threshold=0.0, windows=None, shcoords_multiple_scales=None, n_jobs=8, verbose=False):
+def detect_cpu_parallel(i, clf, hcoords, n, features_indexes, threshold=None, windows=None, shcoords_multiple_scales=None, n_jobs=8, verbose=False):
     if verbose:
-        print("[detect_parallel...]")
+        print("[detect_cpu_parallel...]")
     t1 = time.time()
     times = {}
     t1_preprocess = time.time()
@@ -338,14 +340,14 @@ def detect_parallel(i, clf, hcoords, n, features_indexes, threshold=0.0, windows
     dt_preprocess = t2_preprocess - t1_preprocess
     times["preprocess"] = dt_preprocess
     if verbose:
-        print(f"[detect_parallel: preprocessing done; time: {dt_preprocess} s; i_gray.shape: {i_gray.shape}]")
+        print(f"[detect_cpu_parallel: preprocessing done; time: {dt_preprocess} s; i_gray.shape: {i_gray.shape}]")
     t1_ii = time.time()
     ii = haar.integral_image_numba_jit(i_gray)
     t2_ii = time.time()
     dt_ii = t2_ii - t1_ii
     times["ii"] = dt_ii
     if verbose:
-        print(f"[detect_parallel: integral_image_numba_jit done; time: {dt_ii} s]")
+        print(f"[detect_cpu_parallel: integral_image_numba_jit done; time: {dt_ii} s]")
     if windows is None:
         t1_prepare = time.time()
         windows, shcoords_multiple_scales = prepare_detection_windows_and_scaled_haar_coords(i_h, i_w, hcoords, features_indexes)
@@ -353,14 +355,14 @@ def detect_parallel(i, clf, hcoords, n, features_indexes, threshold=0.0, windows
         dt_prepare = t2_prepare - t1_prepare
         times["prepare"] = dt_prepare
         if verbose:
-            print(f"[detect_parallel: prepare_detection_windows_and_scaled_haar_coords done; time: {dt_prepare} s; windows to check: {windows.shape[0]}]")    
+            print(f"[detect_cpu_parallel: prepare_detection_windows_and_scaled_haar_coords done; time: {dt_prepare} s; windows to check: {windows.shape[0]}]")    
     t1_parallel = time.time()
     m = windows.shape[0]
     n_calls = n_jobs * 1
     job_size = m // n_calls
     job_ranges = job_size * np.ones(n_calls, dtype=np.int32)        
     job_ranges[:m % n_calls] += 1
-    job_ranges = np.r_[0, np.cumsum(job_ranges)]                  
+    job_ranges = np.r_[0, np.cumsum(job_ranges)]                    
     with Parallel(n_jobs=n_jobs, verbose=0) as parallel:      
         def worker(job_index):
             job_slice = slice(job_ranges[job_index], job_ranges[job_index + 1])
@@ -370,6 +372,8 @@ def detect_parallel(i, clf, hcoords, n, features_indexes, threshold=0.0, windows
             return job_responses 
         workers_results = parallel((delayed(worker)(job_index) for job_index in range(n_calls)))
         responses =  reduce(lambda a, b: np.r_[a, b], [jr for jr in workers_results])
+        if threshold is None:
+            threshold = clf.decision_threshold_
         detected = responses > threshold
         detections = windows[detected, 1:] # skipping scale index
         responses = responses[detected] 
@@ -377,17 +381,17 @@ def detect_parallel(i, clf, hcoords, n, features_indexes, threshold=0.0, windows
     dt_parallel = t2_parallel - t1_parallel
     times["parallel"] = dt_parallel
     if verbose:
-        print(f"[detect_parallel: all parallel jobs done (haar_features_multiple_windows_numba_jit_tf, clf.decision_function, finding detections (thresholding and indexing); time {dt_parallel} s]")    
+        print(f"[detect_cpu_parallel: all parallel jobs done (haar_features_multiple_windows_numba_jit_tf, clf.decision_function, finding detections (thresholding and indexing); time {dt_parallel} s]")    
     t2 = time.time()
     if verbose:
-        print(f"[detect_parallel done; time: {t2 - t1} s]")                    
+        print(f"[detect_cpu_parallel done; time: {t2 - t1} s]")                    
     return detections, responses, times
 
-def detect_cuda(i, clf, hcoords, features_indexes, threshold=0.0, windows=None, shcoords_multiple_scales=None, 
-                dev_windows=None, dev_shcoords_multiple_scales=None, dev_X_selected=None, dev_mins_selected=None, dev_maxes_selected=None, dev_logits=None, dev_responses=None, 
-                verbose=False):
+def detect_gpu_cuda(i, clf, hcoords, features_indexes, threshold=None, windows=None, shcoords_multiple_scales=None, 
+                    dev_windows=None, dev_shcoords_multiple_scales=None, dev_X_selected=None, dev_mins_selected=None, dev_maxes_selected=None, dev_logits=None, dev_responses=None, 
+                    verbose=False):
     if verbose:
-        print("[detect_cuda...]")
+        print("[detect_gpu_cuda...]")
     t1 = time.time()
     times = {}
     t1_preprocess = time.time()
@@ -398,14 +402,14 @@ def detect_cuda(i, clf, hcoords, features_indexes, threshold=0.0, windows=None, 
     dt_preprocess = t2_preprocess - t1_preprocess
     times["preprocess"] = dt_preprocess
     if verbose:
-        print(f"[detect_cuda: preprocessing done; time: {dt_preprocess} s; i_gray.shape: {i_gray.shape}]")
+        print(f"[detect_gpu_cuda: preprocessing done; time: {dt_preprocess} s; i_gray.shape: {i_gray.shape}]")
     t1_ii = time.time()
     ii = haar.integral_image_numba_jit(i_gray)
     t2_ii = time.time()
     dt_ii = t2_ii - t1_ii
     times["ii"] = dt_ii
     if verbose:
-        print(f"[detect_cuda: integral_image_numba_jit done; time: {dt_ii} s]")
+        print(f"[detect_gpu_cuda: integral_image_numba_jit done; time: {dt_ii} s]")
     if windows is None:
         t1_prepare = time.time()
         windows, shcoords_multiple_scales = prepare_detection_windows_and_scaled_haar_coords(i_h, i_w, hcoords, features_indexes)
@@ -415,7 +419,7 @@ def detect_cuda(i, clf, hcoords, features_indexes, threshold=0.0, windows=None, 
         dt_prepare = t2_prepare - t1_prepare 
         times["prepare"] = dt_prepare
         if verbose:
-            print(f"[detect_cuda: prepare_detection_windows_and_scaled_haar_coords done; time: {dt_prepare} s; windows to check: {windows.shape[0]}]")
+            print(f"[detect_gpu_cuda: prepare_detection_windows_and_scaled_haar_coords done; time: {dt_prepare} s; windows to check: {windows.shape[0]}]")
     if dev_X_selected is None:
         dev_X_selected = cuda.device_array((m, T), dtype=np.int16)
     if dev_mins_selected is None:
@@ -436,17 +440,19 @@ def detect_cuda(i, clf, hcoords, features_indexes, threshold=0.0, windows=None, 
     dt_haar = t2_haar - t1_haar
     times["haar"] = dt_haar
     if verbose:
-        print(f"[detect_cuda: haar_features_multiple_windows_numba_cuda done; time: {dt_haar} s]")
+        print(f"[detect_gpu_cuda: haar_features_multiple_windows_numba_cuda done; time: {dt_haar} s]")
     t1_frbb = time.time()    
-    FastRealBoostBins.decision_function_numba_cuda_job[bpg, tpb](dev_X_selected, dev_mins_selected, dev_maxes_selected, dev_logits, dev_responses)
+    FastRealBoostBins.decision_function_numba_cuda_job_int16[bpg, tpb](dev_X_selected, dev_mins_selected, dev_maxes_selected, dev_logits, dev_responses)
     responses = dev_responses.copy_to_host()
     cuda.synchronize()
     t2_frbb = time.time()
     dt_frbb = t2_frbb - t1_frbb
     times["frbb"] = dt_frbb  
     if verbose:
-        print(f"[detect_cuda: FastRealBoostBins.decision_function_numba_cuda_job done; time: {dt_frbb} s]")
-    t1_ti = time.time()                
+        print(f"[detect_gpu_cuda: FastRealBoostBins.decision_function_numba_cuda_job_int16 done; time: {dt_frbb} s]")
+    t1_ti = time.time()
+    if threshold is None:
+        threshold = clf.decision_threshold_       
     detected = responses > threshold
     detections = windows[detected, 1:] # skipping scale index
     responses = responses[detected] 
@@ -454,17 +460,17 @@ def detect_cuda(i, clf, hcoords, features_indexes, threshold=0.0, windows=None, 
     dt_ti = t2_ti - t1_ti
     times["ti"] = dt_ti 
     if verbose:
-        print(f"[detect_cuda: finding detections (thresholding and indexing) done; time: {dt_ti} s]")        
+        print(f"[detect_gpu_cuda: finding detections (thresholding and indexing) done; time: {dt_ti} s]")        
     t2 = time.time()
     if verbose:
         print(f"[detect_cuda done; time: {t2 - t1} s]")                 
     return detections, responses, times
 
-def detect_cuda_within_multiple_clfs(ii, clf, hcoords, features_indexes, threshold=0.0, windows=None, shcoords_multiple_scales=None, 
-                                dev_windows=None, dev_shcoords_multiple_scales=None, dev_X_selected=None, dev_mins_selected=None, dev_maxes_selected=None, dev_logits=None, dev_responses=None, 
-                                verbose=False):
+def detect_gpu_cuda_within_multiple_clfs(ii, clf, threshold, windows, 
+                                         dev_windows=None, dev_shcoords_multiple_scales=None, dev_X_selected=None, dev_mins_selected=None, dev_maxes_selected=None, dev_logits=None, dev_responses=None, 
+                                         verbose=False):
     if verbose:
-        print("[detect_cuda_within_multiple_clfs...]")
+        print("[detect_gpu_cuda_within_multiple_clfs...]")
     t1 = time.time()
     times = {}
     t1_haar = time.time()
@@ -477,17 +483,19 @@ def detect_cuda_within_multiple_clfs(ii, clf, hcoords, features_indexes, thresho
     dt_haar = t2_haar - t1_haar
     times["haar"] = dt_haar
     if verbose:
-        print(f"[detect_cuda_within_multiple_clfs: haar_features_multiple_windows_numba_cuda done; time: {dt_haar} s]")
+        print(f"[detect_gpu_cuda_within_multiple_clfs: haar_features_multiple_windows_numba_cuda done; time: {dt_haar} s]")
     t1_frbb = time.time()    
-    FastRealBoostBins.decision_function_numba_cuda_job[bpg, tpb](dev_X_selected, dev_mins_selected, dev_maxes_selected, dev_logits, dev_responses)
+    FastRealBoostBins.decision_function_numba_cuda_job_int16[bpg, tpb](dev_X_selected, dev_mins_selected, dev_maxes_selected, dev_logits, dev_responses)
     responses = dev_responses.copy_to_host()
     cuda.synchronize()
     t2_frbb = time.time()
     dt_frbb = t2_frbb - t1_frbb
     times["frbb"] = dt_frbb  
     if verbose:
-        print(f"[detect_cuda_within_multiple_clfs: FastRealBoostBins.decision_function_numba_cuda_job done; time: {dt_frbb} s]")
-    t1_ti = time.time()                
+        print(f"[detect_gpu_cuda_within_multiple_clfs: FastRealBoostBins.decision_function_numba_cuda_job_int16 done; time: {dt_frbb} s]")
+    t1_ti = time.time()
+    if threshold is None:
+        threshold = clf.decision_threshold_       
     detected = responses > threshold
     detections = windows[detected, 1:] # skipping scale index
     responses = responses[detected] 
@@ -495,14 +503,13 @@ def detect_cuda_within_multiple_clfs(ii, clf, hcoords, features_indexes, thresho
     dt_ti = t2_ti - t1_ti
     times["ti"] = dt_ti 
     if verbose:
-        print(f"[detect_cuda_within_multiple_clfs: finding detections (thresholding and indexing) done; time: {dt_ti} s]")        
+        print(f"[detect_gpu_cuda_within_multiple_clfs: finding detections (thresholding and indexing) done; time: {dt_ti} s]")        
     t2 = time.time()
     if verbose:
-        print(f"[detect_cuda_within_multiple_clfs done; time: {t2 - t1} s]")                 
+        print(f"[detect_gpu_cuda_within_multiple_clfs done; time: {t2 - t1} s]")                 
     return detections, responses, times
 
-
-def postprocess_nms(detections, responses, threshold=0.5):
+def postprocess_nms(detections, responses, iou_threshold=0.5):
     d = detections
     r = responses
     d_final = []
@@ -520,11 +527,11 @@ def postprocess_nms(detections, responses, threshold=0.5):
         for j in range(i + 1, len(detections)):
             if indexes[j] == False:
                 continue            
-            if haar.iou2(d[i], d[j]) >= threshold:
+            if haar.iou2(d[i], d[j]) >= iou_threshold:
                 indexes[j] = False
     return d_final, r_final
 
-def postprocess_avg(detections, responses, threshold=0.5):
+def postprocess_avg(detections, responses, iou_threshold=0.5):
     d = detections
     r = responses
     d_final = []
@@ -544,7 +551,7 @@ def postprocess_avg(detections, responses, threshold=0.5):
         for j in range(i + 1, len(detections)):
             if indexes[j] == False:
                 continue            
-            if haar.iou2(d[i], d[j]) >= threshold:
+            if haar.iou2(d[i], d[j]) >= iou_threshold:
                 indexes[j] = False
                 d_avg.append(d[j])
                 r_avg.append(r[j])
@@ -554,7 +561,7 @@ def postprocess_avg(detections, responses, threshold=0.5):
         r_final.append(r_avg)
     return d_final, r_final
 
-def demo_detect_in_video(clf, hcoords, threshold, computations="cuda", postprocess="avg", n_jobs=8, detector_title=None, verbose_loop=True, verbose_detect=False):
+def demo_detect_in_video(clf, hcoords, threshold, computations="gpu_cuda", postprocess="avg", n_jobs=8, detector_title=None, verbose_loop=True, verbose_detect=False):
     print("DEMO OF DETECT IN VIDEO...")
     color_detect = (0, 255, 255)
     color_info = (255, 255, 255)
@@ -623,14 +630,14 @@ def demo_detect_in_video(clf, hcoords, threshold, computations="cuda", postproce
             print(f"[windows per frame: {windows.shape[0]}]")
             print(f"[terms per window: {clf.T_}]")                            
         t1_comps = time.time()
-        if computations == "simple":
-            detections, responses, times = detect_simple(frame, clf, hcoords, n, features_indexes, threshold, windows, shcoords_multiple_scales, verbose=verbose_detect)
-        elif computations == "parallel":
-            detections, responses, times = detect_parallel(frame, clf, hcoords, n, features_indexes, threshold, windows, shcoords_multiple_scales, n_jobs=n_jobs, verbose=verbose_detect)        
-        elif computations == "cuda":
-            detections, responses, times = detect_cuda(frame, clf, hcoords, features_indexes, threshold, windows, shcoords_multiple_scales, 
-                                                       dev_windows, dev_shcoords_multiple_scales, dev_X_selected, dev_mins_selected, dev_maxes_selected, dev_logits, dev_responses, 
-                                                       verbose=verbose_detect)                        
+        if computations == "cpu_simple":
+            detections, responses, times = detect_cpu_simple(frame, clf, hcoords, n, features_indexes, threshold, windows, shcoords_multiple_scales, verbose=verbose_detect)
+        elif computations == "cpu_parallel":
+            detections, responses, times = detect_cpu_parallel(frame, clf, hcoords, n, features_indexes, threshold, windows, shcoords_multiple_scales, n_jobs=n_jobs, verbose=verbose_detect)        
+        elif computations == "gpu_cuda":
+            detections, responses, times = detect_gpu_cuda(frame, clf, hcoords, features_indexes, threshold, windows, shcoords_multiple_scales, 
+                                                           dev_windows, dev_shcoords_multiple_scales, dev_X_selected, dev_mins_selected, dev_maxes_selected, dev_logits, dev_responses, 
+                                                           verbose=verbose_detect)                        
         t2_comps = time.time()
         t1_post = time.time()
         if postprocess is not None:
@@ -782,10 +789,10 @@ def demo_detect_in_video_multiple_clfs(clfs, hcoords, thresholds, postprocess="a
             print(f"[windows per frame: {windows.shape[0]}]")
             print(f"[terms per window per clfs: {[clf.T_ for clf in clfs]}]")        
         for i in range(len(clfs)):
-            t1_comps = time.time()  
-            detections, responses, times = detect_cuda_within_multiple_clfs(ii, clfs[i], hcoords, features_indexes[i], thresholds[i], windows, shcoords_multiple_scales[i], 
-                                                                            dev_windows, dev_shcoords_multiple_scales[i], dev_X_selected[i], dev_mins_selected[i], dev_maxes_selected[i], dev_logits[i], dev_responses[i], 
-                                                                            verbose=verbose_detect)
+            t1_comps = time.time()      
+            detections, responses, times = detect_gpu_cuda_within_multiple_clfs(ii, clfs[i], thresholds[i], windows, 
+                                                                                dev_windows, dev_shcoords_multiple_scales[i], dev_X_selected[i], dev_mins_selected[i], dev_maxes_selected[i], dev_logits[i], dev_responses[i], 
+                                                                                verbose=verbose_detect)
             t2_comps = time.time()
             tpf_comps += t2_comps - t1_comps            
             t1_post = time.time()
@@ -857,7 +864,7 @@ def demo_detect_in_video_multiple_clfs(clfs, hcoords, thresholds, postprocess="a
 # ----------------------------------------------------------------------------------------------------------------------------------------------------------------
 # MAIN
 # ----------------------------------------------------------------------------------------------------------------------------------------------------------------
-if __name__ == "__main__":        
+if __name__ == "__main_main__":        
     print("DEMONSTRATION OF \"FAST REAL-BOOST WITH BINS\" ALGORITHM IMPLEMENTED VIA NUMBA.JIT AND NUMBA.CUDA.")
 
     n = haar.HAAR_TEMPLATES.shape[0] * S**2 * (2 * P - 1)**2    
@@ -947,8 +954,6 @@ if __name__ == "__rocs__":
         roc_arr = np.array([fars, sens, thrs]).T        
         plt.plot(fars, sens, label=CLF_NAME)
         print(f"[X_train.shape: {X_train.shape}, X_test.shape: {X_test.shape}]")        
-        # with np.printoptions(threshold=np.inf):
-        #     print(roc_arr)
     plt.xscale("log")
     plt.xlabel("FAR")
     plt.ylabel("SENSITIVITY")
