@@ -27,13 +27,13 @@ def fddb_data_to_haar(hcoords, n, negs_per_img, seed=0, verbose=False):
     print("FDDB DATA TO HAAR...")
     t1 = time.time()
     folds_names_train = [
-        # "FDDB-folds/FDDB-fold-01-ellipseList.txt",
-        # "FDDB-folds/FDDB-fold-02-ellipseList.txt",
-        # "FDDB-folds/FDDB-fold-03-ellipseList.txt",
-        # "FDDB-folds/FDDB-fold-04-ellipseList.txt",
-        # "FDDB-folds/FDDB-fold-05-ellipseList.txt",
-        # "FDDB-folds/FDDB-fold-06-ellipseList.txt",
-        # "FDDB-folds/FDDB-fold-07-ellipseList.txt",
+        "FDDB-folds/FDDB-fold-01-ellipseList.txt",
+        "FDDB-folds/FDDB-fold-02-ellipseList.txt",
+        "FDDB-folds/FDDB-fold-03-ellipseList.txt",
+        "FDDB-folds/FDDB-fold-04-ellipseList.txt",
+        "FDDB-folds/FDDB-fold-05-ellipseList.txt",
+        "FDDB-folds/FDDB-fold-06-ellipseList.txt",
+        "FDDB-folds/FDDB-fold-07-ellipseList.txt",
         "FDDB-folds/FDDB-fold-08-ellipseList.txt",
         "FDDB-folds/FDDB-fold-09-ellipseList.txt"
         ] 
