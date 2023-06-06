@@ -98,8 +98,6 @@ def fddb_data_to_haar_single_fold(fddb_root, fold_name, hcoords, n, negs_per_img
         file_name = fddb_root + line + ".jpg"
         log_line = f"[image {n_imgs + 1}: {file_name} within {fold_name}]"        
         print(log_line)    
-        if n_imgs == 234:
-            print("debug")
         i_original = cv2.imread(file_name)                    
         line = lines[li]
         li += 1
