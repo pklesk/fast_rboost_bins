@@ -599,7 +599,7 @@ def demo_detect_in_video(clf, hcoords, threshold, computations="gpu_cuda", postp
     dev_maxes_selected = None
     dev_logits = None
     dev_responses = None
-    if computations == "cuda":
+    if computations == "gpu_cuda":
         m, T = windows.shape[0], features_indexes.size
         dev_windows = cuda.to_device(windows)
         dev_shcoords_multiple_scales = cuda.to_device(shcoords_multiple_scales)        
@@ -668,7 +668,7 @@ def demo_detect_in_video(clf, hcoords, threshold, computations="gpu_cuda", postp
         cv2.putText(frame, f"WINDOWS PER FRAME: {windows.shape[0]}", (0, frame_h - 1 - 4 * text_shift), cv2.FONT_HERSHEY_PLAIN, font_size, color_info, 1)
         cv2.putText(frame, f"TERMS PER WINDOW: {clf.T_}", (0, frame_h - 1 - 3 * text_shift), cv2.FONT_HERSHEY_PLAIN, font_size, color_info, 1)
         computations_str = f"COMPUTATIONS: {computations.upper()}"
-        if computations == "cuda":
+        if computations == "gpu_cuda":
             computations_str += f" [GPU: {gpu_name.upper()}]"
         cv2.putText(frame, f"{computations_str}", (0, frame_h - 1 - 2 * text_shift), cv2.FONT_HERSHEY_PLAIN, font_size, color_info, 1)
         comps_details = ""
@@ -909,7 +909,7 @@ if __name__ == "__main__":
         measure_accs_of_model(clf, X_train, y_train, X_test, y_test)        
         
     if DEMO_DETECT_IN_VIDEO:            
-        demo_detect_in_video(clf, hcoords, threshold=DETECTION_THRESHOLD, computations="cuda", postprocess=DETECTION_POSTPROCESS, n_jobs=8, detector_title=KIND.upper(), verbose_loop=True, verbose_detect=True)
+        demo_detect_in_video(clf, hcoords, threshold=DETECTION_THRESHOLD, computations="gpu_cuda", postprocess=DETECTION_POSTPROCESS, n_jobs=8, detector_title=KIND.upper(), verbose_loop=True, verbose_detect=True)
         
     if DEMO_DETECT_IN_VIDEO_MULTIPLE_CLFS:        
         clfs_names = ["clf_frbb_face_n_18225_S_5_P_5_NPI_200_SEED_0_T_1024_B_8.bin", "clf_frbb_hand_n_18225_S_5_P_5_NPI_10_SEED_0_T_1024_B_8.bin"]
