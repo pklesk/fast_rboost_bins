@@ -50,7 +50,8 @@ class FastRealBoostBins(BaseEstimator, ClassifierMixin):
         self.cuda_tpb_default = cuda.get_current_device().MAX_THREADS_PER_BLOCK // 2 if self.cuda_available else None
         self.cuda_tpb_bin_add_weights = 128 if self.cuda_available else None
         self.cuda_n_streams = cuda.get_current_device().ASYNC_ENGINE_COUNT if self.cuda_available else None
-        self.set_modes(fit_mode, decision_function_mode)        
+        self.set_modes(fit_mode, decision_function_mode)
+        self.decision_function_numba_cuda_job_static_method_name = None        
         
     def set_modes(self, fit_mode="numba_cuda", decision_function_mode="numba_cuda"):
         self.fit_mode = fit_mode # possible values: "numpy", "numba_cuda" 
@@ -76,7 +77,7 @@ class FastRealBoostBins(BaseEstimator, ClassifierMixin):
     def fit(self, X, y):
         self.fit_init()
         self.fit_method(X, y)
-        self.assign_decision_function_numba_cuda_job_by_dtype(X.dtype)
+        self.set_decision_function_numba_cuda_job_static_method_name(X.dtype)
         return self
     
     def fit_init(self):        
@@ -86,20 +87,19 @@ class FastRealBoostBins(BaseEstimator, ClassifierMixin):
         self.logits_ = np.zeros((self.T_, self.B_), dtype=np.float32)
         self.decision_threshold_ = 0.0
     
-    def assign_decision_function_numba_cuda_job_by_dtype(self, dtype):
-        self.decision_function_numba_cuda_job_static_method = None
+    def set_decision_function_numba_cuda_job_static_method_name(self, dtype):
         if dtype == np.int8:
-            self.decision_function_numba_cuda_job_static_method = FastRealBoostBins.decision_function_numba_cuda_job_int8
+            self.decision_function_numba_cuda_job_static_method_name = "decision_function_numba_cuda_job_int8"
         elif dtype == np.int16:
-            self.decision_function_numba_cuda_job_static_method = FastRealBoostBins.decision_function_numba_cuda_job_int16
+            self.decision_function_numba_cuda_job_static_method_name = "decision_function_numba_cuda_job_int16"
         elif dtype == np.int32:
-            self.decision_function_numba_cuda_job_static_method = FastRealBoostBins.decision_function_numba_cuda_job_int32
+            self.decision_function_numba_cuda_job_static_method_name = "decision_function_numba_cuda_job_int32"
         elif dtype == np.int64:
-            self.decision_function_numba_cuda_job_static_method = FastRealBoostBins.decision_function_numba_cuda_job_int64
+            self.decision_function_numba_cuda_job_static_method_name = "decision_function_numba_cuda_job_int64"
         elif dtype == np.float32:
-            self.decision_function_numba_cuda_job_static_method = FastRealBoostBins.decision_function_numba_cuda_job_float32
+            self.decision_function_numba_cuda_job_static_method_name = "decision_function_numba_cuda_job_float32"
         elif dtype == np.float64:
-            self.decision_function_numba_cuda_job_static_method = FastRealBoostBins.decision_function_numba_cuda_job_float64                        
+            self.decision_function_numba_cuda_job_static_method_name = "decision_function_numba_cuda_job_float64"                                    
     
     def bin_data(self, X, mins, maxes):
         X_binned = None
@@ -564,7 +564,8 @@ class FastRealBoostBins(BaseEstimator, ClassifierMixin):
         dev_responses = cuda.device_array(m, dtype=np.float32)
         tpb = self.cuda_tpb_default
         bpg = m        
-        self.decision_function_numba_cuda_job_static_method[bpg, tpb](dev_X_selected, dev_mins_selected, dev_maxes_selected, dev_logits, dev_responses)
+        decision_function_numba_cuda_job_method = getattr(FastRealBoostBins, self.decision_function_numba_cuda_job_static_method_name)
+        decision_function_numba_cuda_job_method[bpg, tpb](dev_X_selected, dev_mins_selected, dev_maxes_selected, dev_logits, dev_responses)
         cuda.synchronize()
         responses = dev_responses.copy_to_host()        
         return responses
