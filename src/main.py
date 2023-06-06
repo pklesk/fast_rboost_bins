@@ -18,24 +18,24 @@ __email__ = "pklesk@zut.edu.pl"
 
 
 # main settings
-KIND = "hand"
+KIND = "face"
 S = 5 # parameter "scales" to generete Haar-like features
 P = 5 # parameter "positions" to generete Haar-like features
-NPI = 20 # "negatives per image" - no. of negatives (negative windows) to sample per image (image real or generated synthetically) 
-T = 1024 # size of ensemble in FastRealBoostBins (equivalently, no. of boosting rounds when fitting)
+NPI = 200 # "negatives per image" - no. of negatives (negative windows) to sample per image (image real or generated synthetically) 
+T = 2048 # size of ensemble in FastRealBoostBins (equivalently, no. of boosting rounds when fitting)
 B = 8 # no. of bins
 SEED = 0 # randomization seed
 DEMO_HAAR_FEATURES_ALL = False
 DEMO_HAAR_FEATURES_SELECTED = False
-REGENERATE_DATA = False
-FIT_OR_REFIT_MODEL = False
-MEASURE_ACCS_OF_MODEL = False
+REGENERATE_DATA = True
+FIT_OR_REFIT_MODEL = True
+MEASURE_ACCS_OF_MODEL = True
 DEMO_DETECT_IN_VIDEO = False
-DEMO_DETECT_IN_VIDEO_MULTIPLE_CLFS = True
+DEMO_DETECT_IN_VIDEO_MULTIPLE_CLFS = False
 
 # cv2 camera settings
 CV2_VIDEO_CAPTURE_CAMERA_INDEX = 0
-CV2_VIDEO_CAPTURE_IS_IT_MSWINDOWS = True
+CV2_VIDEO_CAPTURE_IS_IT_MSWINDOWS = False
 
 # detection procedure settings
 DETECTION_SCALES = 10
@@ -864,7 +864,7 @@ def demo_detect_in_video_multiple_clfs(clfs, hcoords, thresholds, postprocess="a
 # ----------------------------------------------------------------------------------------------------------------------------------------------------------------
 # MAIN
 # ----------------------------------------------------------------------------------------------------------------------------------------------------------------
-if __name__ == "__main_main__":        
+if __name__ == "__main__":        
     print("DEMONSTRATION OF \"FAST REAL-BOOST WITH BINS\" ALGORITHM IMPLEMENTED VIA NUMBA.JIT AND NUMBA.CUDA.")
 
     n = haar.HAAR_TEMPLATES.shape[0] * S**2 * (2 * P - 1)**2    
