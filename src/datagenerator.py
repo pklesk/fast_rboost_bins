@@ -27,13 +27,13 @@ def fddb_data_to_haar(hcoords, n, negs_per_img, seed=0, verbose=False):
     print("FDDB DATA TO HAAR...")
     t1 = time.time()
     folds_names_train = [
-        "FDDB-folds/FDDB-fold-01-ellipseList.txt",
-        "FDDB-folds/FDDB-fold-02-ellipseList.txt",
-        "FDDB-folds/FDDB-fold-03-ellipseList.txt",
-        "FDDB-folds/FDDB-fold-04-ellipseList.txt",
-        "FDDB-folds/FDDB-fold-05-ellipseList.txt",
-        "FDDB-folds/FDDB-fold-06-ellipseList.txt",
-        "FDDB-folds/FDDB-fold-07-ellipseList.txt",
+        # "FDDB-folds/FDDB-fold-01-ellipseList.txt",
+        # "FDDB-folds/FDDB-fold-02-ellipseList.txt",
+        # "FDDB-folds/FDDB-fold-03-ellipseList.txt",
+        # "FDDB-folds/FDDB-fold-04-ellipseList.txt",
+        # "FDDB-folds/FDDB-fold-05-ellipseList.txt",
+        # "FDDB-folds/FDDB-fold-06-ellipseList.txt",
+        # "FDDB-folds/FDDB-fold-07-ellipseList.txt",
         "FDDB-folds/FDDB-fold-08-ellipseList.txt",
         "FDDB-folds/FDDB-fold-09-ellipseList.txt"
         ] 
@@ -96,8 +96,10 @@ def fddb_data_to_haar_single_fold(fddb_root, fold_name, hcoords, n, negs_per_img
     li += 1
     while line != "":
         file_name = fddb_root + line + ".jpg"
-        log_line = f"[image {n_imgs + 1}: {file_name} within {fold_name}]"
+        log_line = f"[image {n_imgs + 1}: {file_name} within {fold_name}]"        
         print(log_line)    
+        if n_imgs == 234:
+            print("debug")
         i_original = cv2.imread(file_name)                    
         line = lines[li]
         li += 1
@@ -119,10 +121,10 @@ def fddb_data_to_haar_single_fold(fddb_root, fold_name, hcoords, n, negs_per_img
                 if verbose:
                     print(f"[positive window {target_coords} out of bounds -> ignored]")
                     continue
-            if (h / ii.shape[0] < pos_rel_min): # smaller positives might cause white regions in haar features having no area
+            if h / ii.shape[0] < pos_rel_min: # smaller positives might cause white regions in haar features having no area
                 if verbose:
                     print(f"[positive window {target_coords} too small -> ignored]")
-                    continue                            
+                continue                            
             n_targets += 1
             targets_coords.append(target_coords)                        
             shcoords_one_window = (np.array([h, w, h, w]) * hcoords).astype(np.int16)                        
@@ -223,7 +225,7 @@ def hagrid_data_to_haar(hcoords, n, negs_per_img, train_ratio=0.75, seed=0, verb
                 if verbose:
                     print(f"[window {target_coords} out of bounds -> ignored]")
                 continue
-            if (h / H < pos_rel_min): # min relative size of positive window (smaller may lead to division by zero when white regions in haar features have no area)
+            if h / H < pos_rel_min: # min relative size of positive window (smaller may lead to division by zero when white regions in haar features have no area)
                 if verbose:
                     print(f"[window {target_coords} too small -> ignored]")
                 continue                            
