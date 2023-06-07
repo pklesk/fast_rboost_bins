@@ -18,7 +18,7 @@ __email__ = "pklesk@zut.edu.pl"
 
 
 # main settings
-KIND = "face"
+KIND = "hand"
 S = 5 # parameter "scales" to generete Haar-like features
 P = 5 # parameter "positions" to generete Haar-like features
 NPI = 200 # "negatives per image" - no. of negatives (negative windows) to sample per image (image real or generated synthetically) 
