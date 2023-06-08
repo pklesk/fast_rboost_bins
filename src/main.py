@@ -18,10 +18,10 @@ __email__ = "pklesk@zut.edu.pl"
 
 
 # main settings
-KIND = "hand"
+KIND = "face"
 S = 5 # parameter "scales" to generete Haar-like features
 P = 5 # parameter "positions" to generete Haar-like features
-NPI = 30 # "negatives per image" - no. of negatives (negative windows) to sample per image (image real or generated synthetically) 
+NPI = 300 # "negatives per image" - no. of negatives (negative windows) to sample per image (image real or generated synthetically) 
 T = 2048 # size of ensemble in FastRealBoostBins (equivalently, no. of boosting rounds when fitting)
 B = 8 # no. of bins
 SEED = 0 # randomization seed
@@ -30,6 +30,7 @@ DEMO_HAAR_FEATURES_SELECTED = False
 REGENERATE_DATA = True
 FIT_OR_REFIT_MODEL = True
 MEASURE_ACCS_OF_MODEL = True
+ADJUST_DECISION_THRESHOLD_OF_MODEL = True
 DEMO_DETECT_IN_VIDEO = False
 DEMO_DETECT_IN_VIDEO_MULTIPLE_CLFS = False
 
@@ -43,7 +44,7 @@ DETECTION_WINDOW_HEIGHT_MIN = 96
 DETECTION_WINDOW_WIDTH_MIN = 96
 DETECTION_WINDOW_GROWTH = 1.2
 DETECTION_WINDOW_JUMP = 0.05
-DETECTION_THRESHOLD = 6.0 # can be set to None (then classfiers' own thresholds are used)
+DETECTION_DECISION_THRESHOLD = 7.0 # can be set to None (then classfiers' internal thresholds are used)
 DETECTION_POSTPROCESS = "avg" # possible values: None, "nms", "avg"
 
 # folders
@@ -157,7 +158,7 @@ def measure_accs_of_model(clf, X_train, y_train, X_test, y_test):
     t2_accs = time.time()
     print("MEASURE ACCS DONE. [time: " + str(t2_accs - t1_accs) + " s]")
     
-def best_threshold_via_prec(roc, y_test):
+def best_decision_threshold_via_precision(roc, y_test, heuristic_coeff):
     py = np.zeros(2)
     py[0] = np.mean(y_test == -1)
     py[1] = np.mean(y_test == 1)
@@ -173,10 +174,22 @@ def best_threshold_via_prec(roc, y_test):
     best_thr = dts_sub[best_index]
     best_prec = precs[best_index]    
     if best_index > 0:
-        best_thr = 0.5 * (best_thr + dts_sub[best_index - 1]) 
-        best_prec = 0.5 * (best_prec + precs[best_index - 1])
-    print(f"[best_threshold_via_prec -> best_thr: {best_thr}, best_prec: {best_prec}; py: {py}, fprs_sub[best_index]: {fprs_sub[best_index]}, tprs_sub[best_index]: {tprs_sub[best_index]}]")
+        best_thr = heuristic_coeff * best_thr + (1.0 - heuristic_coeff) * dts_sub[best_index - 1] 
+        best_prec = heuristic_coeff * best_prec + (1.0 - heuristic_coeff) * precs[best_index - 1]
+    print(f"[best_decision_threshold_via_precision (heuristic_coeff: {heuristic_coeff}) -> best_thr: {best_thr}, best_prec: {best_prec}; py: {py}, best_index on roc: {best_index}, fprs_sub[best_index]: {fprs_sub[best_index]}, tprs_sub[best_index]: {tprs_sub[best_index]}]")
     return best_thr, best_prec
+
+def adjust_decision_threshold_via_precision(clf, X_test, y_test, heuristic_coeff=0.25):
+        print("ADJUST DECISION THRESHOLD VIA PRECISION...")
+        t1 = time.time()
+        responses_test = clf.decision_function(X_test)
+        roc = roc_curve(y_test, responses_test)
+        best_thr, _ = best_decision_threshold_via_precision(roc, y_test, heuristic_coeff)
+        print(f"[adjusting decision threshold within clf form {clf.decision_threshold_} to {best_thr}]")
+        clf.decision_threshold_ = best_thr
+        t2 = time.time()
+        print(f"ADJUST DECISION THRESHOLD VIA PRECISION DONE. [time: {t2 - t1} s] ")
+        
 
 def draw_feature_at(i, j0, k0, shcoords_one_feature):
     i_copy = i.copy()
@@ -186,31 +199,43 @@ def draw_feature_at(i, j0, k0, shcoords_one_feature):
     cv2.rectangle(i_copy, (k0 + k, j0 + j), (k0 + k + w - 1, j0 + j + h - 1), (255, 255, 255), cv2.FILLED)
     return i_copy
 
-def demo_haar_features(hinds, hcoords, n):
+def demo_haar_features(hinds, hcoords, n, selected_indexes=None):
     print(f"DEMO OF HAAR FEATURES... [hcoords.shape: {hcoords.shape}]")
-    i = cv2.imread(FOLDER_EXTRAS + "photo_for_face_features_demo.jpg")
-    j0, k0 = 116, 100
-    w = h = 221
-    # i = cv2.imread(FOLDER_EXTRAS + "photo_for_hand_features_demo.jpg")
-    # j0, k0 = 86, 52
-    # w = h = 221
+    if KIND == "face":
+        i = cv2.imread(FOLDER_EXTRAS + "photo_for_face_features_demo.jpg")
+        j0, k0 = 107, 96
+        w = h = 241
+    elif KIND == "hand": 
+        i = cv2.imread(FOLDER_EXTRAS + "photo_for_hand_features_demo.jpg")
+        j0, k0 = 172, 53
+        w = h = 257
     i_resized = haar.resize_image(i)
     i_gray = cv2.cvtColor(i_resized, cv2.COLOR_BGR2GRAY)
     ii = haar.integral_image_numba_jit(i_gray)
     cv2.rectangle(i_resized, (k0, j0), (k0 + w - 1, j0 + h - 1), (0, 0, 255), 1)
-    title = "DEMO OF FEATURES [press ESC to quit or any other key to continue]"    
+    title = "['esc' to quit or other to continue]"
+    font_size = 1.0
+    text_shift = int(font_size * 16)
+    color_info = (255, 255, 255)
+    cv2.putText(i_resized, f"DEMO OF FEATURES [KIND: {KIND.upper()}]", (0, 0 + 1 * text_shift), cv2.FONT_HERSHEY_PLAIN, font_size, color_info, 1)        
     cv2.imshow(title, i_resized)
-    cv2.waitKey()    
-    for ord_ind, (ind, c) in enumerate(zip(hinds, hcoords)):
+    cv2.waitKey()
+    if selected_indexes is None:
+        selected_indexes = np.arange(n)
+    #for ord_ind, (ind, c) in enumerate(zip(hinds, hcoords)):
+    for ord_ind in selected_indexes:
+        ind = hinds[ord_ind]
+        c = hcoords[ord_ind]
         hcoords_window = (np.array([h, w, h, w]) * c).astype(np.int16) 
         i_with_feature = draw_feature_at(i_resized, j0, k0, hcoords_window)
         i_temp = cv2.addWeighted(i_resized, 0.5, i_with_feature, 0.5, 0.0)
-        print(f"feature index (ordinal): {ord_ind}")
-        print(f"feature multi-index: {ind}")
-        print(f"feature hcoords (cartesian):\n {c}")
-        print(f"feature hcoords in window:\n {hcoords_window}")
-        print(f"feature value: {haar_feature_numba_jit(ii, j0, k0, hcoords_window)}")        
-        print("----------------------------------------------------------------")
+        feature_value = haar.haar_feature_numba_jit(ii, j0, k0, hcoords_window)
+        print(f"[feature index (ordinal): {ord_ind}]")
+        print(f"[feature multi-index: {ind}]")
+        print(f"[feature hcoords (cartesian):\n {c}]")
+        print(f"[feature hcoords in window:\n {hcoords_window}]")
+        print(f"[feature value: {feature_value}]")
+        print("--------------------------------------------------------------------------------------------------------------------------------")
         cv2.imshow(title, i_temp)
         key = cv2.waitKey()
         if key & 0xFF == 27: # esc key
@@ -268,7 +293,7 @@ def prepare_scaled_haar_coords(hcoords, features_indexes):
     shcoords_multiple_scales = np.array(shcoords_multiple_scales) 
     return shcoords_multiple_scales
 
-def detect_cpu_simple(i, clf, hcoords, n, features_indexes, threshold=None, windows=None, shcoords_multiple_scales=None, verbose=False):
+def detect_cpu_simple(i, clf, hcoords, n, features_indexes, decision_threshold=None, windows=None, shcoords_multiple_scales=None, verbose=False):
     if verbose:
         print("[detect_cpu_simple...]")
     t1 = time.time()
@@ -312,9 +337,9 @@ def detect_cpu_simple(i, clf, hcoords, n, features_indexes, threshold=None, wind
     if verbose:
         print(f"[detect_cpu_simple: clf.decision_function done; time: {dt_frbb} s]")
     t1_ti = time.time()
-    if threshold is None:
-        threshold = clf.decision_threshold_             
-    detected = responses > threshold
+    if decision_threshold is None:
+        decision_threshold = clf.decision_threshold_             
+    detected = responses > decision_threshold
     detections = windows[detected, 1:] # skipping scale index
     responses = responses[detected] 
     t2_ti = time.time()
@@ -327,7 +352,7 @@ def detect_cpu_simple(i, clf, hcoords, n, features_indexes, threshold=None, wind
         print(f"[detect_cpu_simple done; time: {t2 - t1} s]")                    
     return detections, responses, times
 
-def detect_cpu_parallel(i, clf, hcoords, n, features_indexes, threshold=None, windows=None, shcoords_multiple_scales=None, n_jobs=8, verbose=False):
+def detect_cpu_parallel(i, clf, hcoords, n, features_indexes, decision_threshold=None, windows=None, shcoords_multiple_scales=None, n_jobs=8, verbose=False):
     if verbose:
         print("[detect_cpu_parallel...]")
     t1 = time.time()
@@ -372,9 +397,9 @@ def detect_cpu_parallel(i, clf, hcoords, n, features_indexes, threshold=None, wi
             return job_responses 
         workers_results = parallel((delayed(worker)(job_index) for job_index in range(n_calls)))
         responses =  reduce(lambda a, b: np.r_[a, b], [jr for jr in workers_results])
-        if threshold is None:
-            threshold = clf.decision_threshold_
-        detected = responses > threshold
+        if decision_threshold is None:
+            decision_threshold = clf.decision_threshold_
+        detected = responses > decision_threshold
         detections = windows[detected, 1:] # skipping scale index
         responses = responses[detected] 
     t2_parallel = time.time()
@@ -387,7 +412,7 @@ def detect_cpu_parallel(i, clf, hcoords, n, features_indexes, threshold=None, wi
         print(f"[detect_cpu_parallel done; time: {t2 - t1} s]")                    
     return detections, responses, times
 
-def detect_gpu_cuda(i, clf, hcoords, features_indexes, threshold=None, windows=None, shcoords_multiple_scales=None, 
+def detect_gpu_cuda(i, clf, hcoords, features_indexes, decision_threshold=None, windows=None, shcoords_multiple_scales=None, 
                     dev_windows=None, dev_shcoords_multiple_scales=None, dev_X_selected=None, dev_mins_selected=None, dev_maxes_selected=None, dev_logits=None, dev_responses=None, 
                     verbose=False):
     if verbose:
@@ -451,9 +476,9 @@ def detect_gpu_cuda(i, clf, hcoords, features_indexes, threshold=None, windows=N
     if verbose:
         print(f"[detect_gpu_cuda: FastRealBoostBins.decision_function_numba_cuda_job_int16 done; time: {dt_frbb} s]")
     t1_ti = time.time()
-    if threshold is None:
-        threshold = clf.decision_threshold_       
-    detected = responses > threshold
+    if decision_threshold is None:
+        decision_threshold = clf.decision_threshold_       
+    detected = responses > decision_threshold
     detections = windows[detected, 1:] # skipping scale index
     responses = responses[detected] 
     t2_ti = time.time()
@@ -466,7 +491,7 @@ def detect_gpu_cuda(i, clf, hcoords, features_indexes, threshold=None, windows=N
         print(f"[detect_cuda done; time: {t2 - t1} s]")                 
     return detections, responses, times
 
-def detect_gpu_cuda_within_multiple_clfs(ii, clf, threshold, windows, 
+def detect_gpu_cuda_within_multiple_clfs(ii, clf, decision_threshold, windows, 
                                          dev_windows=None, dev_shcoords_multiple_scales=None, dev_X_selected=None, dev_mins_selected=None, dev_maxes_selected=None, dev_logits=None, dev_responses=None, 
                                          verbose=False):
     if verbose:
@@ -494,9 +519,9 @@ def detect_gpu_cuda_within_multiple_clfs(ii, clf, threshold, windows,
     if verbose:
         print(f"[detect_gpu_cuda_within_multiple_clfs: FastRealBoostBins.decision_function_numba_cuda_job_int16 done; time: {dt_frbb} s]")
     t1_ti = time.time()
-    if threshold is None:
-        threshold = clf.decision_threshold_       
-    detected = responses > threshold
+    if decision_threshold is None:
+        decision_threshold = clf.decision_threshold_       
+    detected = responses > decision_threshold
     detections = windows[detected, 1:] # skipping scale index
     responses = responses[detected] 
     t2_ti = time.time()
@@ -561,7 +586,7 @@ def postprocess_avg(detections, responses, iou_threshold=0.5):
         r_final.append(r_avg)
     return d_final, r_final
 
-def demo_detect_in_video(clf, hcoords, threshold, computations="gpu_cuda", postprocess="avg", n_jobs=8, detector_title=None, verbose_loop=True, verbose_detect=False):
+def demo_detect_in_video(clf, hcoords, decision_threshold, computations="gpu_cuda", postprocess="avg", n_jobs=8, detector_title=None, verbose_loop=True, verbose_detect=False):
     print("DEMO OF DETECT IN VIDEO...")
     color_detect = (0, 255, 255)
     color_info = (255, 255, 255)
@@ -580,8 +605,11 @@ def demo_detect_in_video(clf, hcoords, threshold, computations="gpu_cuda", postp
     windows, shcoords_multiple_scales = prepare_detection_windows_and_scaled_haar_coords(resized_height, resized_width, hcoords, features_indexes)
     print(f"[frame shape: {frame.shape}]")
     print(f"[windows per frame: {windows.shape[0]}]")
-    print(f"[terms per window: {clf.T_}]")
-    print(f"[about to start a camera...]")
+    print(f"[terms per window: {clf.T_}]")    
+    decision_threshold = clf.decision_threshold_ if DETECTION_DECISION_THRESHOLD is None else DETECTION_DECISION_THRESHOLD
+    decision_threshold_source = "internal (clf.decision_threshold_)" if DETECTION_DECISION_THRESHOLD is None else "external (DETECTION_DECISION_THRESHOLD setting)"  
+    print(f"[decision threshold: {decision_threshold}, source: {decision_threshold_source}]")
+    print(f"[about to start video camera...]")
     h_scale = frame_h / resized_height
     w_scale = frame_w / resized_width 
     n_frames = 0
@@ -615,8 +643,8 @@ def demo_detect_in_video(clf, hcoords, threshold, computations="gpu_cuda", postp
     t1_loop = time.time()
     while(True):
         t1 = time.time()
-        if verbose_loop:
-            print(f"----------------------------------------------------------------")
+        if verbose_loop:            
+            print(f"--------------------------------------------------------------------------------------------------------------------------------")
             print(f"[frame: {n_frames}]")        
         t1_read = time.time()
         _, frame = video.read()
@@ -631,11 +659,11 @@ def demo_detect_in_video(clf, hcoords, threshold, computations="gpu_cuda", postp
             print(f"[terms per window: {clf.T_}]")                            
         t1_comps = time.time()
         if computations == "cpu_simple":
-            detections, responses, times = detect_cpu_simple(frame, clf, hcoords, n, features_indexes, threshold, windows, shcoords_multiple_scales, verbose=verbose_detect)
+            detections, responses, times = detect_cpu_simple(frame, clf, hcoords, n, features_indexes, decision_threshold, windows, shcoords_multiple_scales, verbose=verbose_detect)
         elif computations == "cpu_parallel":
-            detections, responses, times = detect_cpu_parallel(frame, clf, hcoords, n, features_indexes, threshold, windows, shcoords_multiple_scales, n_jobs=n_jobs, verbose=verbose_detect)        
+            detections, responses, times = detect_cpu_parallel(frame, clf, hcoords, n, features_indexes, decision_threshold, windows, shcoords_multiple_scales, n_jobs=n_jobs, verbose=verbose_detect)        
         elif computations == "gpu_cuda":
-            detections, responses, times = detect_gpu_cuda(frame, clf, hcoords, features_indexes, threshold, windows, shcoords_multiple_scales, 
+            detections, responses, times = detect_gpu_cuda(frame, clf, hcoords, features_indexes, decision_threshold, windows, shcoords_multiple_scales, 
                                                            dev_windows, dev_shcoords_multiple_scales, dev_X_selected, dev_mins_selected, dev_maxes_selected, dev_logits, dev_responses, 
                                                            verbose=verbose_detect)                        
         t2_comps = time.time()
@@ -704,7 +732,7 @@ def demo_detect_in_video(clf, hcoords, threshold, computations="gpu_cuda", postp
     avg_fps_disp = n_frames / (t2_loop - t1_loop)
     print(f"DEMO OF DETECT IN VIDEO DONE. [avg fps (computations): {avg_fps_comps:.2f}, avg time haar: {avg_time_comps_haar * 1000:.2f} ms, avg time frbb: {avg_time_comps_frbb * 1000:.2f} ms; avg fps (display): {avg_fps_disp:.2f}]")
         
-def demo_detect_in_video_multiple_clfs(clfs, hcoords, thresholds, postprocess="avg", detector_title=None, verbose_loop=True, verbose_detect=False):
+def demo_detect_in_video_multiple_clfs(clfs, hcoords, decision_thresholds, postprocess="avg", detector_title=None, verbose_loop=True, verbose_detect=False):
     print("DEMO OF DETECT IN VIDEO  (MULTIPLE CLFS)...")
     colors_detect = [(0, 255, 255), (255, 255, 0), (255, 0, 255), (255, 0, 0), (0, 0, 255), (255, 0, 0)]
     color_info = (255, 255, 255)
@@ -728,7 +756,7 @@ def demo_detect_in_video_multiple_clfs(clfs, hcoords, thresholds, postprocess="a
     print(f"[frame shape: {frame.shape}]")
     print(f"[windows per frame: {windows.shape[0]}]")
     print(f"[terms per window: {clf.T_}]")
-    print(f"[about to start a camera...]")
+    print(f"[about to start video camera...]")
     h_scale = frame_h / resized_height
     w_scale = frame_w / resized_width 
     n_frames = 0
@@ -762,7 +790,7 @@ def demo_detect_in_video_multiple_clfs(clfs, hcoords, thresholds, postprocess="a
     while(True):
         t1 = time.time()
         if verbose_loop:
-            print(f"----------------------------------------------------------------")
+            print("--------------------------------------------------------------------------------------------------------------------------------")
             print(f"[frame: {n_frames}]")        
         t1_read = time.time()
         _, frame = video.read()
@@ -790,7 +818,7 @@ def demo_detect_in_video_multiple_clfs(clfs, hcoords, thresholds, postprocess="a
             print(f"[terms per window per clfs: {[clf.T_ for clf in clfs]}]")        
         for i in range(len(clfs)):
             t1_comps = time.time()      
-            detections, responses, times = detect_gpu_cuda_within_multiple_clfs(ii, clfs[i], thresholds[i], windows, 
+            detections, responses, times = detect_gpu_cuda_within_multiple_clfs(ii, clfs[i], decision_thresholds[i], windows, 
                                                                                 dev_windows, dev_shcoords_multiple_scales[i], dev_X_selected[i], dev_mins_selected[i], dev_maxes_selected[i], dev_logits[i], dev_responses[i], 
                                                                                 verbose=verbose_detect)
             t2_comps = time.time()
@@ -860,16 +888,51 @@ def demo_detect_in_video_multiple_clfs(clfs, hcoords, thresholds, postprocess="a
     avg_fps_disp = n_frames / (t2_loop - t1_loop)
     print(f"DEMO OF DETECT IN VIDEO (MULTIPLE CLFS) DONE. [avg fps (computations): {avg_fps_comps:.2f}, avg time haar: {avg_time_comps_haar * 1000:.2f} ms, avg time frbb: {avg_time_comps_frbb * 1000:.2f} ms; avg fps (display): {avg_fps_disp:.2f}]")
 
+def experiment_some_rocs():
+    print("ROCS...")    
+    data_name = "data_face_n_18225_S_5_P_5_NPI_10_SEED_0.bin"    
+    print(f"[data_name: {data_name}]")
+    [X_train, y_train, X_test, y_test] = unpickle_objects(FOLDER_DATA + data_name)    
+    print(f"[X_train.shape: {X_train.shape} (positives: {np.sum(y_train == 1)}), X_test.shape: {X_test.shape} (positives: {np.sum(y_test == 1)})]")
+    clfs_names = [
+        "clf_frbb_face_n_18225_S_5_P_5_NPI_200_SEED_0_T_1024_B_8.bin",
+        "clf_frbb_face_n_18225_S_5_P_5_NPI_200_SEED_0_T_2048_B_8.bin"                                      
+        ]    
+    for clf_name in clfs_names:                                                                          
+        print("--------------------------------------------------------------------------------------------------------------------------------")        
+        print(f"[clf_name: {clf_name}]")                            
+        [clf] = unpickle_objects(FOLDER_CLFS + clf_name)                
+        responses_test = clf.decision_function(X_test)
+        roc = roc_curve(y_test, responses_test)
+        best_decision_threshold_via_precision(roc, y_test, heuristic_coeff=0.25) 
+        fars, sens, _ = roc                
+        plt.plot(fars, sens, label=clf_name)                
+    plt.xscale("log")
+    plt.xlabel("FAR")
+    plt.ylabel("SENSITIVITY")
+    plt.legend(loc="lower right", fontsize=8)
+    plt.show()
+
+def experiment_random_data():
+    np.random.seed(0)
+    m, n = 1000, 100
+    X = (100 * np.random.rand(m, n)).astype(np.int8)
+    y = np.random.randint(0, 2, size=m) * 2 - 1
+    clf = FastRealBoostBins(T=32, B=8, fit_mode="numba_cuda", decision_function_mode="numba_cuda", verbose=True, debug_verbose=False)
+    clf.fit(X, y)
+    print(f"ACC: {clf.score(X, y)}")
+
         
 # ----------------------------------------------------------------------------------------------------------------------------------------------------------------
 # MAIN
 # ----------------------------------------------------------------------------------------------------------------------------------------------------------------
 if __name__ == "__main__":        
-    print("DEMONSTRATION OF \"FAST REAL-BOOST WITH BINS\" ALGORITHM IMPLEMENTED VIA NUMBA.JIT AND NUMBA.CUDA.")
+    print("DEMONSTRATION OF \"FAST REAL BOOST WITH BINS\" ALGORITHM IMPLEMENTED VIA NUMBA.JIT AND NUMBA.CUDA.")
 
     n = haar.HAAR_TEMPLATES.shape[0] * S**2 * (2 * P - 1)**2    
     hinds = haar.haar_indexes(S, P)
     hcoords = haar.haar_coords(S, P, hinds)
+    clf = None
     
     data_suffix = f"{KIND}_n_{n}_S_{S}_P_{P}_NPI_{NPI}_SEED_{SEED}" 
     DATA_NAME = f"data_{data_suffix}.bin"
@@ -888,7 +951,7 @@ if __name__ == "__main__":
             X_train, y_train, X_test, y_test = datagenerator.hagrid_data_to_haar(hcoords, n, NPI, seed=SEED, verbose=False)
         pickle_objects(FOLDER_DATA + DATA_NAME, [X_train, y_train, X_test, y_test])
     
-    if FIT_OR_REFIT_MODEL or MEASURE_ACCS_OF_MODEL:
+    if FIT_OR_REFIT_MODEL or MEASURE_ACCS_OF_MODEL or ADJUST_DECISION_THRESHOLD_OF_MODEL:
         if not REGENERATE_DATA: 
             [X_train, y_train, X_test, y_test] = unpickle_objects(FOLDER_DATA + DATA_NAME)
         print(f"[X_train.shape: {X_train.shape} (positives: {np.sum(y_train == 1)}), X_test.shape: {X_test.shape} (positives: {np.sum(y_test == 1)})]")
@@ -898,73 +961,30 @@ if __name__ == "__main__":
         clf.fit(X_train, y_train)
         pickle_objects(FOLDER_CLFS + CLF_NAME, [clf])
     
-    if (MEASURE_ACCS_OF_MODEL or DEMO_DETECT_IN_VIDEO) and not FIT_OR_REFIT_MODEL:
+    if clf is None and (MEASURE_ACCS_OF_MODEL or ADJUST_DECISION_THRESHOLD_OF_MODEL or DEMO_HAAR_FEATURES_SELECTED or DEMO_DETECT_IN_VIDEO):
         [clf] = unpickle_objects(FOLDER_CLFS + CLF_NAME)
+        print(f"[unpickled clf {clf} with decision threshold: {clf.decision_threshold_}; full dict of params: {clf.get_params(deep=True)}]")
     
-    if DEMO_HAAR_FEATURES_SELECTED and clf is not None:
-        selected = features_indexes_
-        demo_haar_features(hinds[selected], hcoords[selected], selected.size)
+    if DEMO_HAAR_FEATURES_SELECTED:        
+        demo_haar_features(hinds, hcoords, n, selected_indexes=clf.features_indexes_)
         
     if MEASURE_ACCS_OF_MODEL:
-        measure_accs_of_model(clf, X_train, y_train, X_test, y_test)        
+        measure_accs_of_model(clf, X_train, y_train, X_test, y_test)            
+    
+    if ADJUST_DECISION_THRESHOLD_OF_MODEL:    
+        adjust_decision_threshold_via_precision(clf, X_test, y_test)
+        pickle_objects(FOLDER_CLFS + CLF_NAME, [clf])              
         
     if DEMO_DETECT_IN_VIDEO:            
-        demo_detect_in_video(clf, hcoords, threshold=DETECTION_THRESHOLD, computations="gpu_cuda", postprocess=DETECTION_POSTPROCESS, n_jobs=8, detector_title=KIND.upper(), verbose_loop=True, verbose_detect=True)
+        demo_detect_in_video(clf, hcoords, decision_threshold=DETECTION_DECISION_THRESHOLD, computations="gpu_cuda", postprocess=DETECTION_POSTPROCESS, n_jobs=8, detector_title=KIND.upper(), verbose_loop=True, verbose_detect=True)
         
     if DEMO_DETECT_IN_VIDEO_MULTIPLE_CLFS:        
-        clfs_names = ["clf_frbb_face_n_18225_S_5_P_5_NPI_200_SEED_0_T_1024_B_8.bin", "clf_frbb_hand_n_18225_S_5_P_5_NPI_10_SEED_0_T_1024_B_8.bin"]
+        clfs_names = ["clf_frbb_face_n_18225_S_5_P_5_NPI_200_SEED_0_T_1024_B_8.bin", "clf_frbb_hand_n_18225_S_5_P_5_NPI_30_SEED_0_T_1024_B_8.bin"]
+        decision_thresholds = [6.5, 5.0] # set to [None, None] if clfs' internal thresholds to be used
         clfs = [unpickle_objects(FOLDER_CLFS + clf_name)[0] for clf_name in clfs_names]
-        thresholds = [7.5, 7.5] # TODO make thresholds within clfs
-        detector_title = "face, hand"
-        demo_detect_in_video_multiple_clfs(clfs, hcoords, thresholds, postprocess=DETECTION_POSTPROCESS, detector_title=detector_title.upper(), verbose_loop=True, verbose_detect=True)
+        print(f"[about to start multiple clfs demo; unpickled clfs:]")
+        for clf_name, clf in zip(clfs_names, clfs):
+            print(f"[{clf_name} -> {clf} with decision_threshold_: {clf.decision_threshold_}; full dict of params: {clf.get_params(deep=True)}]")        
+        demo_detect_in_video_multiple_clfs(clfs, hcoords, decision_thresholds, postprocess=DETECTION_POSTPROCESS, detector_title="face, hand", verbose_loop=True, verbose_detect=True)
 
     print("ALL DONE.")
-
-    
-if __name__ == "__rocs__":        
-    print("ROCS...")
-    
-    clfs_settings = [                     
-                      {"KIND": "hand", "S": 5, "P": 5, "NPI": 10, "SEED": 0, "T": 2048, "B": 8}                  
-                     ]
-    
-    for s in clfs_settings:
-        KIND = s["KIND"]
-        S = s["S"]
-        P = s["P"]
-        NPI = s["NPI"]        
-        SEED = s["SEED"]
-        T = s["T"]
-        B = s["B"] 
-        n = haar.HAAR_TEMPLATES.shape[0] * S**2 * (2 * P - 1)**2    
-        hinds = haar.haar_indexes(S, P)
-        hcoords = haar.haar_coords(S, P, hinds)            
-        data_suffix = f"{KIND}_n_{n}_S_{S}_P_{P}_NPI_{NPI}_SEED_{SEED}"                                      
-        DATA_NAME = "data_hand_n_18225_S_5_P_5_NPI_10_SEED_0.bin"
-        [X_train, y_train, X_test, y_test] = unpickle_objects(FOLDER_DATA + DATA_NAME)        
-        CLF_NAME = f"clf_frbb_{data_suffix}_T_{T}_B_{B}.bin"            
-        print("---")
-        print(f"DATA_NAME: {DATA_NAME}")
-        print(f"CLF_NAME: {CLF_NAME}")                            
-        [clf] = unpickle_objects(FOLDER_CLFS + CLF_NAME)                
-        responses_test = clf.decision_function(X_test)
-        roc = roc_curve(y_test, responses_test)
-        best_thr, best_prec = best_threshold_via_prec(roc, y_test) 
-        fars, sens, thrs = roc
-        roc_arr = np.array([fars, sens, thrs]).T        
-        plt.plot(fars, sens, label=CLF_NAME)
-        print(f"[X_train.shape: {X_train.shape}, X_test.shape: {X_test.shape}]")        
-    plt.xscale("log")
-    plt.xlabel("FAR")
-    plt.ylabel("SENSITIVITY")
-    plt.legend(loc="lower right", fontsize=8)
-    plt.show()
-    
-if __name__ == "__random__":
-    np.random.seed(0)
-    m, n = 1000, 100
-    X = (100 * np.random.rand(m, n)).astype(np.int8)
-    y = np.random.randint(0, 2, size=m) * 2 - 1
-    clf = FastRealBoostBins(T=32, B=8, fit_mode="numba_cuda", decision_function_mode="numba_cuda", verbose=True, debug_verbose=False)
-    clf.fit(X, y)
-    print(f"ACC: {clf.score(X, y)}")

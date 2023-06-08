@@ -524,6 +524,9 @@ class FastRealBoostBins(BaseEstimator, ClassifierMixin):
         self.logits_ = self.logits_[:T]
         self.mins_selected_ = self.mins_selected_[:T]
         self.maxes_selected_ = self.maxes_selected_[:T]
+        params = self.get_params(deep=True)
+        params["T"] = self.T_
+        self.set_params(**params)
 
     def decision_function(self, X):
         return self.decision_function_method(X)
