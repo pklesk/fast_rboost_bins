@@ -22,16 +22,16 @@ KIND = "face"
 S = 5 # parameter "scales" to generete Haar-like features
 P = 5 # parameter "positions" to generete Haar-like features
 NPI = 300 # "negatives per image" - no. of negatives (negative windows) to sample per image (image real or generated synthetically) 
-T = 2048 # size of ensemble in FastRealBoostBins (equivalently, no. of boosting rounds when fitting)
+T = 1024 # size of ensemble in FastRealBoostBins (equivalently, no. of boosting rounds when fitting)
 B = 8 # no. of bins
 SEED = 0 # randomization seed
 DEMO_HAAR_FEATURES_ALL = False
 DEMO_HAAR_FEATURES_SELECTED = False
-REGENERATE_DATA = True
-FIT_OR_REFIT_MODEL = True
-MEASURE_ACCS_OF_MODEL = True
-ADJUST_DECISION_THRESHOLD_OF_MODEL = True
-DEMO_DETECT_IN_VIDEO = False
+REGENERATE_DATA = False
+FIT_OR_REFIT_MODEL = False
+MEASURE_ACCS_OF_MODEL = False
+ADJUST_DECISION_THRESHOLD_OF_MODEL = False
+DEMO_DETECT_IN_VIDEO = True
 DEMO_DETECT_IN_VIDEO_MULTIPLE_CLFS = False
 
 # cv2 camera settings
@@ -973,14 +973,14 @@ if __name__ == "__main__":
     
     if ADJUST_DECISION_THRESHOLD_OF_MODEL:    
         adjust_decision_threshold_via_precision(clf, X_test, y_test)
-        pickle_objects(FOLDER_CLFS + CLF_NAME, [clf])              
+        pickle_objects(FOLDER_CLFS + CLF_NAME, [clf])
         
     if DEMO_DETECT_IN_VIDEO:            
         demo_detect_in_video(clf, hcoords, decision_threshold=DETECTION_DECISION_THRESHOLD, computations="gpu_cuda", postprocess=DETECTION_POSTPROCESS, n_jobs=8, detector_title=KIND.upper(), verbose_loop=True, verbose_detect=True)
         
     if DEMO_DETECT_IN_VIDEO_MULTIPLE_CLFS:        
-        clfs_names = ["clf_frbb_face_n_18225_S_5_P_5_NPI_200_SEED_0_T_1024_B_8.bin", "clf_frbb_hand_n_18225_S_5_P_5_NPI_30_SEED_0_T_1024_B_8.bin"]
-        decision_thresholds = [6.5, 5.0] # set to [None, None] if clfs' internal thresholds to be used
+        clfs_names = ["clf_frbb_face_n_18225_S_5_P_5_NPI_300_SEED_0_T_1024_B_8.bin", "clf_frbb_hand_n_18225_S_5_P_5_NPI_30_SEED_0_T_1024_B_8.bin"]
+        decision_thresholds = [7.5, 5.0] # set to [None, None] if clfs' internal thresholds to be used
         clfs = [unpickle_objects(FOLDER_CLFS + clf_name)[0] for clf_name in clfs_names]
         print(f"[about to start multiple clfs demo; unpickled clfs:]")
         for clf_name, clf in zip(clfs_names, clfs):
