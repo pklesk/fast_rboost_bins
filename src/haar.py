@@ -5,7 +5,6 @@ from numba import void, int16, int32, float32, uint8
 from numba.core.errors import NumbaPerformanceWarning
 import warnings
 
-__version__ = "0.8.0"
 __author__ = "Przemysław Klęsk"
 __email__ = "pklesk@zut.edu.pl"
 
