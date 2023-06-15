@@ -201,7 +201,7 @@ def demo_haar_features(hinds, hcoords, n, selected_indexes=None):
         print(f"[feature hcoords (cartesian):\n {c}]")
         print(f"[feature hcoords in window:\n {hcoords_window}]")
         print(f"[feature value: {feature_value}]")
-        print("-" * 96)
+        print("-" * 128)
         cv2.imshow(title, i_temp)
         key = cv2.waitKey()
         if key & 0xFF == 27: # esc key
@@ -612,7 +612,7 @@ def demo_detect_in_video(clf, hcoords, decision_threshold, computations="gpu_cud
     while(True):
         t1 = time.time()
         if verbose_loop:            
-            print("-" * 96)
+            print("-" * 128)
             print(f"[frame: {n_frames}]")        
         t1_read = time.time()
         _, frame = video.read()
@@ -762,7 +762,7 @@ def demo_detect_in_video_multiple_clfs(clfs, hcoords, decision_thresholds, postp
     while(True):
         t1 = time.time()
         if verbose_loop:
-            print("-" * 96)
+            print("-" * 128)
             print(f"[frame: {n_frames}]")        
         t1_read = time.time()
         _, frame = video.read()
@@ -871,7 +871,7 @@ def experiment_some_rocs():
         "clf_frbb_face_n_18225_S_5_P_5_NPI_200_SEED_0_T_2048_B_8.bin"                                      
         ]    
     for clf_name in clfs_names:                                                                          
-        print("-" * 96)        
+        print("-" * 128)        
         print(f"[clf_name: {clf_name}]")                            
         [clf] = unpickle_objects(FOLDER_CLFS + clf_name)                
         responses_test = clf.decision_function(X_test)

@@ -115,7 +115,7 @@ def experimenter_leukemia_data():
         t2_predict_test = time.time()                
         acc_test = np.mean(predictions_test == y_test)
         print(f"[predict (on test data) done; time: {t2_predict_test - t1_predict_test} s, acc: {acc_test}]")        
-        print("-" * 96)
+        print("-" * 128)
     t2 = time.time()             
     print(f"EXPERIMENT LEUKEMIA DATA DONE. [time: {t2 - t1} s]")
     
@@ -154,7 +154,7 @@ def experimenter_spambase_data():
         t2_predict_test = time.time()                
         acc_test = np.mean(predictions_test == y_test)
         print(f"[predict (on test data) done; time: {t2_predict_test - t1_predict_test} s, acc: {acc_test}]")        
-        print("-" * 96)
+        print("-" * 128)
     t2 = time.time()             
     print(f"EXPERIMENT SPAMBASE DATA DONE. [time: {t2 - t1} s]")    
     
@@ -223,7 +223,7 @@ def experimenter_random_data(Ts=TS_DEFAULT, Bs=BS_DEFAULT, nmm_magn_orders=NMM_M
     results_descr = np.empty((n_experiments, len(clf_defs)), dtype=object)
     clfs_names = np.empty((n_experiments, len(clf_defs)), dtype=object)        
     for experiment_id, (T, B, nmmo) in enumerate(product(Ts, Bs, nmm_magn_orders)):
-        print("=" * 96)
+        print("=" * 128)
         print(f"[experiment_id: {experiment_id}, params: {(T, B, nmmo)}]")            
         n = 10**nmmo[0]
         m_train = 10**nmmo[1]
@@ -235,7 +235,7 @@ def experimenter_random_data(Ts=TS_DEFAULT, Bs=BS_DEFAULT, nmm_magn_orders=NMM_M
         y_test = np.random.randint(0, 2, size=m_train) * 2 - 1        
         experiments_descr[experiment_id] = {"T": T, "B": B, "n": n, "m_train": m_train, "m_test": m_test}
         print(f"[description: {experiments_descr[experiment_id]}]")
-        print("=" * 96)
+        print("=" * 128)
         results_arr = []
         clfs_now = []
         for clf_id, (clf_class, clf_consts, _) in enumerate(clf_defs):
@@ -276,7 +276,7 @@ def experimenter_random_data(Ts=TS_DEFAULT, Bs=BS_DEFAULT, nmm_magn_orders=NMM_M
             results_arr.append([time_fit, time_predict_train, time_predict_test, acc_train, acc_test])            
             results_descr[experiment_id, clf_id] = {"time_fit": [time_fit, None], "time_predict_train": [time_predict_train, None], "time_predict_test": [time_predict_test, None],
                                                      "acc_train" : [acc_train, None], "acc_test" : [acc_test, None]}
-            print("-" * 96)
+            print("-" * 128)
         results_arr = np.array(results_arr)
         results_arr[results_arr == 0.0] = EPS
         results_ratios = np.max(results_arr, axis=0) / results_arr  
