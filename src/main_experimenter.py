@@ -22,7 +22,7 @@ FOLDER_DATA_RAW_SPAMBASE = FOLDER_DATA_RAW + "spambase/"
 
 # constants
 TS_DEFAULT = [16, 32, 64, 128]
-NMM_MAGN_ORDERS_DEFAULT = [(4, 4, 4)]
+NMM_MAGN_ORDERS_DEFAULT = [(3, 3, 3)]
 BS_DEFAULT = [8]
 CLF_DEFS_DEFAULT = [
         (FastRealBoostBins, {"fit_mode": "numba_jit", "decision_function_mode": "numba_jit"}, {"color": "blue"}),
