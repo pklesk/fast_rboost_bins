@@ -11,6 +11,7 @@ from joblib import Parallel, delayed
 from functools import reduce
 from sklearn.metrics import roc_curve
 from matplotlib import pyplot as plt
+from utils import cpu_and_system_props, gpu_props
 
 __author__ = "Przemysław Klęsk"
 __email__ = "pklesk@zut.edu.pl"
@@ -30,12 +31,12 @@ REGENERATE_DATA = False
 FIT_OR_REFIT_MODEL = False
 MEASURE_ACCS_OF_MODEL = False
 ADJUST_DECISION_THRESHOLD_OF_MODEL = False
-DEMO_DETECT_IN_VIDEO = False
+DEMO_DETECT_IN_VIDEO = True
 DEMO_DETECT_IN_VIDEO_COMPUTATIONS = "gpu_cuda" # possible values: "cpu_simple", "cpu_parallel", "gpu_cuda"
 DEMO_DETECT_IN_VIDEO_PARALLEL_JOBS = 8
 DEMO_DETECT_IN_VIDEO_VERBOSE_LOOP = True
 DEMO_DETECT_IN_VIDEO_VERBOSE_DETECT = True
-DEMO_DETECT_IN_VIDEO_MULTIPLE_CLFS = True
+DEMO_DETECT_IN_VIDEO_MULTIPLE_CLFS = False
 
 # cv2 camera settings
 CV2_VIDEO_CAPTURE_CAMERA_INDEX = 0
@@ -54,45 +55,7 @@ DETECTION_POSTPROCESS = "avg" # possible values: None, "nms", "avg"
 FOLDER_DATA = "../data/"
 FOLDER_CLFS = "../models/"
 FOLDER_EXTRAS = "../extras/"
-
-def gpu_props():
-    gpu = cuda.get_current_device()
-    props = {}
-    props["name"] = gpu.name.decode("ASCII")
-    props["max_threads_per_block"] = gpu.MAX_THREADS_PER_BLOCK
-    props["max_block_dim_x"] = gpu.MAX_BLOCK_DIM_X
-    props["max_block_dim_y"] = gpu.MAX_BLOCK_DIM_Y
-    props["max_block_dim_z"] = gpu.MAX_BLOCK_DIM_Z
-    props["max_grid_dim_x"] = gpu.MAX_GRID_DIM_X
-    props["max_grid_dim_y"] = gpu.MAX_GRID_DIM_Y
-    props["max_grid_dim_z"] = gpu.MAX_GRID_DIM_Z    
-    props["max_shared_memory_per_block"] = gpu.MAX_SHARED_MEMORY_PER_BLOCK
-    props["async_engine_count"] = gpu.ASYNC_ENGINE_COUNT
-    props["can_map_host_memory"] = gpu.CAN_MAP_HOST_MEMORY
-    props["multiprocessor_count"] = gpu.MULTIPROCESSOR_COUNT
-    props["warp_size"] = gpu.WARP_SIZE
-    props["unified_addressing"] = gpu.UNIFIED_ADDRESSING
-    props["pci_bus_id"] = gpu.PCI_BUS_ID
-    props["pci_device_id"] = gpu.PCI_DEVICE_ID
-    props["compute_capability"] = gpu.compute_capability            
-    CC_CORES_PER_SM_DICT = {
-        (2,0) : 32,
-        (2,1) : 48,
-        (3,0) : 256,
-        (3,5) : 256,
-        (3,7) : 256,
-        (5,0) : 128,
-        (5,2) : 128,
-        (6,0) : 64,
-        (6,1) : 128,
-        (7,0) : 64,
-        (7,5) : 64,
-        (8,0) : 64,
-        (8,6) : 128
-        }
-    props["cores_per_SM"] = CC_CORES_PER_SM_DICT.get(gpu.compute_capability)
-    props["cores_total"] = props["cores_per_SM"] * gpu.MULTIPROCESSOR_COUNT
-    return props   
+  
                             
 def pickle_objects(fname, some_list):
     print(f"PICKLE OBJECTS... [to file: {fname}]")
@@ -333,12 +296,12 @@ def detect_cpu_simple(i, clf, hcoords, n, features_indexes, decision_threshold=N
     if verbose:
         print(f"[detect_cpu_simple: haar_features_multiple_windows done; time: {dt_haar} s]")
     t1_frbb = time.time()    
-    responses = clf.decision_function_numba_jit(X)
+    responses = clf._decision_function_numba_jit(X)
     t2_frbb = time.time()
     dt_frbb = t2_frbb - t1_frbb 
     times["frbb"] = dt_frbb 
     if verbose:
-        print(f"[detect_cpu_simple: clf.decision_function done; time: {dt_frbb} s]")
+        print(f"[detect_cpu_simple: clf._decision_function done; time: {dt_frbb} s]")
     t1_ti = time.time()
     if decision_threshold is None:
         decision_threshold = clf.decision_threshold_             
@@ -396,7 +359,7 @@ def detect_cpu_parallel(i, clf, hcoords, n, features_indexes, decision_threshold
             job_slice = slice(job_ranges[job_index], job_ranges[job_index + 1])
             job_windows = windows[job_slice]
             X = haar.haar_features_multiple_windows_numba_jit_tf(ii, job_windows, shcoords_multiple_scales, n, features_indexes)
-            job_responses = clf.decision_function_numba_jit(X)         
+            job_responses = clf._decision_function_numba_jit(X)         
             return job_responses 
         workers_results = parallel((delayed(worker)(job_index) for job_index in range(n_calls)))
         responses =  reduce(lambda a, b: np.r_[a, b], [jr for jr in workers_results])
@@ -593,9 +556,10 @@ def demo_detect_in_video(clf, hcoords, decision_threshold, computations="gpu_cud
     print("DEMO OF DETECT IN VIDEO...")
     color_detect = (0, 255, 255)
     color_info = (255, 255, 255)
-    font_size = 1.0
+    font_size = 0.9
     text_shift = int(font_size * 16)
     gpu_name = gpu_props()["name"]
+    cpu_name = cpu_and_system_props()["cpu_name"]
     features_indexes = clf.features_selected_
     video = cv2.VideoCapture(CV2_VIDEO_CAPTURE_CAMERA_INDEX + (cv2.CAP_DSHOW if CV2_VIDEO_CAPTURE_IS_IT_MSWINDOWS else 0))
     video.set(cv2.CAP_PROP_FRAME_WIDTH, 640)
@@ -695,13 +659,15 @@ def demo_detect_in_video(clf, hcoords, decision_threshold, computations="gpu_cud
         fps_comps = fps_comps_ma * normalizer_ma            
         time_comps += t2_comps - t1_comps
         cv2.putText(frame, "DEMO: FAST REAL BOOST BINS VIA NUMBA (+HAAR FEATURES)", (0, 0 + 1 * text_shift), cv2.FONT_HERSHEY_PLAIN, font_size, color_info, 2)
-        cv2.putText(frame, f"DETECTOR KIND: {detector_title}", (0, 0 + 2 * text_shift), cv2.FONT_HERSHEY_PLAIN, 1.0, color_info, 1)
-        cv2.putText(frame, f"FRAME: {n_frames}", (0, 0 + 3 * text_shift), cv2.FONT_HERSHEY_PLAIN, 1.0, color_info, 1)
+        cv2.putText(frame, f"DETECTOR KIND: {detector_title}", (0, 0 + 2 * text_shift), cv2.FONT_HERSHEY_PLAIN, font_size, color_info, 1)
+        cv2.putText(frame, f"FRAME: {n_frames}", (0, 0 + 3 * text_shift), cv2.FONT_HERSHEY_PLAIN, font_size, color_info, 1)
         cv2.putText(frame, f"WINDOWS PER FRAME: {windows.shape[0]}", (0, frame_h - 1 - 4 * text_shift), cv2.FONT_HERSHEY_PLAIN, font_size, color_info, 1)
         cv2.putText(frame, f"TERMS PER WINDOW: {clf.T}", (0, frame_h - 1 - 3 * text_shift), cv2.FONT_HERSHEY_PLAIN, font_size, color_info, 1)
         computations_str = f"COMPUTATIONS: {computations.upper()}"
         if computations == "gpu_cuda":
             computations_str += f" [GPU: {gpu_name.upper()}]"
+        else:
+            computations_str += f" [CPU: {cpu_name.upper()}]"            
         cv2.putText(frame, f"{computations_str}", (0, frame_h - 1 - 2 * text_shift), cv2.FONT_HERSHEY_PLAIN, font_size, color_info, 1)
         comps_details = ""
         if "haar" in times and "frbb" in times:
@@ -925,7 +891,9 @@ def experiment_some_rocs():
 # ----------------------------------------------------------------------------------------------------------------------------------------------------------------
 if __name__ == "__main__":        
     print("DEMONSTRATION OF \"FAST REAL BOOST WITH BINS\" ALGORITHM IMPLEMENTED VIA NUMBA.JIT AND NUMBA.CUDA.")
-    print("MAIN (OBJECT DETECTOR) STARTING...")
+    print(f"CPU AND SYSTEM PROPS: {cpu_and_system_props()}")
+    print(f"GPU PROPS: {gpu_props()}")
+    print("MAIN (OBJECT DETECTOR) STARTING...")    
 
     n = haar.HAAR_TEMPLATES.shape[0] * S**2 * (2 * P - 1)**2    
     hinds = haar.haar_indexes(S, P)
@@ -935,9 +903,10 @@ if __name__ == "__main__":
     data_suffix = f"{KIND}_n_{n}_S_{S}_P_{P}_NPI_{NPI}_SEED_{SEED}" 
     DATA_NAME = f"data_{data_suffix}"
     CLF_NAME = f"clf_frbb_{data_suffix}_T_{T}_B_{B}"
-    print(f"DATA_NAME: {DATA_NAME}")
-    print(f"CLF_NAME: {CLF_NAME}")
-    print(f"GPU_PROPS: {gpu_props()}")    
+    
+    if DEMO_HAAR_FEATURES_ALL or REGENERATE_DATA or FIT_OR_REFIT_MODEL or DEMO_HAAR_FEATURES_SELECTED or MEASURE_ACCS_OF_MODEL or ADJUST_DECISION_THRESHOLD_OF_MODEL or DEMO_DETECT_IN_VIDEO:
+        print(f"DATA NAME: {DATA_NAME}")
+        print(f"CLF NAME: {CLF_NAME}")
     
     if DEMO_HAAR_FEATURES_ALL:
         demo_haar_features(hinds, hcoords, n)      
@@ -963,10 +932,6 @@ if __name__ == "__main__":
     if clf is None and (MEASURE_ACCS_OF_MODEL or ADJUST_DECISION_THRESHOLD_OF_MODEL or DEMO_HAAR_FEATURES_SELECTED or DEMO_DETECT_IN_VIDEO):
         [clf] = unpickle_objects(FOLDER_CLFS + CLF_NAME + ".bin")
         print(f"[unpickled clf {clf} with decision threshold: {clf.decision_threshold_}]")        
-    
-    # clf_name = "clf_frbb_hand_n_18225_S_5_P_5_NPI_30_SEED_0_T_2048_B_8"
-    # clf = FastRealBoostBins.json_load(FOLDER_CLFS + clf_name + ".json")
-    # pickle_objects(FOLDER_CLFS + clf_name + ".bin", [clf])
     
     if DEMO_HAAR_FEATURES_SELECTED:        
         demo_haar_features(hinds, hcoords, n, selected_indexes=clf.features_selected_)

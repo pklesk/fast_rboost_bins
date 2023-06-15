@@ -1,7 +1,6 @@
 import numpy as np
 from frbb import FastRealBoostBins
 from sklearn.ensemble import AdaBoostClassifier
-from sklearn.ensemble import RandomForestClassifier
 from sklearn.tree import DecisionTreeClassifier
 from sklearn.model_selection import train_test_split
 from keras.datasets import cifar10
@@ -10,6 +9,7 @@ import time
 import re
 from itertools import product
 from matplotlib import pyplot as plt
+from utils import cpu_and_system_props, gpu_props
 
 np.set_printoptions(linewidth=512)
 np.set_printoptions(threshold=np.inf)    
@@ -22,7 +22,7 @@ FOLDER_DATA_RAW_SPAMBASE = FOLDER_DATA_RAW + "spambase/"
 
 # constants
 TS_DEFAULT = [16, 32, 64, 128]
-NMM_MAGN_ORDERS_DEFAULT = [(2, 3, 3), (3, 4, 4)]
+NMM_MAGN_ORDERS_DEFAULT = [(3, 3, 3)]
 BS_DEFAULT = [8]
 CLF_DEFS_DEFAULT = [
         (FastRealBoostBins, {"fit_mode": "numba_jit", "decision_function_mode": "numba_jit"}, {"color": "blue"}),
@@ -32,9 +32,10 @@ CLF_DEFS_DEFAULT = [
 EPS = 1e-7
 
 # plot settings
-PLOT_FONTSIZE_TITLE = 12
+PLOT_FONTSIZE_SUPTITLE = 12
+PLOT_FONTSIZE_TITLE = 8
 PLOT_FONTSIZE_AXES = 11
-PLOT_FONTSIZE_LEGEND = 7.5
+PLOT_FONTSIZE_LEGEND = 8
 PLOT_FIGSIZE = (8, 4.5)
 PLOT_MARKERSIZE = 4
 PLOT_GRID_COLOR = (0.4, 0.4, 0.4) 
@@ -208,8 +209,11 @@ def experimenter_cifar10_data():
 def experimenter_random_data(Ts=TS_DEFAULT, Bs=BS_DEFAULT, nmm_magn_orders=NMM_MAGN_ORDERS_DEFAULT, dtype=np.int8, clf_defs=CLF_DEFS_DEFAULT, seed=0, 
                              plots=True, plots_arg_name=None, plots_values_names=[]):
     print("EXPERIMENTER RANDOM DATA...")
-    print(f"[settings -> Ts: {Ts}, Bs: {Bs}, nmm_magn_orders: {nmm_magn_orders}, dtype: {dtype}, no. of clf_defs: {len(clf_defs)}, seed: {seed}]")
-    
+    print(f"[settings -> Ts: {Ts}, Bs: {Bs}, nmm_magn_orders: {nmm_magn_orders}, dtype: {dtype.__name__}, no. of clf_defs: {len(clf_defs)}, seed: {seed}]")
+    print(f"[clfs definitions:]")
+    for clf_id, (clf_class, clf_consts, _) in enumerate(clf_defs):
+        print(f"[def {clf_id}: {clf_class.__name__}({clf_consts})]")
+    cpu_gpu_info = f"[cpu: {cpu_and_system_props()['cpu_name']}, gpu: {gpu_props()['name']}]".upper()
     t1 = time.time()
     np.random.seed(seed)
     max_value = np.iinfo(dtype).max if np.issubdtype(dtype, np.integer) else np.finfo(dtype).max      
@@ -286,9 +290,12 @@ def experimenter_random_data(Ts=TS_DEFAULT, Bs=BS_DEFAULT, nmm_magn_orders=NMM_M
             print(f"[{clf_id}: {clfs_names[experiment_id, clf_id]}]")
             print(f"[{clf_id}: {results_descr[experiment_id, clf_id]}]")                            
     t2 = time.time()
+    if plots and plots_arg_name and plots_values_names:
+        print("[about to generate wanted plots]")
     print(f"EXPERIMENT RANDOM DATA DONE. [time: {t2 - t1} s]")
     if plots and plots_arg_name and plots_values_names:
-        print("[generating wanted plots]")
+        value_name_mapper = {"time_fit": "FIT TIME", "time_predict_train": "PREDICT TIME (TRAIN DATA)", "time_predict_test": "PREDICT TIME (TEST DATA)",
+                             "acc_train": "ACC (TRAIN DATA)", "acc_test": "ACC (TEST DATA)"}        
         nonargs = {}
         nonargs_experiment_ids = {}
         for experiment_id in range(n_experiments):
@@ -316,9 +323,10 @@ def experimenter_random_data(Ts=TS_DEFAULT, Bs=BS_DEFAULT, nmm_magn_orders=NMM_M
                 y_min = min(y_min, min(ys))
                 y_max = max(y_max, max(ys))                    
             plt.xticks(xs)    
-            plt.title(f"{vn} {key}".upper(), fontsize=PLOT_FONTSIZE_TITLE)                
+            plt.suptitle(f"{value_name_mapper[vn]} {key.upper()}", fontsize=PLOT_FONTSIZE_SUPTITLE)
+            plt.title(f"\n{cpu_gpu_info}", fontsize=PLOT_FONTSIZE_TITLE)
             plt.xlabel(plots_arg_name.upper(), fontsize=PLOT_FONTSIZE_AXES)            
-            plt.ylabel(vn.upper(), fontsize=PLOT_FONTSIZE_AXES)
+            plt.ylabel(value_name_mapper[vn], fontsize=PLOT_FONTSIZE_AXES)
             plt.ylim([0.1 * y_min, 10 * y_max])
             plt.yscale("log")            
             plt.legend(loc=PLOT_LEGEND_LOC, prop={"size": PLOT_FONTSIZE_LEGEND}, handlelength=PLOT_LEGEND_HANDLELENGTH)        
@@ -327,7 +335,9 @@ def experimenter_random_data(Ts=TS_DEFAULT, Bs=BS_DEFAULT, nmm_magn_orders=NMM_M
 
 if __name__ == "__main__":
     print("DEMONSTRATION OF \"FAST REAL BOOST WITH BINS\" ALGORITHM IMPLEMENTED VIA NUMBA.JIT AND NUMBA.CUDA.")
-    print("MAIN (TESTER) STARTING...")
+    print(f"CPU AND SYSTEM PROPS: {cpu_and_system_props()}")
+    print(f"GPU PROPS: {gpu_props()}")    
+    print("MAIN (EXPERIMENTER) STARTING...")
     experimenter_random_data(Ts=TS_DEFAULT, Bs=BS_DEFAULT, nmm_magn_orders=NMM_MAGN_ORDERS_DEFAULT, dtype=np.int8, clf_defs=CLF_DEFS_DEFAULT, seed=0, 
-                             plots=True, plots_arg_name="T", plots_values_names=["time_fit", "time_predict_test"])    
-    print("MAIN TESTER DONE.")
+                             plots=False, plots_arg_name="T", plots_values_names=["time_fit", "time_predict_test"])    
+    print("MAIN (EXPERIMENTER) DONE.")
