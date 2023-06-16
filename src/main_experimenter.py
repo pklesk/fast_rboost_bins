@@ -21,13 +21,13 @@ FOLDER_DATA_RAW_LEUKEMIA = FOLDER_DATA_RAW + "leukemia/"
 FOLDER_DATA_RAW_SPAMBASE = FOLDER_DATA_RAW + "spambase/"
 
 # constants
-TS_DEFAULT = [16, 32, 64, 128]
-NMM_MAGN_ORDERS_DEFAULT = [(3, 3, 3), (3, 3, 3)]
+NMM_MAGN_ORDERS_DEFAULT = [(3, 3, 3), (4, 3, 3)]
+TS_DEFAULT = [4, 8, 16, 32, 64]
 BS_DEFAULT = [8]
 CLF_DEFS_DEFAULT = [
+        (AdaBoostClassifier, {"algorithm": "SAMME.R"}, {"color": "black"}),
         (FastRealBoostBins, {"fit_mode": "numba_jit", "decision_function_mode": "numba_jit"}, {"color": "blue"}),
-        (FastRealBoostBins, {"fit_mode": "numba_cuda", "decision_function_mode": "numba_cuda"}, {"color": "red"}),
-        (AdaBoostClassifier, {"algorithm": "SAMME.R"}, {"color": "black"})
+        (FastRealBoostBins, {"fit_mode": "numba_cuda", "decision_function_mode": "numba_cuda"}, {"color": "red"})        
         ]
 EPS = 1e-7
 
@@ -206,33 +206,31 @@ def experimenter_cifar10_data():
     t2 = time.time()             
     print(f"EXPERIMENT CIFAR-10 DATA DONE. [time: {t2 - t1} s]")
 
-def experimenter_random_data(Ts=TS_DEFAULT, Bs=BS_DEFAULT, nmm_magn_orders=NMM_MAGN_ORDERS_DEFAULT, dtype=np.int8, clf_defs=CLF_DEFS_DEFAULT, seed=0, 
+def experimenter_random_data(dtype=np.int8, nmm_magn_orders=NMM_MAGN_ORDERS_DEFAULT, Ts=TS_DEFAULT, Bs=BS_DEFAULT, clf_defs=CLF_DEFS_DEFAULT, seed=0, 
                              plots=True, plots_arg_name=None, plots_values_names=[]):
     print("EXPERIMENTER RANDOM DATA...")
-    print(f"[settings -> Ts: {Ts}, Bs: {Bs}, nmm_magn_orders: {nmm_magn_orders}, dtype: {dtype.__name__}, no. of clf_defs: {len(clf_defs)}, seed: {seed}]")
+    print(f"[settings -> dtype: {dtype.__name__}, nmm_magn_orders: {nmm_magn_orders}, Ts: {Ts}, Bs: {Bs}, no. of clf_defs: {len(clf_defs)}, seed: {seed}]")
     print(f"[clfs definitions:]")
     for clf_id, (clf_class, clf_consts, _) in enumerate(clf_defs):
-        print(f"[def {clf_id}: {clf_class.__name__}({clf_consts})]")
+        print(f"[def {clf_id}: {clf_class.__name__}({clf_consts})]")    
     cpu_gpu_info = f"[cpu: {cpu_and_system_props()['cpu_name']}, gpu: {gpu_props()['name']}]".upper()
     t1 = time.time()
     np.random.seed(seed)
-    max_value = np.iinfo(dtype).max if np.issubdtype(dtype, np.integer) else np.finfo(dtype).max      
-    
+    max_value = (np.iinfo(dtype).max // 2) if np.issubdtype(dtype, np.integer) else 1.0                
     n_experiments = len(Ts) * len(Bs) * len(nmm_magn_orders)
     experiments_descr = np.empty(n_experiments, dtype=object)    
     results_descr = np.empty((n_experiments, len(clf_defs)), dtype=object)
-    clfs_names = np.empty((n_experiments, len(clf_defs)), dtype=object)        
-    for experiment_id, (T, B, nmmo) in enumerate(product(Ts, Bs, nmm_magn_orders)):
+    clfs_names = np.empty((n_experiments, len(clf_defs)), dtype=object)    
+    for experiment_id, (nmmo, T, B) in enumerate(product(nmm_magn_orders, Ts, Bs)):
         print("=" * 196)
-        print(f"[experiment_id: {experiment_id}, params: {(T, B, nmmo)}]")            
+        print(f"[experiment: {experiment_id + 1}/{n_experiments}, params: {(nmmo, T, B)}]")              
         n = 10**nmmo[0]
         m_train = 10**nmmo[1]
-        m_test = 10**nmmo[2]        
-        max_value /= 2.0 * B
+        m_test = 10**nmmo[2]               
         X_train = (max_value * np.random.rand(m_train, n)).astype(dtype)
         y_train = np.random.randint(0, 2, size=m_train) * 2 - 1
         X_test = (max_value * np.random.rand(m_test, n)).astype(dtype)
-        y_test = np.random.randint(0, 2, size=m_train) * 2 - 1        
+        y_test = np.random.randint(0, 2, size=m_test) * 2 - 1        
         experiments_descr[experiment_id] = {"T": T, "B": B, "n": n, "m_train": m_train, "m_test": m_test}
         print(f"[description: {experiments_descr[experiment_id]}]")
         print("=" * 196)
@@ -244,15 +242,14 @@ def experimenter_random_data(Ts=TS_DEFAULT, Bs=BS_DEFAULT, nmm_magn_orders=NMM_M
             if isinstance(clf, FastRealBoostBins):
                 params["T"] = T
                 params["B"] = B
-            else:
+            if isinstance(clf, AdaBoostClassifier):
                 params["n_estimators"] = T
-                params["random_state"] = seed
             clf.set_params(**params)
             clfs_now.append(clf)
             clfs_names[experiment_id, clf_id] = clean_name(str(clf))            
-                 
-        for clf_id, clf in enumerate(clfs_now):            
-            print(f"[clf: {clfs_names[experiment_id, clf_id]} at address {id(clf)}]")
+        
+        for clf_id, clf in enumerate(clfs_now):
+            print(f"[clf: {clfs_names[experiment_id, clf_id]}]")
             print(f"[fit...]")
             t1_fit = time.time()
             clf.fit(X_train, y_train)
@@ -280,7 +277,7 @@ def experimenter_random_data(Ts=TS_DEFAULT, Bs=BS_DEFAULT, nmm_magn_orders=NMM_M
         results_arr = np.array(results_arr)
         results_arr[results_arr == 0.0] = EPS
         results_ratios = np.max(results_arr, axis=0) / results_arr  
-        print(f"[results summary for experiment_id {experiment_id} ({experiments_descr[experiment_id]}):]")
+        print(f"[results summary for experiment {experiment_id + 1}/{n_experiments} ({experiments_descr[experiment_id]}):]")
         for clf_id in range(len(clf_defs)):
             results_descr[experiment_id, clf_id]["time_fit"][1] = results_ratios[clf_id, 0]
             results_descr[experiment_id, clf_id]["time_predict_train"][1] = results_ratios[clf_id, 1]
@@ -294,7 +291,7 @@ def experimenter_random_data(Ts=TS_DEFAULT, Bs=BS_DEFAULT, nmm_magn_orders=NMM_M
         print("[about to generate wanted plots]")
     print(f"EXPERIMENT RANDOM DATA DONE. [time: {t2 - t1} s]")
     if plots and plots_arg_name and plots_values_names:
-        value_name_mapper = {"time_fit": "FIT TIME", "time_predict_train": "PREDICT TIME (TRAIN DATA)", "time_predict_test": "PREDICT TIME (TEST DATA)",
+        value_name_mapper = {"time_fit": "FIT TIME [s]", "time_predict_train": "PREDICT TIME (TRAIN DATA) [s]", "time_predict_test": "PREDICT TIME (TEST DATA) [s]",
                              "acc_train": "ACC (TRAIN DATA)", "acc_test": "ACC (TEST DATA)"}        
         nonargs = {}
         nonargs_experiment_ids = {}
@@ -338,6 +335,6 @@ if __name__ == "__main__":
     print(f"CPU AND SYSTEM PROPS: {cpu_and_system_props()}")
     print(f"GPU PROPS: {gpu_props()}")    
     print("MAIN (EXPERIMENTER) STARTING...")
-    experimenter_random_data(Ts=TS_DEFAULT, Bs=BS_DEFAULT, nmm_magn_orders=NMM_MAGN_ORDERS_DEFAULT, dtype=np.int8, clf_defs=CLF_DEFS_DEFAULT, seed=0, 
-                             plots=False, plots_arg_name="T", plots_values_names=["time_fit", "time_predict_test"])    
+    experimenter_random_data(dtype=np.int16, nmm_magn_orders=NMM_MAGN_ORDERS_DEFAULT, Ts=TS_DEFAULT, Bs=BS_DEFAULT, clf_defs=CLF_DEFS_DEFAULT, seed=0, 
+                             plots=True, plots_arg_name="T", plots_values_names=["time_fit", "time_predict_test"])    
     print("MAIN (EXPERIMENTER) DONE.")
