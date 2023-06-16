@@ -429,12 +429,11 @@ class FastRealBoostBins(BaseEstimator, ClassifierMixin):
             print("[binning...]")
         #X_binned = self._bin_data(X, mins, maxes)
         X_binned = None
-        if np.issubdtype(self.dtype_, np.integer):
-            spreads = maxes.astype(np.int64) - mins.astype(np.int64)
+        if np.issubdtype(self.dtype_, np.integer):            
             info = np.iinfo(self.dtype_)
-        else:
-            spreads = maxes.astype(np.float64) - mins.astype(np.float64)
+        else:            
             info = np.finfo(self.dtype_)    
+        spreads = maxes - mins
         if np.issubdtype(self.dtype_, np.integer):
             if np.any(np.float64(self.B) * spreads > info.max):
                 broader_dtype = np.int16
