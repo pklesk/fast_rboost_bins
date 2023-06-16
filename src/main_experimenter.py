@@ -21,8 +21,8 @@ FOLDER_DATA_RAW_LEUKEMIA = FOLDER_DATA_RAW + "leukemia/"
 FOLDER_DATA_RAW_SPAMBASE = FOLDER_DATA_RAW + "spambase/"
 
 # constants
-NMM_MAGN_ORDERS_DEFAULT = [(3, 3, 3)]
-TS_DEFAULT = [16, 32, 64, 128, 256, 512, 1024, 2048]
+NMM_MAGN_ORDERS_DEFAULT = [(3, 2, 2)]
+TS_DEFAULT = [32, 64, 128, 256, 512, 1024, 2048]
 BS_DEFAULT = [8]
 CLF_DEFS_DEFAULT = [
         #(AdaBoostClassifier, {"algorithm": "SAMME.R"}, {"color": "black"}),
@@ -224,9 +224,9 @@ def experimenter_random_data(dtype=np.int8, nmm_magn_orders=NMM_MAGN_ORDERS_DEFA
     for experiment_id, (nmmo, T, B) in enumerate(product(nmm_magn_orders, Ts, Bs)):
         print("=" * 196)
         print(f"[experiment: {experiment_id + 1}/{n_experiments}, params: {(nmmo, T, B)}]")              
-        n = 10**nmmo[0]
-        m_train = 10**nmmo[1]
-        m_test = 10**nmmo[2]               
+        n = int(10**nmmo[0])
+        m_train = int(10**nmmo[1])
+        m_test = int(10**nmmo[2])               
         X_train = (max_value * np.random.rand(m_train, n)).astype(dtype)
         y_train = np.random.randint(0, 2, size=m_train) * 2 - 1
         X_test = (max_value * np.random.rand(m_test, n)).astype(dtype)
