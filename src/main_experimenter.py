@@ -21,8 +21,8 @@ FOLDER_DATA_RAW_LEUKEMIA = FOLDER_DATA_RAW + "leukemia/"
 FOLDER_DATA_RAW_SPAMBASE = FOLDER_DATA_RAW + "spambase/"
 
 # constants
-NMM_MAGN_ORDERS_DEFAULT = [(3, 3, 3), (4, 3, 3)]
-TS_DEFAULT = [4, 8, 16, 32, 64]
+NMM_MAGN_ORDERS_DEFAULT = [(3, 2, 3)]
+TS_DEFAULT = [8, 16, 32, 64, 128, 256, 512, 1024, 2048, 4096]
 BS_DEFAULT = [8]
 CLF_DEFS_DEFAULT = [
         (AdaBoostClassifier, {"algorithm": "SAMME.R"}, {"color": "black"}),
