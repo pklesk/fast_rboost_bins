@@ -650,7 +650,7 @@ def demo_detect_in_video(clf, hcoords, decision_threshold, computations="gpu_cud
             ws = int(np.round(w * w_scale))
             cv2.rectangle(frame, (ks, js), (ks + ws - 1, js + hs - 1), color_detect, draw_thickness)
             if postprocess:
-                cv2.putText(frame, f"{responses[index]:.1f}", (k0, j0 + ws - 2), cv2.FONT_HERSHEY_PLAIN, font_size, color_detect, draw_thickness)
+                cv2.putText(frame, f"{responses[index]:.1f}", (ks, js + ws - 2), cv2.FONT_HERSHEY_PLAIN, font_size, color_detect, draw_thickness)
         normalizer_ma = 1.0 / (1.0 - ma_decay**(n_frames + 1))
         if n_frames > 0:
             fps_disp_ma = ma_decay * fps_disp_ma + (1.0 - ma_decay) * 1.0 / tpf_prev
@@ -813,7 +813,7 @@ def demo_detect_in_video_multiple_clfs(clfs, hcoords, decision_thresholds, postp
                 ws = int(np.round(w * w_scale))
                 cv2.rectangle(frame, (ks, js), (ks + ws - 1, js + hs - 1), colors_detect[i], draw_thickness)
                 if postprocess:
-                    cv2.putText(frame, f"{responses[index]:.1f}", (k0, j0 + ws - 2), cv2.FONT_HERSHEY_PLAIN, font_size, colors_detect[i], draw_thickness)            
+                    cv2.putText(frame, f"{responses[index]:.1f}", (ks, js + ws - 2), cv2.FONT_HERSHEY_PLAIN, font_size, colors_detect[i], draw_thickness)            
         normalizer_ma = 1.0 / (1.0 - ma_decay**(n_frames + 1))
         if n_frames > 0:
             fps_disp_ma = ma_decay * fps_disp_ma + (1.0 - ma_decay) * 1.0 / tpf_prev
