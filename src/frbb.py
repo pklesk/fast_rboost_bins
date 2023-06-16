@@ -171,12 +171,8 @@ class FastRealBoostBins(BaseEstimator, ClassifierMixin):
     
     def _bin_data(self, X, mins, maxes):
         X_binned = None
-        if np.issubdtype(self.dtype_, np.integer):
-            spreads = maxes.astype(np.int64) - mins.astype(np.int64)
-            info = np.iinfo(self.dtype_)
-        else:
-            spreads = maxes.astype(np.float64) - mins.astype(np.float64)
-            info = np.finfo(self.dtype_)    
+        spreads = maxes - mins
+        info = np.iinfo(self.dtype_) if np.issubdtype(self.dtype_, np.integer) else np.finfo(self.dtype_) 
         if np.issubdtype(self.dtype_, np.integer):
             if np.any(np.float64(self.B) * spreads > info.max):
                 broader_dtype = np.int16
@@ -423,41 +419,11 @@ class FastRealBoostBins(BaseEstimator, ClassifierMixin):
         t2_ranges = time.time()
         if self.verbose:
             print(f"[finding ranges of features done; time: {t2_ranges - t1_ranges} s]")          
-
-        t1_binning = time.time()
+        
         if self.verbose:
             print("[binning...]")
-        #X_binned = self._bin_data(X, mins, maxes)
-        X_binned = None
-        if np.issubdtype(self.dtype_, np.integer):            
-            info = np.iinfo(self.dtype_)
-        else:            
-            info = np.finfo(self.dtype_)    
-        spreads = maxes - mins
-        if np.issubdtype(self.dtype_, np.integer):
-            if np.any(np.float64(self.B) * spreads > info.max):
-                broader_dtype = np.int16
-                if self.dtype_ == np.int16 or self.dtype_ == np.uint16:
-                    broader_dtype = np.int32
-                elif self.dtype_ == np.int32 or self.dtype_ == np.uint32:
-                    broader_dtype = np.int64
-                spreads[spreads == 0] = info.max                
-                if self.dtype_ == np.int64 or self.dtype_ == np.uint64:
-                    if self.verbose:
-                        print(f"[warning: temporarily changing dtype = {self.dtype_} to {np.float64} while binning to prevent overflow]")
-                    X_binned = np.clip(np.int8(np.float64(self.B) * (X - mins) / spreads), 0, self.B - 1)        
-                else:                    
-                    if self.verbose:
-                        print(f"[warning: temporarily extending dtype = {self.dtype_} to {broader_dtype} while binning to prevent overflow]")                 
-                    X = X.astype(broader_dtype)
-                    X_binned = np.clip(np.int8(self.B * (X - mins) // spreads), 0, self.B - 1)
-                    X = X.astype(self.dtype_)
-            else:                 
-                spreads[spreads == 0] = info.max
-                X_binned = np.clip(np.int8(self.B * (X - mins) // spreads), 0, self.B - 1)
-        else:
-            spreads[spreads == 0] = info.max
-            X_binned = np.clip(np.int8(self.B * (X - mins) / spreads), 0, self.B - 1)        
+        t1_binning = time.time()            
+        X_binned = self._bin_data(X, mins, maxes)        
         t2_binning = time.time()
         if self.verbose:
             print(f"[binning done; time: {t2_binning - t1_binning} s]")    
