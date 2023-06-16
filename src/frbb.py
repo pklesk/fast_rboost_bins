@@ -164,7 +164,7 @@ class FastRealBoostBins(BaseEstimator, ClassifierMixin):
         self.logits_ = np.zeros((self.T, self.B), dtype=np.float32) # binned logits for selected features
         self.decision_threshold_ = 0.0 # default decision threshold
         self.classes_ = np.unique(y) # unique class labels, we assume exactly 2 classes with first class negative
-        self.dtype_ = X.dtype # dtype of input array (important while binning)
+        self.dtype_ = X.dtype # dtype of input array 
         self.decision_function_numba_cuda_job_name_ = f"_decision_function_numba_cuda_job_{str(self.dtype_)}"
         # memorizing incoming number of features (same expected later at predict stage)
         self.n_features_in_ = X.shape[1]             
@@ -192,7 +192,7 @@ class FastRealBoostBins(BaseEstimator, ClassifierMixin):
                 else:                    
                     if self.verbose:
                         print(f"[warning: temporarily extending dtype = {self.dtype_} to {broader_dtype} while binning to prevent overflow]")                 
-                    X = X.astype(np.int64)
+                    X = X.astype(broader_dtype)
                     X_binned = np.clip(np.int8(self.B * (X - mins) // spreads), 0, self.B - 1)
                     X = X.astype(self.dtype_)
             else:                 
