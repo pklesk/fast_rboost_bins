@@ -21,11 +21,11 @@ FOLDER_DATA_RAW_LEUKEMIA = FOLDER_DATA_RAW + "leukemia/"
 FOLDER_DATA_RAW_SPAMBASE = FOLDER_DATA_RAW + "spambase/"
 
 # constants
-NMM_MAGN_ORDERS_DEFAULT = [(3, 2, 3)]
-TS_DEFAULT = [8, 16, 32, 64, 128, 256, 512, 1024, 2048, 4096]
+NMM_MAGN_ORDERS_DEFAULT = [(3, 3, 3)]
+TS_DEFAULT = [16, 32, 64, 128, 256, 512, 1024, 2048]
 BS_DEFAULT = [8]
 CLF_DEFS_DEFAULT = [
-        (AdaBoostClassifier, {"algorithm": "SAMME.R"}, {"color": "black"}),
+        #(AdaBoostClassifier, {"algorithm": "SAMME.R"}, {"color": "black"}),
         (FastRealBoostBins, {"fit_mode": "numba_jit", "decision_function_mode": "numba_jit"}, {"color": "blue"}),
         (FastRealBoostBins, {"fit_mode": "numba_cuda", "decision_function_mode": "numba_cuda"}, {"color": "red"})        
         ]
@@ -40,7 +40,7 @@ PLOT_FIGSIZE = (8, 4.5)
 PLOT_MARKERSIZE = 4
 PLOT_GRID_COLOR = (0.4, 0.4, 0.4) 
 PLOT_GRID_DASHES = (4.0, 4.0)
-PLOT_LEGEND_LOC = 4
+PLOT_LEGEND_LOC = "upper left"
 PLOT_LEGEND_HANDLELENGTH = 4
 
 def clean_name(name):
@@ -324,8 +324,9 @@ def experimenter_random_data(dtype=np.int8, nmm_magn_orders=NMM_MAGN_ORDERS_DEFA
             plt.title(f"\n{cpu_gpu_info}", fontsize=PLOT_FONTSIZE_TITLE)
             plt.xlabel(plots_arg_name.upper(), fontsize=PLOT_FONTSIZE_AXES)            
             plt.ylabel(value_name_mapper[vn], fontsize=PLOT_FONTSIZE_AXES)
-            plt.ylim([0.1 * y_min, 10 * y_max])
-            plt.yscale("log")            
+            y_range = y_max - y_min
+            plt.ylim([y_min - 0.1 * y_range, y_max + 0.1 * y_range])
+            #plt.yscale("log")            
             plt.legend(loc=PLOT_LEGEND_LOC, prop={"size": PLOT_FONTSIZE_LEGEND}, handlelength=PLOT_LEGEND_HANDLELENGTH)        
             plt.grid(color=PLOT_GRID_COLOR, zorder=0, dashes=PLOT_GRID_DASHES)                     
             plt.show()                                                        
