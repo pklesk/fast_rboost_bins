@@ -752,7 +752,7 @@ class FastRealBoostBins(BaseEstimator, ClassifierMixin):
         dev_logits = cuda.to_device(self.logits_)                
         dev_responses = cuda.device_array(m, dtype=np.float32)
         tpb = self._cuda_tpb_default
-        bpg = m        
+        bpg = m    
         decision_function_numba_cuda_job_method = getattr(FastRealBoostBins, self.decision_function_numba_cuda_job_name_)
         decision_function_numba_cuda_job_method[bpg, tpb](dev_X_selected, dev_mins_selected, dev_maxes_selected, dev_logits, dev_responses)
         cuda.synchronize()
