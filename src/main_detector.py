@@ -28,9 +28,9 @@ SEED = 0 # randomization seed
 DEMO_HAAR_FEATURES_ALL = False
 DEMO_HAAR_FEATURES_SELECTED = False
 REGENERATE_DATA = False
-FIT_OR_REFIT_MODEL = True
-MEASURE_ACCS_OF_MODEL = True
-ADJUST_DECISION_THRESHOLD_OF_MODEL = True
+FIT_OR_REFIT_MODEL = False
+MEASURE_ACCS_OF_MODEL = False
+ADJUST_DECISION_THRESHOLD_OF_MODEL = False
 DEMO_DETECT_IN_VIDEO = False
 DEMO_DETECT_IN_VIDEO_COMPUTATIONS = "gpu_cuda" # possible values: "cpu_simple", "cpu_parallel", "gpu_cuda"
 DEMO_DETECT_IN_VIDEO_PARALLEL_JOBS = 8
@@ -48,7 +48,7 @@ DETECTION_WINDOW_HEIGHT_MIN = 96
 DETECTION_WINDOW_WIDTH_MIN = 96
 DETECTION_WINDOW_GROWTH = 1.2
 DETECTION_WINDOW_JUMP = 0.05
-DETECTION_DECISION_THRESHOLD = None # can be set to None (then classfiers' internal thresholds are used)
+DETECTION_DECISION_THRESHOLD = 8.0 # can be set to None (then classfiers' internal thresholds are used)
 DETECTION_POSTPROCESS = "avg" # possible values: None, "nms", "avg"
 
 # folders

@@ -1,6 +1,6 @@
 import numpy as np
 from frbb import FastRealBoostBins
-from sklearn.ensemble import AdaBoostClassifier
+from sklearn.ensemble import AdaBoostClassifier, HistGradientBoostingClassifier
 from sklearn.tree import DecisionTreeClassifier
 from sklearn.model_selection import train_test_split
 from keras.datasets import cifar10
@@ -21,11 +21,12 @@ FOLDER_DATA_RAW_LEUKEMIA = FOLDER_DATA_RAW + "leukemia/"
 FOLDER_DATA_RAW_SPAMBASE = FOLDER_DATA_RAW + "spambase/"
 
 # constants
-NMM_MAGN_ORDERS_DEFAULT = [(4, 3, 4)]
-TS_DEFAULT = [8, 16, 32, 64, 128]
+NMM_MAGN_ORDERS_DEFAULT = [(3, 2, 4)]
+TS_DEFAULT = [4, 8, 16, 32]
 BS_DEFAULT = [8]
 CLF_DEFS_DEFAULT = [
-        (AdaBoostClassifier, {"algorithm": "SAMME.R"}, {"color": "black"}),
+        #(AdaBoostClassifier, {"algorithm": "SAMME.R"}, {"color": "black"}),
+        (HistGradientBoostingClassifier, {"max_depth": 1}, {"color": 'green'}),
         (FastRealBoostBins, {"fit_mode": "numba_jit", "decision_function_mode": "numba_jit"}, {"color": "blue"}),
         (FastRealBoostBins, {"fit_mode": "numba_cuda", "decision_function_mode": "numba_cuda"}, {"color": "red"})        
         ]
@@ -35,12 +36,12 @@ EPS = 1e-7
 PLOT_FONTSIZE_SUPTITLE = 12
 PLOT_FONTSIZE_TITLE = 8
 PLOT_FONTSIZE_AXES = 11
-PLOT_FONTSIZE_LEGEND = 8
+PLOT_FONTSIZE_LEGEND = 7
 PLOT_FIGSIZE = (8, 4.5)
 PLOT_MARKERSIZE = 4
 PLOT_GRID_COLOR = (0.4, 0.4, 0.4) 
 PLOT_GRID_DASHES = (4.0, 4.0)
-PLOT_LEGEND_LOC = "bottom_right"
+PLOT_LEGEND_LOC = "lower right"
 PLOT_LEGEND_HANDLELENGTH = 4
 
 def clean_name(name):
@@ -244,6 +245,9 @@ def experimenter_random_data(dtype=np.int8, nmm_magn_orders=NMM_MAGN_ORDERS_DEFA
                 params["B"] = B
             if isinstance(clf, AdaBoostClassifier):
                 params["n_estimators"] = T
+            if isinstance(clf, HistGradientBoostingClassifier):
+                params["max_iter"] = T
+                params["max_bins"] = B                
             clf.set_params(**params)
             clfs_now.append(clf)
             clfs_names[experiment_id, clf_id] = clean_name(str(clf))            
@@ -256,6 +260,8 @@ def experimenter_random_data(dtype=np.int8, nmm_magn_orders=NMM_MAGN_ORDERS_DEFA
             t2_fit = time.time()            
             time_fit = t2_fit - t1_fit
             print(f"[fit done; time: {time_fit} s]")
+            if isinstance(clf, HistGradientBoostingClassifier):
+                print(f"![do_early_stopping_: {clf.do_early_stopping_}")
             print(f"[predict train...]")
             t1_predict_train = time.time()
             predictions_train = clf.predict(X_train)
