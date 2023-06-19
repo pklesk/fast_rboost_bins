@@ -8,6 +8,7 @@ from itertools import product, compress
 from matplotlib import pyplot as plt
 from utils import cpu_and_system_props, gpu_props
 import pickle
+from datetime import date
 
 np.set_printoptions(linewidth=512)
 np.set_printoptions(threshold=np.inf)    
@@ -20,8 +21,8 @@ FOLDER_DATA_RAW = "../data_raw/"
 DATA_KIND_DEFAULT = "real" # possible values: "real" or "random"
 REAL_DATA_DEFS_DEFAULT = [
     ("fddb-patches", "read_data_fddb_patches", "FDDB-PATCHES (3NPI)"),
-    ("cifar10", "read_data_cifar10", "CIFAR-10 (TRUCK)"),
-    ("mnist", "read_data_mnist", "MNIST (DIGIT 0)")
+    ("cifar10", "read_data_cifar10", "CIFAR-10 (AIRPLANE)"),
+    ("mnist", "read_data_mnist", "MNIST-B (DIGIT 0)")
     ]
 REAL_DATA_FLAGS_DEFAULT = [True, False, False]
 CLFS_DEFS_DEFAULT = [
@@ -33,9 +34,13 @@ CLFS_DEFS_DEFAULT = [
         ]
 CLFS_FLAGS_DEFAULT = [True, True, True, True, True]
 NMM_MAGN_ORDERS_DEFAULT = [(3, 4, 4)]
-TS_DEFAULT = [16, 32, 64, 128, 256]
+TS_DEFAULT = [1, 2]
 BS_DEFAULT = [8]
 SEED_DEFAULT = 0
+PLOTS_DEFAULT = True
+PLOTS_ARG_NAME_DEFAULT = "T"
+PLOTS_VALUES_NAMES_DEFAULT = ["acc_test", "acc_train", "time_fit", "time_predict_test"]
+
 EPS = 1e-9
 
 # plot settings
@@ -47,7 +52,7 @@ PLOT_FIGSIZE = (10, 6.5)
 PLOT_MARKERSIZE = 4
 PLOT_GRID_COLOR = (0.4, 0.4, 0.4) 
 PLOT_GRID_DASHES = (4.0, 4.0)
-PLOT_LEGEND_LOC = "upper left" #"lower right"
+PLOT_LEGEND_LOC = "best"
 PLOT_LEGEND_HANDLELENGTH = 4
 
 def clean_name(name):
@@ -55,6 +60,16 @@ def clean_name(name):
     name = name.replace("\t", "")
     name = re.sub(" +", " ", name)
     return name
+
+def hash_function(s):
+    h = 0
+    for c in s:
+        h *= 31 
+        h += ord(c)
+    return h
+
+def experiment_hash_str(kind="real", params=None, digits=10):
+    return kind + "_" + str((hash_function(str(params)) & ((1 << 32) - 1)) % 10**digits).rjust(digits, "0") + "_" + date.today().strftime("%Y%m%d")
 
 def unpickle_objects(fname):
     print(f"UNPICKLE OBJECTS... [from file: {fname}]")
@@ -77,8 +92,9 @@ def read_data_fddb_patches():
     X_test = np.reshape(X_test, (X_test.shape[0], n))         
     return X_train, y_train, X_test, y_test
 
-def read_data_cifar10(class_index=9): # default class: 9 ('truck')
+def read_data_cifar10():
     (X_train, y_train), (X_test, y_test) = cifar10.load_data()
+    class_index = 0 # 'airplane'
     indexes = y_train == class_index
     y_train[indexes] = 1
     y_train[~indexes] = -1
@@ -110,13 +126,16 @@ def read_data_mnist(seed=0):
     X_train = ((X_train.astype(np.uint16) + noise_train) // 2).astype(np.uint8)
     noise_test = np.random.randint(0, 256, X_test.shape, dtype=np.uint16)
     X_test = ((X_test.astype(np.uint16) + noise_test) // 2).astype(np.uint8)             
-    return X_train, y_train, X_test, y_test
-                    
+    return X_train, y_train, X_test, y_test                    
     
-def experimenter_random_data(clfs_defs=CLFS_DEFS_DEFAULT, clfs_flags=CLFS_FLAGS_DEFAULT,
-                             dtype=np.int8, nmm_magn_orders=NMM_MAGN_ORDERS_DEFAULT, Ts=TS_DEFAULT, Bs=BS_DEFAULT, seed=0, 
-                             plots=True, plots_arg_name=None, plots_values_names=[]):
-    print("EXPERIMENTER RANDOM DATA...")    
+def experimenter_random_data(dtype=np.int8, nmm_magn_orders=NMM_MAGN_ORDERS_DEFAULT,
+                             clfs_defs=CLFS_DEFS_DEFAULT, clfs_flags=CLFS_FLAGS_DEFAULT, 
+                             Ts=TS_DEFAULT, Bs=BS_DEFAULT, seed=0, 
+                             plots=PLOTS_DEFAULT, plots_arg_name=PLOTS_ARG_NAME_DEFAULT, plots_values_names=PLOTS_VALUES_NAMES_DEFAULT,
+                             cpu_props=None, gpu_props=None):
+    print("EXPERIMENTER RANDOM DATA...")
+    hash_str = experiment_hash_str("real", locals())
+    print(f"[experiment hash string: {hash_str}]")    
     print(f"[clfs definitions:]")
     for clf_id, (clf_class, clf_consts, _) in enumerate(clfs_defs):
         print(f"[clf def {clf_id} (active: {clfs_flags[clf_id]}): {clf_class.__name__}({clf_consts})]")
@@ -202,7 +221,7 @@ def experimenter_random_data(clfs_defs=CLFS_DEFS_DEFAULT, clfs_flags=CLFS_FLAGS_
     t2 = time.time()
     if plots and plots_arg_name and plots_values_names:
         print("[about to generate wanted plots]")
-    print(f"EXPERIMENT RANDOM DATA DONE. [time: {t2 - t1} s]")
+    print(f"EXPERIMENT RANDOM DATA DONE. [time: {t2 - t1} s, hash string: {hash_str}]")
     if plots and plots_arg_name and plots_values_names:
         value_name_mapper = {"time_fit": "FIT TIME [s]", "time_predict_train": "PREDICT TIME (TRAIN DATA) [s]", "time_predict_test": "PREDICT TIME (TEST DATA) [s]",
                              "acc_train": "ACC (TRAIN DATA)", "acc_test": "ACC (TEST DATA)"}        
@@ -239,14 +258,21 @@ def experimenter_random_data(clfs_defs=CLFS_DEFS_DEFAULT, clfs_flags=CLFS_FLAGS_
             plt.ylabel(value_name_mapper[vn], fontsize=PLOT_FONTSIZE_AXES)
             plt.yscale("log")
             plt.legend(loc=PLOT_LEGEND_LOC, prop={"size": PLOT_FONTSIZE_LEGEND}, handlelength=PLOT_LEGEND_HANDLELENGTH)        
-            plt.grid(color=PLOT_GRID_COLOR, zorder=0, dashes=PLOT_GRID_DASHES)                     
-            plt.show()
+            plt.grid(color=PLOT_GRID_COLOR, zorder=0, dashes=PLOT_GRID_DASHES)
+            plt.tight_layout()
+            fname = "fig_experiment_" + hash_str + "_" + vn
+            plt.savefig(FOLDER_EXTRAS +  fname + ".eps")
+            plt.savefig(FOLDER_EXTRAS +  fname + ".pdf")
+            plt.close()
             
 def experimenter_real_data(real_data_defs=REAL_DATA_DEFS_DEFAULT, real_data_flags=REAL_DATA_FLAGS_DEFAULT,
                            clfs_defs=CLFS_DEFS_DEFAULT, clfs_flags=CLFS_FLAGS_DEFAULT,
-                           Ts=TS_DEFAULT, Bs=BS_DEFAULT, seed=0, 
-                           plots=True, plots_arg_name=None, plots_values_names=[]):
+                           Ts=TS_DEFAULT, Bs=BS_DEFAULT, seed=SEED_DEFAULT, 
+                           plots=PLOTS_DEFAULT, plots_arg_name=PLOTS_ARG_NAME_DEFAULT, plots_values_names=PLOTS_VALUES_NAMES_DEFAULT,
+                           cpu_props=None, gpu_props=None):
     print("EXPERIMENTER REAL DATA...")    
+    hash_str = experiment_hash_str("real", locals())
+    print(f"[experiment hash string: {hash_str}]")
     print(f"[data definitions:]")
     for data_id, (data_name_short, data_reader, data_name_full) in enumerate(real_data_defs):
         print(f"[data def {data_id} (active: {real_data_flags[data_id]}): (name short: '{data_name_short}', reading function: {data_reader}(), name full: '{data_name_full})']")        
@@ -256,7 +282,7 @@ def experimenter_real_data(real_data_defs=REAL_DATA_DEFS_DEFAULT, real_data_flag
     print(f"[other settings -> Ts: {Ts}, Bs: {Bs}, seed: {seed}]")        
     real_data_defs = list(compress(real_data_defs, real_data_flags))        
     clfs_defs = list(compress(clfs_defs, clfs_flags))    
-    cpu_gpu_info = f"[cpu: {cpu_and_system_props()['cpu_name']}, gpu: {gpu_props()['name']}]".upper()
+    cpu_gpu_info = f"[cpu: {cpu_props['cpu_name']}, gpu: {gpu_props['name']}]".upper()
     t1 = time.time()
     np.random.seed(seed)
     n_experiments = len(real_data_defs) * len(Ts) * len(Bs)
@@ -333,7 +359,7 @@ def experimenter_real_data(real_data_defs=REAL_DATA_DEFS_DEFAULT, real_data_flag
     t2 = time.time()
     if plots and plots_arg_name and plots_values_names:
         print("[about to generate wanted plots]")
-    print(f"EXPERIMENT RANDOM DATA DONE. [time: {t2 - t1} s]")
+    print(f"EXPERIMENT REAL DATA DONE. [time: {t2 - t1} s, hash string: {hash_str}]")
     if plots and plots_arg_name and plots_values_names:
         value_name_mapper = {"time_fit": "FIT TIME [s]", "time_predict_train": "PREDICT TIME (TRAIN DATA) [s]", "time_predict_test": "PREDICT TIME (TEST DATA) [s]",
                              "acc_train": "ACC (TRAIN DATA)", "acc_test": "ACC (TEST DATA)"}        
@@ -371,29 +397,42 @@ def experimenter_real_data(real_data_defs=REAL_DATA_DEFS_DEFAULT, real_data_flag
             plt.yscale("log")               
             plt.legend(loc=PLOT_LEGEND_LOC, prop={"size": PLOT_FONTSIZE_LEGEND}, handlelength=PLOT_LEGEND_HANDLELENGTH)        
             plt.grid(color=PLOT_GRID_COLOR, zorder=0, dashes=PLOT_GRID_DASHES)
-            plt.tight_layout()                     
-            plt.show()                                                                    
+            plt.tight_layout()
+            fname = "fig_experiment_" + hash_str + "_" + vn
+            plt.savefig(FOLDER_EXTRAS +  fname + ".eps")
+            plt.savefig(FOLDER_EXTRAS +  fname + ".pdf")
+            plt.close()                                                                                    
 
 if __name__ == "__main__":
     print("DEMONSTRATION OF \"FAST REAL BOOST WITH BINS\" ALGORITHM IMPLEMENTED VIA NUMBA.JIT AND NUMBA.CUDA.")
-    print(f"CPU AND SYSTEM PROPS: {cpu_and_system_props()}")
-    print(f"GPU PROPS: {gpu_props()}")        
+    cpu_props = cpu_and_system_props()
+    gpu_props = gpu_props()
+    print(f"CPU AND SYSTEM PROPS: {cpu_props}")
+    print(f"GPU PROPS: {gpu_props}")        
     print(f"MAIN (EXPERIMENTER) STARTING...]")
     data_kind = DATA_KIND_DEFAULT
     clfs_defs = CLFS_DEFS_DEFAULT
     clfs_flags = CLFS_FLAGS_DEFAULT
+    Ts = TS_DEFAULT
+    Bs = BS_DEFAULT
     seed = SEED_DEFAULT
+    plots = PLOTS_DEFAULT
+    plots_arg_name = PLOTS_ARG_NAME_DEFAULT
+    plots_values_names = PLOTS_VALUES_NAMES_DEFAULT
     if data_kind == "real":        
         real_data_flags = REAL_DATA_FLAGS_DEFAULT
         real_data_defs = REAL_DATA_DEFS_DEFAULT        
         print(f"[data kind: {data_kind}, real data flags: {real_data_flags}, clfs flags: {clfs_flags}, seed: {seed}]")        
         experimenter_real_data(real_data_defs=real_data_defs, real_data_flags=real_data_flags,
                                clfs_defs=clfs_defs, clfs_flags=clfs_flags, 
-                               Ts=TS_DEFAULT, Bs=BS_DEFAULT, seed=seed, 
-                               plots=True, plots_arg_name="T", plots_values_names=["acc_test", "acc_train", "time_fit", "time_predict_test"])
+                               Ts=Ts, Bs=Bs, seed=seed, 
+                               plots=True, plots_arg_name=plots_arg_name, plots_values_names=plots_values_names,
+                               cpu_props=cpu_props, gpu_props=gpu_props)
     elif data_kind == "random":
         print(f"[data kind: {data_kind}, real data flags: {real_data_flags}, clfs flags: {clfs_flags}, seed: {seed}]")
-        experimenter_random_data(clfs_defs=clfs_defs, clfs_flags=clfs_flags,
-                                 dtype=np.int16, nmm_magn_orders=NMM_MAGN_ORDERS_DEFAULT, Ts=TS_DEFAULT, Bs=BS_DEFAULT, seed=seed, 
-                                 plots=True, plots_arg_name="T", plots_values_names=["time_fit", "time_predict_test"])            
+        experimenter_random_data(dtype=np.int16, nmm_magn_orders=NMM_MAGN_ORDERS_DEFAULT,
+                                 clfs_defs=clfs_defs, clfs_flags=clfs_flags,                                
+                                 Ts=Ts, Bs=Bs, seed=seed, 
+                                 plots=True, plots_arg_name=plots_arg_name, plots_values_names=plots_values_names,
+                                 cpu_props=cpu_props, gpu_props=gpu_props)            
     print("MAIN (EXPERIMENTER) DONE.")
