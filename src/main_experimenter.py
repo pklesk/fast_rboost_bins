@@ -16,15 +16,18 @@ np.set_printoptions(threshold=np.inf)
 # folders
 FOLDER_EXTRAS = "../extras/"
 FOLDER_DATA_RAW = "../data_raw/"
+FOLDER_DATA = "../data/"
 
 # constants
 DATA_KIND_DEFAULT = "real" # possible values: "real" or "random"
 REAL_DATA_DEFS_DEFAULT = [
     ("fddb-patches", "read_data_fddb_patches", "FDDB-PATCHES (3NPI)"),
-    ("cifar10", "read_data_cifar10", "CIFAR-10 (AIRPLANE)"),
-    ("mnist", "read_data_mnist", "MNIST-B (DIGIT 0)")
+    ("cifar-10", "read_data_cifar_10", "CIFAR-10 (AIRPLANE)"),
+    ("mnist-b", "read_data_mnist_b", "MNIST-B (DIGIT 0)"),
+    ("fddb-hfs", "read_data_fddb_haar", "FDDB-HFs (300NPI)"),
+    ("hagrid-hfs", "read_data_hagrid_haar", "HaGRID-HFs (PALM, 300NPI)")
     ]
-REAL_DATA_FLAGS_DEFAULT = [True, False, False]
+REAL_DATA_FLAGS_DEFAULT = [False, False, False, True, False]
 CLFS_DEFS_DEFAULT = [
         (AdaBoostClassifier, {"algorithm": "SAMME.R"}, {"color": "black"}),
         (GradientBoostingClassifier, {"max_depth": 1}, {"color": "green"}),
@@ -32,14 +35,14 @@ CLFS_DEFS_DEFAULT = [
         (FastRealBoostBins, {"fit_mode": "numba_jit", "decision_function_mode": "numba_jit"}, {"color": "blue"}),
         (FastRealBoostBins, {"fit_mode": "numba_cuda", "decision_function_mode": "numba_cuda"}, {"color": "red"})        
         ]
-CLFS_FLAGS_DEFAULT = [True, True, True, True, True]
-NMM_MAGN_ORDERS_DEFAULT = [(3, 4, 4)]
-TS_DEFAULT = [1, 2]
+CLFS_FLAGS_DEFAULT = [False, False, True, False, True]
+NMM_MAGN_ORDERS_DEFAULT = [(3, 3, 4)]
+TS_DEFAULT = [1, 2, 4, 8, 16]
 BS_DEFAULT = [8]
 SEED_DEFAULT = 0
 PLOTS_DEFAULT = True
 PLOTS_ARG_NAME_DEFAULT = "T"
-PLOTS_VALUES_NAMES_DEFAULT = ["acc_test", "acc_train", "time_fit", "time_predict_test"]
+PLOTS_VALUES_NAMES_DEFAULT = ["acc_test", "acc_train", "time_fit", "time_predict_train", "time_predict_test"]
 
 EPS = 1e-9
 
@@ -92,7 +95,7 @@ def read_data_fddb_patches():
     X_test = np.reshape(X_test, (X_test.shape[0], n))         
     return X_train, y_train, X_test, y_test
 
-def read_data_cifar10():
+def read_data_cifar_10():
     (X_train, y_train), (X_test, y_test) = cifar10.load_data()
     class_index = 0 # 'airplane'
     indexes = y_train == class_index
@@ -108,7 +111,7 @@ def read_data_cifar10():
     X_test = np.reshape(X_test, (X_test.shape[0], n))         
     return X_train, y_train, X_test, y_test
 
-def read_data_mnist(seed=0):
+def read_data_mnist_b(seed=0):
     (X_train, y_train), (X_test, y_test) = mnist.load_data()
     indexes = y_train == 0
     y_train[indexes] = 1
@@ -128,6 +131,16 @@ def read_data_mnist(seed=0):
     X_test = ((X_test.astype(np.uint16) + noise_test) // 2).astype(np.uint8)             
     return X_train, y_train, X_test, y_test                    
     
+def read_data_fddb_haar(): 
+    fname = "data_face_n_18225_S_5_P_5_NPI_300_SEED_0.bin"
+    [X_train, y_train, X_test, y_test] = unpickle_objects(FOLDER_DATA + fname)
+    return X_train, y_train, X_test, y_test
+
+def read_data_hagrid_haar(): 
+    fname = "data_hand_n_18225_S_5_P_5_NPI_30_SEED_0.bin"
+    [X_train, y_train, X_test, y_test] = unpickle_objects(FOLDER_DATA + fname)
+    return X_train, y_train, X_test, y_test    
+    
 def experimenter_random_data(dtype=np.int8, nmm_magn_orders=NMM_MAGN_ORDERS_DEFAULT,
                              clfs_defs=CLFS_DEFS_DEFAULT, clfs_flags=CLFS_FLAGS_DEFAULT, 
                              Ts=TS_DEFAULT, Bs=BS_DEFAULT, seed=0, 
@@ -139,8 +152,9 @@ def experimenter_random_data(dtype=np.int8, nmm_magn_orders=NMM_MAGN_ORDERS_DEFA
     print(f"[clfs definitions:]")
     for clf_id, (clf_class, clf_consts, _) in enumerate(clfs_defs):
         print(f"[clf def {clf_id} (active: {clfs_flags[clf_id]}): {clf_class.__name__}({clf_consts})]")
-    print(f"[other settings -> dtype: {dtype.__name__}, nmm_magn_orders: {nmm_magn_orders}, Ts: {Ts}, Bs: {Bs}, seed: {seed}]")    
-    cpu_gpu_info = f"[cpu: {cpu_and_system_props()['cpu_name']}, gpu: {gpu_props()['name']}]".upper()
+    print(f"[other settings -> dtype: {dtype.__name__}, nmm_magn_orders: {nmm_magn_orders}, Ts: {Ts}, Bs: {Bs}, seed: {seed}]")
+    clfs_defs = list(compress(clfs_defs, clfs_flags))        
+    cpu_gpu_info = f"[cpu: {cpu_props['cpu_name']}, gpu: {gpu_props['name']}]".upper()
     t1 = time.time()
     np.random.seed(seed)
     max_value = (np.iinfo(dtype).max // 2) if np.issubdtype(dtype, np.integer) else 1.0                
@@ -429,7 +443,7 @@ if __name__ == "__main__":
                                plots=True, plots_arg_name=plots_arg_name, plots_values_names=plots_values_names,
                                cpu_props=cpu_props, gpu_props=gpu_props)
     elif data_kind == "random":
-        print(f"[data kind: {data_kind}, real data flags: {real_data_flags}, clfs flags: {clfs_flags}, seed: {seed}]")
+        print(f"[data kind: {data_kind}, clfs flags: {clfs_flags}, seed: {seed}]")
         experimenter_random_data(dtype=np.int16, nmm_magn_orders=NMM_MAGN_ORDERS_DEFAULT,
                                  clfs_defs=clfs_defs, clfs_flags=clfs_flags,                                
                                  Ts=Ts, Bs=Bs, seed=seed, 

@@ -22,8 +22,8 @@ KIND = "face"
 S = 5 # parameter "scales" to generete Haar-like features
 P = 5 # parameter "positions" to generete Haar-like features
 NPI = 300 # "negatives per image" - no. of negatives (negative windows) to sample per image (image real or generated synthetically) 
-T = 2048 # size of ensemble in FastRealBoostBins (equivalently, no. of boosting rounds when fitting)
-B = 16 # no. of bins
+T = 1024 # size of ensemble in FastRealBoostBins (equivalently, no. of boosting rounds when fitting)
+B = 8 # no. of bins
 SEED = 0 # randomization seed
 DEMO_HAAR_FEATURES_ALL = False
 DEMO_HAAR_FEATURES_SELECTED = False
@@ -36,7 +36,7 @@ DEMO_DETECT_IN_VIDEO_COMPUTATIONS = "gpu_cuda" # possible values: "cpu_simple", 
 DEMO_DETECT_IN_VIDEO_PARALLEL_JOBS = 8
 DEMO_DETECT_IN_VIDEO_VERBOSE_LOOP = True
 DEMO_DETECT_IN_VIDEO_VERBOSE_DETECT = True
-DEMO_DETECT_IN_VIDEO_MULTIPLE_CLFS = False
+DEMO_DETECT_IN_VIDEO_MULTIPLE_CLFS = True
 
 # cv2 camera settings
 CV2_VIDEO_CAPTURE_CAMERA_INDEX = 0
@@ -44,11 +44,11 @@ CV2_VIDEO_CAPTURE_IS_IT_MSWINDOWS = False
 
 # detection procedure settings
 DETECTION_SCALES = 9
-DETECTION_WINDOW_HEIGHT_MIN = 96
-DETECTION_WINDOW_WIDTH_MIN = 96
+DETECTION_WINDOW_HEIGHT_MIN = 64
+DETECTION_WINDOW_WIDTH_MIN = 64
 DETECTION_WINDOW_GROWTH = 1.2
 DETECTION_WINDOW_JUMP = 0.05
-DETECTION_DECISION_THRESHOLD = 8.0 # can be set to None (then classfiers' internal thresholds are used)
+DETECTION_DECISION_THRESHOLD = 4.0 # can be set to None (then classfiers' internal thresholds are used)
 DETECTION_POSTPROCESS = "avg" # possible values: None, "nms", "avg"
 
 # folders
@@ -950,7 +950,7 @@ if __name__ == "__main__":
         
     if DEMO_DETECT_IN_VIDEO_MULTIPLE_CLFS:        
         clfs_names = ["clf_frbb_face_n_18225_S_5_P_5_NPI_300_SEED_0_T_1024_B_8.bin", "clf_frbb_hand_n_18225_S_5_P_5_NPI_30_SEED_0_T_1024_B_8.bin"]
-        decision_thresholds = [4.5, 5.0] # set to [None, None] if clfs' internal thresholds to be used
+        decision_thresholds = [5.0, 5.0] # set to [None, None] if clfs' internal thresholds to be used
         clfs = [unpickle_objects(FOLDER_CLFS + clf_name)[0] for clf_name in clfs_names]
         print(f"[about to start multiple clfs demo; unpickled clfs:]")
         for clf_name, clf in zip(clfs_names, clfs):
