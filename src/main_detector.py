@@ -18,10 +18,10 @@ __email__ = "pklesk@zut.edu.pl"
 
 
 # main settings
-KIND = "face"
+KIND = "hand"
 S = 5 # parameter "scales" to generete Haar-like features
 P = 5 # parameter "positions" to generete Haar-like features
-NPI = 300 # "negatives per image" - no. of negatives (negative windows) to sample per image (image real or generated synthetically) 
+NPI = 30 # "negatives per image" - no. of negatives (negative windows) to sample per image (image real or generated synthetically) 
 T = 1024 # size of ensemble in FastRealBoostBins (equivalently, no. of boosting rounds when fitting)
 B = 8 # no. of bins
 SEED = 0 # randomization seed
@@ -36,7 +36,7 @@ DEMO_DETECT_IN_VIDEO_COMPUTATIONS = "gpu_cuda" # possible values: "cpu_simple", 
 DEMO_DETECT_IN_VIDEO_PARALLEL_JOBS = 8
 DEMO_DETECT_IN_VIDEO_VERBOSE_LOOP = True
 DEMO_DETECT_IN_VIDEO_VERBOSE_DETECT = True
-DEMO_DETECT_IN_VIDEO_MULTIPLE_CLFS = True
+DEMO_DETECT_IN_VIDEO_MULTIPLE_CLFS = False
 
 # cv2 camera settings
 CV2_VIDEO_CAPTURE_CAMERA_INDEX = 0
@@ -932,6 +932,9 @@ if __name__ == "__main__":
     if clf is None and (MEASURE_ACCS_OF_MODEL or ADJUST_DECISION_THRESHOLD_OF_MODEL or DEMO_HAAR_FEATURES_SELECTED or DEMO_DETECT_IN_VIDEO):
         [clf] = unpickle_objects(FOLDER_CLFS + CLF_NAME + ".bin")
         print(f"[unpickled clf {clf} with decision threshold: {clf.decision_threshold_}]")        
+    
+    [clf] = unpickle_objects(FOLDER_CLFS + CLF_NAME + ".bin")
+    clf.json_dump(FOLDER_CLFS + CLF_NAME + ".json")
     
     if DEMO_HAAR_FEATURES_SELECTED:        
         demo_haar_features(hinds, hcoords, n, selected_indexes=clf.features_selected_)
