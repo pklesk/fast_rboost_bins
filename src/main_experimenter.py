@@ -4,9 +4,10 @@ from sklearn.ensemble import AdaBoostClassifier, GradientBoostingClassifier, His
 from keras.datasets import cifar10, mnist
 import time
 import re
-from itertools import product
+from itertools import product, compress
 from matplotlib import pyplot as plt
 from utils import cpu_and_system_props, gpu_props
+import pickle
 
 np.set_printoptions(linewidth=512)
 np.set_printoptions(threshold=np.inf)    
@@ -16,22 +17,25 @@ FOLDER_EXTRAS = "../extras/"
 FOLDER_DATA_RAW = "../data_raw/"
 
 # constants
-DATA_KIND = "real" # possible values: "real" or "random"
-NMM_MAGN_ORDERS_DEFAULT = [(3, 4, 4)]
-TS_DEFAULT = [2, 4, 8, 16]
-BS_DEFAULT = [8]
-CLF_DEFS_DEFAULT = [
+DATA_KIND_DEFAULT = "real" # possible values: "real" or "random"
+REAL_DATA_DEFS_DEFAULT = [
+    ("fddb-patches", "read_data_fddb_patches", "FDDB-PATCHES (3NPI)"),
+    ("cifar10", "read_data_cifar10", "CIFAR-10 (TRUCK)"),
+    ("mnist", "read_data_mnist", "MNIST (DIGIT 0)")
+    ]
+REAL_DATA_FLAGS_DEFAULT = [True, False, False]
+CLFS_DEFS_DEFAULT = [
         (AdaBoostClassifier, {"algorithm": "SAMME.R"}, {"color": "black"}),
         (GradientBoostingClassifier, {"max_depth": 1}, {"color": "green"}),
         (HistGradientBoostingClassifier, {"max_depth": 1, "early_stopping": False}, {"color": "orange"}),
         (FastRealBoostBins, {"fit_mode": "numba_jit", "decision_function_mode": "numba_jit"}, {"color": "blue"}),
         (FastRealBoostBins, {"fit_mode": "numba_cuda", "decision_function_mode": "numba_cuda"}, {"color": "red"})        
         ]
-CLF_DEFS_FLAGS_DEFAULT = [True] * len(CLF_DEFS_DEFAULT)
-REAL_DATA_DEFS = [
-    ("mnist", "read_data_mnist") 
-    ("cifar10", "read_data_cifar10")
-     ]
+CLFS_FLAGS_DEFAULT = [True, True, True, True, True]
+NMM_MAGN_ORDERS_DEFAULT = [(3, 4, 4)]
+TS_DEFAULT = [8, 16, 32, 64, 128, 256]
+BS_DEFAULT = [8]
+SEED_DEFAULT = 0
 EPS = 1e-9
 
 # plot settings
@@ -51,6 +55,27 @@ def clean_name(name):
     name = name.replace("\t", "")
     name = re.sub(" +", " ", name)
     return name
+
+def unpickle_objects(fname):
+    print(f"UNPICKLE OBJECTS... [from file: {fname}]")
+    t1 = time.time()
+    try:    
+        f = open(fname, "rb")
+        some_list = pickle.load(f)
+        f.close()
+    except IOError:
+        sys.exit("[error occurred when trying to open or read the file]")
+    t2 = time.time()
+    print(f"UNPICKLE OBJECTS DONE. [time: {t2 - t1} s]")
+    return some_list
+
+def read_data_fddb_patches(): 
+    fname = "fddb_patches/fddb_patches_32x32_NPI_3_SEED_0.bin"
+    [X_train, y_train, X_test, y_test] = unpickle_objects(FOLDER_DATA_RAW + fname)
+    n = np.product(X_train.shape[1:])
+    X_train = np.reshape(X_train, (X_train.shape[0], n))
+    X_test = np.reshape(X_test, (X_test.shape[0], n))         
+    return X_train, y_train, X_test, y_test
 
 def read_data_cifar10(class_index=9): # default class: 9 ('truck')
     (X_train, y_train), (X_test, y_test) = cifar10.load_data()
@@ -88,21 +113,22 @@ def read_data_mnist(seed=0):
     return X_train, y_train, X_test, y_test
                     
     
-def experimenter_random_data(dtype=np.int8, nmm_magn_orders=NMM_MAGN_ORDERS_DEFAULT, Ts=TS_DEFAULT, Bs=BS_DEFAULT, clf_defs=CLF_DEFS_DEFAULT, seed=0, 
+def experimenter_random_data(clfs_defs=CLFS_DEFS_DEFAULT, clfs_flags=CLFS_FLAGS_DEFAULT,
+                             dtype=np.int8, nmm_magn_orders=NMM_MAGN_ORDERS_DEFAULT, Ts=TS_DEFAULT, Bs=BS_DEFAULT, seed=0, 
                              plots=True, plots_arg_name=None, plots_values_names=[]):
-    print("EXPERIMENTER RANDOM DATA...")
-    print(f"[settings -> dtype: {dtype.__name__}, nmm_magn_orders: {nmm_magn_orders}, Ts: {Ts}, Bs: {Bs}, no. of clf_defs: {len(clf_defs)}, seed: {seed}]")
+    print("EXPERIMENTER RANDOM DATA...")    
     print(f"[clfs definitions:]")
-    for clf_id, (clf_class, clf_consts, _) in enumerate(clf_defs):
-        print(f"[def {clf_id}: {clf_class.__name__}({clf_consts})]")    
+    for clf_id, (clf_class, clf_consts, _) in enumerate(clfs_defs):
+        print(f"[clf def {clf_id} (active: {clfs_flags[clf_id]}): {clf_class.__name__}({clf_consts})]")
+    print(f"[other settings -> dtype: {dtype.__name__}, nmm_magn_orders: {nmm_magn_orders}, Ts: {Ts}, Bs: {Bs}, seed: {seed}]")    
     cpu_gpu_info = f"[cpu: {cpu_and_system_props()['cpu_name']}, gpu: {gpu_props()['name']}]".upper()
     t1 = time.time()
     np.random.seed(seed)
     max_value = (np.iinfo(dtype).max // 2) if np.issubdtype(dtype, np.integer) else 1.0                
     n_experiments = len(nmm_magn_orders) * len(Ts) * len(Bs)
     experiments_descr = np.empty(n_experiments, dtype=object)    
-    results_descr = np.empty((n_experiments, len(clf_defs)), dtype=object)
-    clfs_names = np.empty((n_experiments, len(clf_defs)), dtype=object)    
+    results_descr = np.empty((n_experiments, len(clfs_defs)), dtype=object)
+    clfs_names = np.empty((n_experiments, len(clfs_defs)), dtype=object)    
     for experiment_id, (nmmo, T, B) in enumerate(product(nmm_magn_orders, Ts, Bs)):
         print("=" * 196)
         print(f"[experiment: {experiment_id + 1}/{n_experiments}, params: {(nmmo, T, B)}]")              
@@ -118,7 +144,7 @@ def experimenter_random_data(dtype=np.int8, nmm_magn_orders=NMM_MAGN_ORDERS_DEFA
         print("=" * 196)
         results_arr = []
         clfs_now = []
-        for clf_id, (clf_class, clf_consts, _) in enumerate(clf_defs):
+        for clf_id, (clf_class, clf_consts, _) in enumerate(clfs_defs):
             clf = clf_class(**clf_consts)
             params = clf.get_params()
             if isinstance(clf, AdaBoostClassifier):
@@ -165,7 +191,7 @@ def experimenter_random_data(dtype=np.int8, nmm_magn_orders=NMM_MAGN_ORDERS_DEFA
         results_arr[results_arr == 0.0] = EPS
         results_ratios = np.max(results_arr, axis=0) / results_arr  
         print(f"[results summary for experiment {experiment_id + 1}/{n_experiments} ({experiments_descr[experiment_id]}):]")
-        for clf_id in range(len(clf_defs)):
+        for clf_id in range(len(clfs_defs)):
             results_descr[experiment_id, clf_id]["time_fit"][1] = results_ratios[clf_id, 0]
             results_descr[experiment_id, clf_id]["time_predict_train"][1] = results_ratios[clf_id, 1]
             results_descr[experiment_id, clf_id]["time_predict_test"][1] = results_ratios[clf_id, 2]
@@ -194,7 +220,7 @@ def experimenter_random_data(dtype=np.int8, nmm_magn_orders=NMM_MAGN_ORDERS_DEFA
             plt.figure(1, figsize=PLOT_FIGSIZE)
             y_min = np.inf
             y_max = -np.inf
-            for clf_id, (clf_class, clf_consts, clf_style) in enumerate(clf_defs): 
+            for clf_id, (clf_class, clf_consts, clf_style) in enumerate(clfs_defs): 
                 xs = []
                 ys = []
                 for experiment_id in nonargs_experiment_ids[key]:
@@ -216,21 +242,28 @@ def experimenter_random_data(dtype=np.int8, nmm_magn_orders=NMM_MAGN_ORDERS_DEFA
             plt.grid(color=PLOT_GRID_COLOR, zorder=0, dashes=PLOT_GRID_DASHES)                     
             plt.show()
             
-def experimenter_real_data(readers=REAL_DATA_READERS_DEF, Ts=TS_DEFAULT, Bs=BS_DEFAULT, clf_defs=CLF_DEFS_DEFAULT, seed=0, 
-                             plots=True, plots_arg_name=None, plots_values_names=[]):
-    print("EXPERIMENTER REAL DATA...")
-    print(f"[settings -> readers: {readers}, Ts: {Ts}, Bs: {Bs}, no. of clf_defs: {len(clf_defs)}, seed: {seed}]")
+def experimenter_real_data(real_data_defs=REAL_DATA_DEFS_DEFAULT, real_data_flags=REAL_DATA_FLAGS_DEFAULT,
+                           clfs_defs=CLFS_DEFS_DEFAULT, clfs_flags=CLFS_FLAGS_DEFAULT,
+                           Ts=TS_DEFAULT, Bs=BS_DEFAULT, seed=0, 
+                           plots=True, plots_arg_name=None, plots_values_names=[]):
+    print("EXPERIMENTER REAL DATA...")    
+    print(f"[data definitions:]")
+    for data_id, (data_name_short, data_reader, data_name_full) in enumerate(real_data_defs):
+        print(f"[data def {data_id} (active: {real_data_flags[data_id]}): (name short: '{data_name_short}', reading function: {data_reader}(), name full: '{data_name_full})']")        
     print(f"[clfs definitions:]")
-    for clf_id, (clf_class, clf_consts, _) in enumerate(clf_defs):
-        print(f"[def {clf_id}: {clf_class.__name__}({clf_consts})]")    
+    for clf_id, (clf_class, clf_consts, _) in enumerate(clfs_defs):
+        print(f"[clf def {clf_id} (active: {clfs_flags[clf_id]}): {clf_class.__name__}({clf_consts})]")
+    print(f"[other settings -> Ts: {Ts}, Bs: {Bs}, seed: {seed}]")        
+    real_data_defs = list(compress(real_data_defs, real_data_flags))        
+    clfs_defs = list(compress(clfs_defs, clfs_flags))    
     cpu_gpu_info = f"[cpu: {cpu_and_system_props()['cpu_name']}, gpu: {gpu_props()['name']}]".upper()
     t1 = time.time()
     np.random.seed(seed)
-    n_experiments = len(readers) * len(Ts) * len(Bs)
+    n_experiments = len(real_data_defs) * len(Ts) * len(Bs)
     experiments_descr = np.empty(n_experiments, dtype=object)    
-    results_descr = np.empty((n_experiments, len(clf_defs)), dtype=object)
-    clfs_names = np.empty((n_experiments, len(clf_defs)), dtype=object)
-    datas = [(data_name, globals()[reader_name]()) for data_name, reader_name in readers]   
+    results_descr = np.empty((n_experiments, len(clfs_defs)), dtype=object)
+    clfs_names = np.empty((n_experiments, len(clfs_defs)), dtype=object)
+    datas = [(data_name_full, globals()[reader_name]()) for _, reader_name, data_name_full in real_data_defs]   
     for experiment_id, ((data_name, data), T, B) in enumerate(product(datas, Ts, Bs)):
         print("=" * 196)
         print(f"[experiment: {experiment_id + 1}/{n_experiments}, params: {(data_name, T, B)}]")
@@ -242,7 +275,7 @@ def experimenter_real_data(readers=REAL_DATA_READERS_DEF, Ts=TS_DEFAULT, Bs=BS_D
         print("=" * 196)
         results_arr = []
         clfs_now = []
-        for clf_id, (clf_class, clf_consts, _) in enumerate(clf_defs):
+        for clf_id, (clf_class, clf_consts, _) in enumerate(clfs_defs):
             clf = clf_class(**clf_consts)
             params = clf.get_params()
             if isinstance(clf, AdaBoostClassifier):
@@ -289,7 +322,7 @@ def experimenter_real_data(readers=REAL_DATA_READERS_DEF, Ts=TS_DEFAULT, Bs=BS_D
         results_arr[results_arr == 0.0] = EPS
         results_ratios = np.max(results_arr, axis=0) / results_arr  
         print(f"[results summary for experiment {experiment_id + 1}/{n_experiments} ({experiments_descr[experiment_id]}):]")
-        for clf_id in range(len(clf_defs)):
+        for clf_id in range(len(clfs_defs)):
             results_descr[experiment_id, clf_id]["time_fit"][1] = results_ratios[clf_id, 0]
             results_descr[experiment_id, clf_id]["time_predict_train"][1] = results_ratios[clf_id, 1]
             results_descr[experiment_id, clf_id]["time_predict_test"][1] = results_ratios[clf_id, 2]
@@ -318,7 +351,7 @@ def experimenter_real_data(readers=REAL_DATA_READERS_DEF, Ts=TS_DEFAULT, Bs=BS_D
             plt.figure(1, figsize=PLOT_FIGSIZE)
             y_min = np.inf
             y_max = -np.inf
-            for clf_id, (clf_class, clf_consts, clf_style) in enumerate(clf_defs): 
+            for clf_id, (clf_class, clf_consts, clf_style) in enumerate(clfs_defs): 
                 xs = []
                 ys = []
                 for experiment_id in nonargs_experiment_ids[key]:
@@ -335,10 +368,6 @@ def experimenter_real_data(readers=REAL_DATA_READERS_DEF, Ts=TS_DEFAULT, Bs=BS_D
             plt.title(f"\n{cpu_gpu_info}", fontsize=PLOT_FONTSIZE_TITLE)
             plt.xlabel(plots_arg_name.upper(), fontsize=PLOT_FONTSIZE_AXES)            
             plt.ylabel(value_name_mapper[vn], fontsize=PLOT_FONTSIZE_AXES)
-            #y_range = np.log10(y_max - y_min)
-            #y1 = max(y_min - 0.1 * y_range, 0.0)
-            #y2 = y_max + 0.1 * y_range
-            #plt.ylim([y1, y2])
             plt.yscale("log")               
             plt.legend(loc=PLOT_LEGEND_LOC, prop={"size": PLOT_FONTSIZE_LEGEND}, handlelength=PLOT_LEGEND_HANDLELENGTH)        
             plt.grid(color=PLOT_GRID_COLOR, zorder=0, dashes=PLOT_GRID_DASHES)
@@ -348,10 +377,23 @@ def experimenter_real_data(readers=REAL_DATA_READERS_DEF, Ts=TS_DEFAULT, Bs=BS_D
 if __name__ == "__main__":
     print("DEMONSTRATION OF \"FAST REAL BOOST WITH BINS\" ALGORITHM IMPLEMENTED VIA NUMBA.JIT AND NUMBA.CUDA.")
     print(f"CPU AND SYSTEM PROPS: {cpu_and_system_props()}")
-    print(f"GPU PROPS: {gpu_props()}")    
-    print("MAIN (EXPERIMENTER) STARTING...")
-    # experimenter_random_data(dtype=np.int16, nmm_magn_orders=NMM_MAGN_ORDERS_DEFAULT, Ts=TS_DEFAULT, Bs=BS_DEFAULT, clf_defs=CLF_DEFS_DEFAULT, seed=0, 
-    #                          plots=True, plots_arg_name="T", plots_values_names=["time_fit", "time_predict_test"])
-    experimenter_real_data(readers=REAL_DATA_READERS_DEF, Ts=TS_DEFAULT, Bs=BS_DEFAULT, clf_defs=CLF_DEFS_DEFAULT, seed=0, 
-                             plots=True, plots_arg_name="T", plots_values_names=["acc_test", "acc_train", "time_fit", "time_predict_test"])            
+    print(f"GPU PROPS: {gpu_props()}")        
+    print(f"MAIN (EXPERIMENTER) STARTING...]")
+    data_kind = DATA_KIND_DEFAULT
+    clfs_defs = CLFS_DEFS_DEFAULT
+    clfs_flags = CLFS_FLAGS_DEFAULT
+    seed = SEED_DEFAULT
+    if data_kind == "real":        
+        real_data_flags = REAL_DATA_FLAGS_DEFAULT
+        real_data_defs = REAL_DATA_DEFS_DEFAULT        
+        print(f"[data kind: {data_kind}, real data flags: {real_data_flags}, clfs flags: {clfs_flags}, seed: {seed}]")        
+        experimenter_real_data(real_data_defs=real_data_defs, real_data_flags=real_data_flags,
+                               clfs_defs=clfs_defs, clfs_flags=clfs_flags, 
+                               Ts=TS_DEFAULT, Bs=BS_DEFAULT, seed=seed, 
+                               plots=True, plots_arg_name="T", plots_values_names=["acc_test", "acc_train", "time_fit", "time_predict_test"])
+    elif data_kind == "random":
+        print(f"[data kind: {data_kind}, real data flags: {real_data_flags}, clfs flags: {clfs_flags}, seed: {seed}]")
+        experimenter_random_data(clfs_defs=clfs_defs, clfs_flags=clfs_flags,
+                                 dtype=np.int16, nmm_magn_orders=NMM_MAGN_ORDERS_DEFAULT, Ts=TS_DEFAULT, Bs=BS_DEFAULT, seed=seed, 
+                                 plots=True, plots_arg_name="T", plots_values_names=["time_fit", "time_predict_test"])            
     print("MAIN (EXPERIMENTER) DONE.")

@@ -916,13 +916,7 @@ if __name__ == "__main__":
             X_train, y_train, X_test, y_test = datagenerator.fddb_data_to_haar(hcoords, n, NPI, seed=SEED, verbose=False)
         elif KIND == "hand":                        
             X_train, y_train, X_test, y_test = datagenerator.hagrid_data_to_haar(hcoords, n, NPI, seed=SEED, verbose=False)
-        pickle_objects(FOLDER_DATA + DATA_NAME + ".bin", [X_train, y_train, X_test, y_test])
-    
-    #data_name = "fddb_patches/fddb_patches_32x32_NPI_3_SEED_0"
-    #X_train, y_train, X_test, y_test = datagenerator.fddb_data_to_haar(hcoords, n, 3, seed=0, verbose=False)
-    #pickle_objects(FOLDER_DATA + data_name + ".bin", [X_train, y_train, X_test, y_test])
-    #[X_train, y_train, X_test, y_test] = unpickle_objects(FOLDER_DATA + data_name + ".bin")
-    
+        pickle_objects(FOLDER_DATA + DATA_NAME + ".bin", [X_train, y_train, X_test, y_test])    
     
     if FIT_OR_REFIT_MODEL or MEASURE_ACCS_OF_MODEL or ADJUST_DECISION_THRESHOLD_OF_MODEL:
         if not REGENERATE_DATA: 
