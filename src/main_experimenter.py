@@ -25,7 +25,7 @@ REAL_DATA_DEFS_DEFAULT = [
     ("cifar-10", "read_data_cifar_10", "CIFAR-10 (AIRPLANE)"),
     ("mnist-b", "read_data_mnist_b", "MNIST-B (DIGIT 0)"),
     ("fddb-hfs-100", "read_data_fddb_haar", "FDDB-HFs (100NPI)"),
-    ("hagrid-hfs-100", "read_data_hagrid_haar", "HaGRID-HFs (PALM, 100NPI)")
+    ("hagrid-hfs-100", "read_data_hagrid_haar", "HaGRID-HFs (PALM, 100NPI)"),
     ("fddb-hfs-300", "read_data_fddb_haar", "FDDB-HFs (300NPI)"),
     ("hagrid-hfs-300", "read_data_hagrid_haar", "HaGRID-HFs (PALM, 300NPI)")    
     ]
