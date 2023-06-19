@@ -24,10 +24,12 @@ REAL_DATA_DEFS_DEFAULT = [
     ("fddb-patches", "read_data_fddb_patches", "FDDB-PATCHES (3NPI)"),
     ("cifar-10", "read_data_cifar_10", "CIFAR-10 (AIRPLANE)"),
     ("mnist-b", "read_data_mnist_b", "MNIST-B (DIGIT 0)"),
-    ("fddb-hfs", "read_data_fddb_haar", "FDDB-HFs (300NPI)"),
-    ("hagrid-hfs", "read_data_hagrid_haar", "HaGRID-HFs (PALM, 300NPI)")
+    ("fddb-hfs-100", "read_data_fddb_haar", "FDDB-HFs (100NPI)"),
+    ("hagrid-hfs-100", "read_data_hagrid_haar", "HaGRID-HFs (PALM, 100NPI)")
+    ("fddb-hfs-300", "read_data_fddb_haar", "FDDB-HFs (300NPI)"),
+    ("hagrid-hfs-300", "read_data_hagrid_haar", "HaGRID-HFs (PALM, 300NPI)")    
     ]
-REAL_DATA_FLAGS_DEFAULT = [False, False, False, True, False]
+REAL_DATA_SELECTED_DEFAULT = [False, False, False, True, False, False, False]
 CLFS_DEFS_DEFAULT = [
         (AdaBoostClassifier, {"algorithm": "SAMME.R"}, {"color": "black"}),
         (GradientBoostingClassifier, {"max_depth": 1}, {"color": "green"}),
