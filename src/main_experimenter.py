@@ -29,7 +29,7 @@ REAL_DATA_DEFS_DEFAULT = [
     ("fddb-hfs-300", "read_data_fddb_haar", "FDDB-HFs (300NPI)"),
     ("hagrid-hfs-300", "read_data_hagrid_haar", "HaGRID-HFs (PALM, 300NPI)")    
     ]
-REAL_DATA_SELECTED_DEFAULT = [False, False, False, True, False, False, False]
+REAL_DATA_FLAGS_DEFAULT = [False, False, False, True, False, False, False]
 CLFS_DEFS_DEFAULT = [
         (AdaBoostClassifier, {"algorithm": "SAMME.R"}, {"color": "black"}),
         (GradientBoostingClassifier, {"max_depth": 1}, {"color": "green"}),
