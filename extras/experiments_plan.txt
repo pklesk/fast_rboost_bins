@@ -1,0 +1,6 @@
+1. cifar10, T = 4, ..., 128 (all clfs, plots)
+2. mnistb, T = 32, ..., 1024 (all clfs, plots)
+3. random 1, T = 1024 (fit order 10**10 = 10**6 x 10**4)
+4. random 2, T = 1024 (fit order 10**10 = 10**5 x 10**5)
+5. fddb, T = 1024
+6. hagrid-palm, T = 2048 

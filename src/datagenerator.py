@@ -41,7 +41,8 @@ def fddb_data_to_haar(hcoords, n, negs_per_img, seed=0, verbose=False):
     for index, fold_name in enumerate(folds_names_train):
         print(f"[processing train fold {index + 1}/{len(folds_names_train)}...]")
         t1 = time.time()        
-        X, y = fddb_data_to_haar_single_fold(fddb_root, fold_name, hcoords, n, negs_per_img, seed, verbose)
+        #X, y = fddb_data_to_haar_single_fold(fddb_root, fold_name, hcoords, n, negs_per_img, seed, verbose)
+        X, y = fddb_data_single_fold(fddb_root, fold_name, negs_per_img, seed, verbose)
         t2 = time.time()
         print(f"[processing train fold {index + 1}/{len(folds_names_train)} done; time: {t2 - t1} s]")
         if X_train is None:
@@ -58,7 +59,8 @@ def fddb_data_to_haar(hcoords, n, negs_per_img, seed=0, verbose=False):
     for index, fold_name in enumerate(folds_names_test):
         print(f"[processing test fold {index + 1}/{len(folds_names_test)}...]")
         t1 = time.time()               
-        X, y = fddb_data_to_haar_single_fold(fddb_root, fold_name, hcoords, n, negs_per_img, seed, verbose)
+        #X, y = fddb_data_to_haar_single_fold(fddb_root, fold_name, hcoords, n, negs_per_img, seed, verbose)
+        X, y = fddb_data_single_fold(fddb_root, fold_name, negs_per_img, seed, verbose)
         t2 = time.time()
         print(f"[processing test fold {index + 1}/{len(folds_names_test)} done; time: {t2 - t1} s]")
         if X_test is None:
@@ -117,7 +119,7 @@ def fddb_data_to_haar_single_fold(fddb_root, fold_name, hcoords, n, negs_per_img
             if j0 < 0 or k0 < 0 or j0 + h - 1 >= i.shape[0] or k0 + w - 1 >= i.shape[1]:
                 if verbose:
                     print(f"[positive window {target_coords} out of bounds -> ignored]")
-                    continue
+                continue
             if h / ii.shape[0] < pos_rel_min: # smaller positives might cause white regions in haar features having no area
                 if verbose:
                     print(f"[positive window {target_coords} too small -> ignored]")
@@ -175,8 +177,113 @@ def fddb_data_to_haar_single_fold(fddb_root, fold_name, hcoords, n, negs_per_img
     y = np.stack(y_list)
     return X, y
 
+def fddb_data_single_fold(fddb_root, fold_name, negs_per_img, seed=0, verbose=False):
+    patch_resolution = 32
+    neg_rel_min = 0.1
+    neg_rel_max = 0.5
+    neg_max_iou = 0.5
+    pos_rel_min = 0.075
+    np.random.seed(seed)            
+    X_list = []
+    y_list = []    
+    lines = []
+    f = open(fddb_root + fold_name, "r")
+    while True:
+        line = f.readline()
+        if line != "":
+            lines.append(line)
+        else:
+            break
+    f.close()    
+    n_imgs = 0
+    n_targets = 0
+    li = 0 # line index
+    line = lines[li].strip()
+    li += 1
+    while line != "":
+        file_name = fddb_root + line + ".jpg"
+        log_line = f"[image {n_imgs + 1}: {file_name} within {fold_name}]"        
+        print(log_line)    
+        i_original = cv2.imread(file_name)
+        i_original = cv2.cvtColor(i_original, cv2.COLOR_BGR2RGB)                   
+        line = lines[li]
+        li += 1
+        n_img_targets = int(line)
+        n_imgs += 1        
+        targets_coords = []
+        i = i_original
+        for _ in range(n_img_targets):
+            line = lines[li].strip()
+            li += 1
+            r_major, _, _, center_x, center_y, _ = list(map(float, line.split()))
+            h = int(1.5 * r_major)
+            w = h # forcing square window
+            j0 = int(center_y - 0.5 * h) 
+            k0 = int(center_x - 0.5 * w)
+            target_coords = np.array([j0, k0, j0 + h - 1, k0 + w - 1])
+            if j0 < 0 or k0 < 0 or j0 + h - 1 >= i.shape[0] or k0 + w - 1 >= i.shape[1]:
+                if verbose:
+                    print(f"[positive window {target_coords} out of bounds -> ignored]")
+                continue
+            if h / i.shape[0] < pos_rel_min: # smaller positives might cause white regions in haar features having no area
+                if verbose:
+                    print(f"[positive window {target_coords} too small -> ignored]")
+                continue                            
+            n_targets += 1
+            targets_coords.append(target_coords)  
+            if verbose:
+                p1 = (k0, j0)
+                p2 = (k0 + w - 1, j0 + h - 1)    
+                cv2.rectangle(i_original, p1, p2, (0, 0, 255), 1)                    
+                print(f"[positive window {target_coords} accepted; features: {feats}]")
+                cv2.imshow(f"IMAGE {n_imgs} IN THIS FOLD [press ESC to continue]", i_original)
+                cv2.waitKey(0)
+            pos_patch = i_original[j0 : j0 + h - 1, k0 : k0 + w - 1]
+            pos_patch = cv2.resize(pos_patch, (patch_resolution, patch_resolution))
+            X_list.append(pos_patch)
+            y_list.append(1)
+        for _ in range(negs_per_img):            
+            while True:
+                h = int(np.random.uniform(neg_rel_min, neg_rel_max) * i.shape[0])
+                w = h # forcing square windows for faces
+                j0 = int(np.random.random() * (i.shape[0] - h + 1))
+                k0 = int(np.random.random() * (i.shape[1] - w + 1))                 
+                neg_candidate_coords = np.array([j0, k0, j0 + h - 1, k0 + w - 1])
+                ious = list(map(lambda tc : haar.iou(neg_candidate_coords, tc), targets_coords))
+                max_iou = max(ious) if len(ious) > 0 else 0.0
+                if max_iou < neg_max_iou:
+                    neg_patch = i_original[j0 : j0 + h - 1, k0 : k0 + w - 1]
+                    neg_patch = cv2.resize(neg_patch, (patch_resolution, patch_resolution))                                        
+                    X_list.append(neg_patch)
+                    y_list.append(-1)
+                    if verbose:
+                        print(f"[negative window {neg_candidate_coords} accepted; features: {feats}]")
+                        p1 = (k0, j0)
+                        p2 = (k0 + w - 1, j0 + h - 1)            
+                        cv2.rectangle(i_original, p1, p2, (0, 255, 0), 1)
+                    break
+                else:                    
+                    if verbose:
+                        print(f"[negative window {neg_candidate_coords} ignored due to max iou: {max_iou}]")
+                        p1 = (k0, j0)
+                        p2 = (k0 + w - 1, j0 + w - 1)
+                        cv2.rectangle(i_original, p1, p2, (255, 255, 0), 1)
+        if verbose: 
+            cv2.imshow(f"IMAGE {n_imgs} IN THIS FOLD [press ESC to continue]", i_original)
+            cv2.waitKey(0)
+            cv2.destroyAllWindows()
+        if li == len(lines):
+            break
+        line = lines[li].strip()
+        li += 1 
+    print(f"[total of images in this fold: {n_imgs}, accepted faces: {n_targets}]")
+    f.close()
+    X = np.stack(X_list)
+    y = np.stack(y_list)
+    return X, y
+
 def hagrid_data_to_haar(hcoords, n, negs_per_img, train_ratio=0.75, seed=0, verbose=False):
-    print(f"HAGRID DATA...")
+    print(f"HAGRID DATA TO HAAR...")
     t1 = time.time()        
     neg_rel_min = 0.1
     neg_rel_max = 0.5    
@@ -274,13 +381,13 @@ def hagrid_data_to_haar(hcoords, n, negs_per_img, train_ratio=0.75, seed=0, verb
     X_test = np.stack(X_list[m_train:])
     y_test = np.stack(y_list[m_train:])    
     t2 = time.time()
-    print(f"HAGRID DATA DONE. [time: {t2 - t1} s; X_train.shape: {X_train.shape}, positives: {np.sum(y_train == 1)}; X_test.shape: {X_test.shape}, positives: {np.sum(y_test == 1)}]")    
+    print(f"HAGRID DATA TO HAAR DONE. [time: {t2 - t1} s; X_train.shape: {X_train.shape}, positives: {np.sum(y_train == 1)}; X_test.shape: {X_test.shape}, positives: {np.sum(y_test == 1)}]")    
     return X_train, y_train, X_test, y_test             
     
 def synthetic_data_to_haar(folder_backgrounds, folder_targets, hcoords, n, data_augmentation, positives_to_generate, negs_per_img, seed=0, verbose=False,
                            rotation_range=SYNTHETIC_ROTATION_RANGE, train_ratio=SYNTHETIC_TRAIN_RATIO, 
                            force_random_rotations=SYNTHETIC_FORCE_RANDOM_ROTATIONS, force_random_horizontal_flips=SYNTHETIC_FORCE_RANDOM_HORIZONTAL_FLIPS):
-    print("SYNTHETIC DATA...")
+    print("SYNTHETIC DATA TO HAAR...")
     t1 = time.time()
     rel_min = 0.1 # for both positives and negatives
     rel_max = 0.5 # for both positives and negatives
@@ -429,7 +536,7 @@ def synthetic_data_to_haar(folder_backgrounds, folder_targets, hcoords, n, data_
     X_test = np.stack(X_list[m_train:])
     y_test = np.stack(y_list[m_train:])    
     t2 = time.time()
-    print(f"SYNTHETIC DATA DONE. [time: {t2 - t1} s, X_train.shape: {X_train.shape}, X_test.shape: {X_test.shape}]")    
+    print(f"SYNTHETIC DATA TO HAAR DONE. [time: {t2 - t1} s, X_train.shape: {X_train.shape}, X_test.shape: {X_test.shape}]")    
     return X_train, y_train, X_test, y_test             
     
 def rotate_bound(image, angle):
