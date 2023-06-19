@@ -37,9 +37,9 @@ CLFS_DEFS_DEFAULT = [
         (FastRealBoostBins, {"fit_mode": "numba_jit", "decision_function_mode": "numba_jit"}, {"color": "blue"}),
         (FastRealBoostBins, {"fit_mode": "numba_cuda", "decision_function_mode": "numba_cuda"}, {"color": "red"})        
         ]
-CLFS_FLAGS_DEFAULT = [True, True, False, True, True]
+CLFS_FLAGS_DEFAULT = [False, True, True, True, True]
 NMM_MAGN_ORDERS_DEFAULT = [(3, 3, 4)]
-TS_DEFAULT = [1, 2, 4, 8, 16, 32]
+TS_DEFAULT = [16, 32, 64, 128, 256]
 BS_DEFAULT = [8]
 SEED_DEFAULT = 0
 PLOTS_DEFAULT = True
