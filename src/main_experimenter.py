@@ -19,7 +19,7 @@ FOLDER_DATA_RAW = "../data_raw/"
 FOLDER_DATA = "../data/"
 
 # constants
-DATA_KIND_DEFAULT = "real" # possible values: "real" or "random"
+DATA_KIND_DEFAULT = "random" # possible values: "real" or "random"
 REAL_DATA_DEFS_DEFAULT = [
     ("fddb-patches", "read_data_fddb_patches", "FDDB-PATCHES (3NPI)"),
     ("cifar-10", "read_data_cifar_10", "CIFAR-10 (AIRPLANE)"),
@@ -29,7 +29,7 @@ REAL_DATA_DEFS_DEFAULT = [
     ("hagrid-hfs-10", "read_data_hagrid_npi_10", "HaGRID-HFs (PALM, 10NPI)"),    
     ("hagrid-hfs-30", "read_data_hagrid_haar_30", "HaGRID-HFs (PALM, 30NPI)")    
     ]
-REAL_DATA_FLAGS_DEFAULT = [True, False, False, False, False, False, False]
+REAL_DATA_FLAGS_DEFAULT = [False, True, False, False, False, False, False]
 CLFS_DEFS_DEFAULT = [
         (AdaBoostClassifier, {"algorithm": "SAMME.R"}, {"color": "black"}),
         (GradientBoostingClassifier, {"max_depth": 1}, {"color": "green"}),
@@ -37,12 +37,12 @@ CLFS_DEFS_DEFAULT = [
         (FastRealBoostBins, {"fit_mode": "numba_jit", "decision_function_mode": "numba_jit"}, {"color": "blue"}),
         (FastRealBoostBins, {"fit_mode": "numba_cuda", "decision_function_mode": "numba_cuda"}, {"color": "red"})        
         ]
-CLFS_FLAGS_DEFAULT = [True, True, True, True, True]
-NMM_MAGN_ORDERS_DEFAULT = [(3, 2, 4), (2, 4, 4)]
-TS_DEFAULT = [16, 32, 64, 128, 256]
+CLFS_FLAGS_DEFAULT = [False, False, True, False, True]
+NMM_MAGN_ORDERS_DEFAULT = [(5, 4, 4)] # only in case of data kind "random"
+TS_DEFAULT = [1024]
 BS_DEFAULT = [8]
 SEED_DEFAULT = 0
-PLOTS_DEFAULT = True
+PLOTS_DEFAULT = False
 PLOTS_ARG_NAME_DEFAULT = "T"
 PLOTS_VALUES_NAMES_DEFAULT = ["acc_test", "acc_train", "time_fit", "time_predict_train", "time_predict_test"]
 
