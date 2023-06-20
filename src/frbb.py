@@ -166,7 +166,7 @@ class FastRealBoostBins(BaseEstimator, ClassifierMixin):
         self.classes_ = np.unique(y) # unique class labels, we assume exactly 2 classes with first class negative
         self.dtype_ = X.dtype # dtype of input array 
         self.decision_function_numba_cuda_job_name_ = f"_decision_function_numba_cuda_job_{str(self.dtype_)}"
-        # memorizing incoming number of features (same expected later at predict stage)
+        # memorizing incoming number of features (same value expected later at predict stage according to sklearn)
         self.n_features_in_ = X.shape[1]             
     
     def _bin_data(self, X, mins, maxes):
@@ -531,7 +531,7 @@ class FastRealBoostBins(BaseEstimator, ClassifierMixin):
             streams = []            
             for _ in range(min(self._cuda_n_streams, n_calls)):
                 streams.append(cuda.stream())
-            tpb = self._cuda_tpb_default          
+            tpb = self._cuda_tpb_default      
             with cuda.pinned(X_binned, yy, w):
                 for i in range(n_calls):
                     stream = streams[i % self._cuda_n_streams]
