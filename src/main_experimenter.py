@@ -24,10 +24,10 @@ REAL_DATA_DEFS_DEFAULT = [
     ("fddb-patches", "read_data_fddb_patches", "FDDB-PATCHES (3NPI)"),
     ("cifar-10", "read_data_cifar_10", "CIFAR-10 (AIRPLANE)"),
     ("mnist-b", "read_data_mnist_b", "MNIST-B (DIGIT 0)"),
-    ("fddb-hfs-100", "read_data_fddb_haar", "FDDB-HFs (100NPI)"),
-    ("hagrid-hfs-100", "read_data_hagrid_haar", "HaGRID-HFs (PALM, 100NPI)"),
-    ("fddb-hfs-300", "read_data_fddb_haar", "FDDB-HFs (300NPI)"),
-    ("hagrid-hfs-300", "read_data_hagrid_haar", "HaGRID-HFs (PALM, 300NPI)")    
+    ("fddb-hfs-100", "read_data_fddb_haar_npi_100", "FDDB-HFs (100NPI)"),
+    ("fddb-hfs-300", "read_data_fddb_haar_300", "FDDB-HFs (300NPI)"),    
+    ("hagrid-hfs-10", "read_data_hagrid_npi_10", "HaGRID-HFs (PALM, 10NPI)"),    
+    ("hagrid-hfs-30", "read_data_hagrid_haar_30", "HaGRID-HFs (PALM, 30NPI)")    
     ]
 REAL_DATA_FLAGS_DEFAULT = [False, False, False, True, False, False, False]
 CLFS_DEFS_DEFAULT = [
@@ -37,7 +37,7 @@ CLFS_DEFS_DEFAULT = [
         (FastRealBoostBins, {"fit_mode": "numba_jit", "decision_function_mode": "numba_jit"}, {"color": "blue"}),
         (FastRealBoostBins, {"fit_mode": "numba_cuda", "decision_function_mode": "numba_cuda"}, {"color": "red"})        
         ]
-CLFS_FLAGS_DEFAULT = [False, True, True, True, True]
+CLFS_FLAGS_DEFAULT = [False, False, True, False, True]
 NMM_MAGN_ORDERS_DEFAULT = [(3, 3, 4)]
 TS_DEFAULT = [16, 32, 64, 128, 256]
 BS_DEFAULT = [8]
@@ -133,12 +133,22 @@ def read_data_mnist_b(seed=0):
     X_test = ((X_test.astype(np.uint16) + noise_test) // 2).astype(np.uint8)             
     return X_train, y_train, X_test, y_test                    
     
-def read_data_fddb_haar(): 
+def read_data_fddb_haar_npi_100(): 
+    fname = "data_face_n_18225_S_5_P_5_NPI_100_SEED_0.bin"
+    [X_train, y_train, X_test, y_test] = unpickle_objects(FOLDER_DATA + fname)
+    return X_train, y_train, X_test, y_test
+
+def read_data_fddb_haar_npi_300(): 
     fname = "data_face_n_18225_S_5_P_5_NPI_300_SEED_0.bin"
     [X_train, y_train, X_test, y_test] = unpickle_objects(FOLDER_DATA + fname)
     return X_train, y_train, X_test, y_test
 
-def read_data_hagrid_haar(): 
+def read_data_hagrid_haar_10(): 
+    fname = "data_hand_n_18225_S_5_P_5_NPI_30_SEED_0.bin"
+    [X_train, y_train, X_test, y_test] = unpickle_objects(FOLDER_DATA + fname)
+    return X_train, y_train, X_test, y_test
+
+def read_data_hagrid_haar_30(): 
     fname = "data_hand_n_18225_S_5_P_5_NPI_30_SEED_0.bin"
     [X_train, y_train, X_test, y_test] = unpickle_objects(FOLDER_DATA + fname)
     return X_train, y_train, X_test, y_test    
