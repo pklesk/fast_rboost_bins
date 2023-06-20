@@ -40,19 +40,18 @@ CLFS_DEFS_DEFAULT = [
 CLFS_FLAGS_DEFAULT = [True, True, True, True, True]
 RANDOM_DTYPE_DEFAULT = np.int8
 NMM_MAGN_ORDERS_DEFAULT = [(5, 5, 4)] # only in case of data kind "random"
-TS_DEFAULT = [1, 2, 4, 8]
+TS_DEFAULT = [32, 64, 128, 512, 1024]
 BS_DEFAULT = [8]
 SEED_DEFAULT = 0
 PLOTS_DEFAULT = True
 PLOTS_ARG_NAME_DEFAULT = "T"
 PLOTS_VALUES_NAMES_DEFAULT = ["acc_test", "acc_train", "time_fit", "time_predict_train", "time_predict_test"]
-
 EPS = 1e-9
 
 # plot settings
-PLOT_FONTSIZE_SUPTITLE = 12.5
+PLOT_FONTSIZE_SUPTITLE = 12
 PLOT_FONTSIZE_TITLE = 11
-PLOT_FONTSIZE_AXES = 12
+PLOT_FONTSIZE_AXES = 13
 PLOT_FONTSIZE_LEGEND = 9.5
 PLOT_FIGSIZE = (10, 6.5)
 PLOT_MARKERSIZE = 4
@@ -250,8 +249,8 @@ def experimenter_random_data(dtype=RANDOM_DTYPE_DEFAULT, nmm_magn_orders=NMM_MAG
         print("[about to generate wanted plots]")
     print(f"EXPERIMENT RANDOM DATA DONE. [time: {t2 - t1} s, hash string: {hash_str}]")
     if plots and plots_arg_name and plots_values_names:
-        value_names_mapper = {"time_fit": "FIT TIME [s]", "time_predict_train": "PREDICT TIME (TRAIN DATA) [s]", "time_predict_test": "PREDICT TIME (TEST DATA) [s]",
-                              "acc_train": "ACC (TRAIN DATA)", "acc_test": "ACC (TEST DATA)"}        
+        value_names_mapper = {"time_fit": "FIT TIME [s]", "time_predict_train": "PREDICT TIME (TRAIN) [s]", "time_predict_test": "PREDICT TIME (TEST) [s]",
+                              "acc_train": "ACC (TRAIN)", "acc_test": "ACC (TEST)"}        
         nonargs = {}
         nonargs_experiment_ids = {}
         for experiment_id in range(n_experiments):
@@ -391,8 +390,8 @@ def experimenter_real_data(real_data_defs=REAL_DATA_DEFS_DEFAULT, real_data_flag
         print("[about to generate wanted plots]")
     print(f"EXPERIMENT REAL DATA DONE. [time: {t2 - t1} s, hash string: {hash_str}]")
     if plots and plots_arg_name and plots_values_names:
-        value_names_mapper = {"time_fit": "FIT TIME [s]", "time_predict_train": "PREDICT TIME (TRAIN DATA) [s]", "time_predict_test": "PREDICT TIME (TEST DATA) [s]", 
-                              "acc_train": "ACC (TRAIN DATA)", "acc_test": "ACC (TEST DATA)"}        
+        value_names_mapper = {"time_fit": "FIT TIME [s]", "time_predict_train": "PREDICT TIME (TRAIN) [s]", "time_predict_test": "PREDICT TIME (TEST) [s]", 
+                              "acc_train": "ACC (TRAIN)", "acc_test": "ACC (TEST)"}        
         nonargs = {}
         nonargs_experiment_ids = {}
         for experiment_id in range(n_experiments):
