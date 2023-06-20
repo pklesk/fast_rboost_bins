@@ -460,7 +460,7 @@ class FastRealBoostBins(BaseEstimator, ClassifierMixin):
                     dev_X_binned_sub = cuda.to_device(X_binned_sub, stream=stream)
                     dev_yy_sub = cuda.to_device(yy[call_slice], stream=stream)
                     dev_w_sub = cuda.to_device(w[call_slice], stream=stream)
-                    bpg = ((X_binned_sub.shape[0] + tpb - 1) // tpb, n)
+                    bpg = (n, (X_binned_sub.shape[0] + tpb - 1) // tpb)
                     FastRealBoostBins._bin_add_weights_numba_cuda[bpg, tpb, stream](dev_X_binned_sub, dev_yy_sub, dev_w_sub, dev_W_p, dev_W_n, dev_mutexes)
                 cuda.synchronize()
             t2_bin_add_weights = time.time()
@@ -495,7 +495,7 @@ class FastRealBoostBins(BaseEstimator, ClassifierMixin):
                     dev_X_binned_sub = cuda.to_device(X_binned_sub, stream=stream)
                     dev_yy_sub = cuda.to_device(yy[call_slice], stream=stream)
                     dev_w_sub = cuda.to_device(w[call_slice], stream=stream)
-                    bpg = ((X_binned_sub.shape[0] + tpb - 1) // tpb, n)
+                    bpg = (n, (X_binned_sub.shape[0] + tpb - 1) // tpb)
                     FastRealBoostBins._errs_exp_numba_cuda[bpg, tpb, stream](dev_X_binned_sub, dev_yy_sub, dev_w_sub, dev_logits, dev_errs_exp, dev_mutexes)
                 cuda.synchronize()
             t2_errs_exp = time.time()
@@ -568,10 +568,10 @@ class FastRealBoostBins(BaseEstimator, ClassifierMixin):
         shared_w_p = cuda.shared.array((128, 32), dtype=float32) # assumed max constants for shared memory: 128 - subsample size (equal to self._cuda_tpb_bin_add_weights), 32 - no. of bins
         shared_w_n = cuda.shared.array((128, 32), dtype=float32) 
         m, _ = X_binned_sub.shape        
-        j = cuda.blockIdx.y
+        j = cuda.blockIdx.x
         tpb = cuda.blockDim.x
         tx = cuda.threadIdx.x
-        i = cuda.blockIdx.x * tpb + tx # local data point index within current data sub (not global)
+        i = cuda.blockIdx.y * tpb + tx # local data point index within current data sub (not global)
         _, B = W_p.shape
         if i < m:
             b_i_j = X_binned_sub[i, j]
@@ -632,8 +632,8 @@ class FastRealBoostBins(BaseEstimator, ClassifierMixin):
         m, _ = X_binned_sub.shape                                                
         tpb = cuda.blockDim.x
         tx = cuda.threadIdx.x
-        i = cuda.blockIdx.x * tpb + tx
-        j = cuda.blockIdx.y
+        i = cuda.blockIdx.y * tpb + tx
+        j = cuda.blockIdx.x
         if i < m:
             err = w_sub[i] * math.exp(-yy_sub[i] * logits[j, X_binned_sub[i, j]])
         else:

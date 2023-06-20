@@ -33,13 +33,14 @@ REAL_DATA_FLAGS_DEFAULT = [True, False, False, False, False, False, False]
 CLFS_DEFS_DEFAULT = [
         (AdaBoostClassifier, {"algorithm": "SAMME.R"}, {"color": "black"}),
         (GradientBoostingClassifier, {"max_depth": 1}, {"color": "green"}),
-        (HistGradientBoostingClassifier, {"max_depth": 1, "early_stopping": False}, {"color": "orange"}),
+        (HistGradientBoostingClassifier, {"max_depth": 1, "early_stopping": False, "verbose": True}, {"color": "orange"}),
         (FastRealBoostBins, {"fit_mode": "numba_jit", "decision_function_mode": "numba_jit"}, {"color": "blue"}),
         (FastRealBoostBins, {"fit_mode": "numba_cuda", "decision_function_mode": "numba_cuda"}, {"color": "red"})        
         ]
-CLFS_FLAGS_DEFAULT = [True, True, True, True, True]
-NMM_MAGN_ORDERS_DEFAULT = [(3, 2, 4), (2, 4, 4)]
-TS_DEFAULT = [16, 32, 64, 128, 256]
+CLFS_FLAGS_DEFAULT = [False, False, True, False, True]
+RANDOM_DTYPE_DEFAULT = np.int16
+NMM_MAGN_ORDERS_DEFAULT = [(5, 3, 3)] # only in case of data kind "random"
+TS_DEFAULT = [16, 32, 64]
 BS_DEFAULT = [8]
 SEED_DEFAULT = 0
 PLOTS_DEFAULT = True
@@ -153,7 +154,7 @@ def read_data_hagrid_haar_30():
     [X_train, y_train, X_test, y_test] = unpickle_objects(FOLDER_DATA + fname)
     return X_train, y_train, X_test, y_test    
     
-def experimenter_random_data(dtype=np.int8, nmm_magn_orders=NMM_MAGN_ORDERS_DEFAULT,
+def experimenter_random_data(dtype=RANDOM_DTYPE_DEFAULT, nmm_magn_orders=NMM_MAGN_ORDERS_DEFAULT,
                              clfs_defs=CLFS_DEFS_DEFAULT, clfs_flags=CLFS_FLAGS_DEFAULT, 
                              Ts=TS_DEFAULT, Bs=BS_DEFAULT, seed=0, 
                              plots=PLOTS_DEFAULT, plots_arg_name=PLOTS_ARG_NAME_DEFAULT, plots_values_names=PLOTS_VALUES_NAMES_DEFAULT,
@@ -181,9 +182,9 @@ def experimenter_random_data(dtype=np.int8, nmm_magn_orders=NMM_MAGN_ORDERS_DEFA
         m_train = int(10**nmmo[1])
         m_test = int(10**nmmo[2])               
         X_train = (max_value * np.random.rand(m_train, n)).astype(dtype)
-        y_train = np.random.randint(0, 2, size=m_train) * 2 - 1
+        y_train = (np.random.randint(0, 2, size=m_train) * 2 - 1).astype(np.int8)
         X_test = (max_value * np.random.rand(m_test, n)).astype(dtype)
-        y_test = np.random.randint(0, 2, size=m_test) * 2 - 1        
+        y_test = (np.random.randint(0, 2, size=m_test) * 2 - 1).astype(np.int8)        
         experiments_descr[experiment_id] = {"T": T, "B": B, "n": n, "m_train": m_train, "m_test": m_test}
         print(f"[description: {experiments_descr[experiment_id]}]")
         print("=" * 196)
@@ -459,7 +460,8 @@ if __name__ == "__main__":
                                cpu_props=cpu_props, gpu_props=gpu_props)
     elif data_kind == "random":
         print(f"[data kind: {data_kind}, clfs flags: {clfs_flags}, seed: {seed}]")
-        experimenter_random_data(dtype=np.int16, nmm_magn_orders=NMM_MAGN_ORDERS_DEFAULT,
+        random_dtype = RANDOM_DTYPE_DEFAULT
+        experimenter_random_data(dtype=random_dtype, nmm_magn_orders=NMM_MAGN_ORDERS_DEFAULT,
                                  clfs_defs=clfs_defs, clfs_flags=clfs_flags,                                
                                  Ts=Ts, Bs=Bs, seed=seed, 
                                  plots=plots, plots_arg_name=plots_arg_name, plots_values_names=plots_values_names,
