@@ -890,7 +890,7 @@ def experiment_some_rocs():
 # MAIN
 # ----------------------------------------------------------------------------------------------------------------------------------------------------------------
 if __name__ == "__main__":        
-    print("DEMONSTRATION OF \"FAST REAL BOOST WITH BINS\" ALGORITHM IMPLEMENTED VIA NUMBA.JIT AND NUMBA.CUDA.")
+    print("DEMONSTRATION OF \"FAST REAL BOOST WITH BINS\": AN ENSEMBLE CLASSIFIER IMPLEMENTED IN PYTHON VIA NUMBA.JIT AND NUMBA.CUDA.")
     print(f"CPU AND SYSTEM PROPS: {cpu_and_system_props()}")
     print(f"GPU PROPS: {gpu_props()}")
     print("MAIN (OBJECT DETECTOR) STARTING...")    

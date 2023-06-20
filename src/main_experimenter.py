@@ -40,7 +40,7 @@ CLFS_DEFS_DEFAULT = [
 CLFS_FLAGS_DEFAULT = [True, True, True, True, True]
 RANDOM_DTYPE_DEFAULT = np.int8
 NMM_MAGN_ORDERS_DEFAULT = [(5, 5, 4)] # only in case of data kind "random"
-TS_DEFAULT = [32, 64, 128, 512, 1024]
+TS_DEFAULT = [16, 32, 64, 128, 512, 1024]
 BS_DEFAULT = [8]
 SEED_DEFAULT = 0
 PLOTS_DEFAULT = True
@@ -52,7 +52,7 @@ EPS = 1e-9
 PLOT_FONTSIZE_SUPTITLE = 12
 PLOT_FONTSIZE_TITLE = 11
 PLOT_FONTSIZE_AXES = 13
-PLOT_FONTSIZE_LEGEND = 9.5
+PLOT_FONTSIZE_LEGEND = 9
 PLOT_FIGSIZE = (10, 6.5)
 PLOT_MARKERSIZE = 4
 PLOT_GRID_COLOR = (0.4, 0.4, 0.4) 
@@ -433,7 +433,7 @@ def experimenter_real_data(real_data_defs=REAL_DATA_DEFS_DEFAULT, real_data_flag
             plt.close()                                                                                    
 
 if __name__ == "__main__":
-    print("DEMONSTRATION OF \"FAST REAL BOOST WITH BINS\" ALGORITHM IMPLEMENTED VIA NUMBA.JIT AND NUMBA.CUDA.")
+    print("DEMONSTRATION OF \"FAST REAL BOOST WITH BINS\": AN ENSEMBLE CLASSIFIER IMPLEMENTED IN PYTHON VIA NUMBA.JIT AND NUMBA.CUDA.")
     cpu_props = cpu_and_system_props()
     gpu_props = gpu_props()
     print(f"CPU AND SYSTEM PROPS: {cpu_props}")
