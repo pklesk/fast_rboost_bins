@@ -35,12 +35,12 @@ CLFS_DEFS_DEFAULT = [
         (GradientBoostingClassifier, {"max_depth": 1}, {"color": "green"}),
         (HistGradientBoostingClassifier, {"max_depth": 1, "early_stopping": False, "verbose": True}, {"color": "orange"}),
         (FastRealBoostBins, {"fit_mode": "numba_jit", "decision_function_mode": "numba_jit"}, {"color": "blue"}),
-        (FastRealBoostBins, {"fit_mode": "numba_cuda", "decision_function_mode": "numba_cuda"}, {"color": "red"})        
+        (FastRealBoostBins, {"fit_mode": "numba_cuda", "decision_function_mode": "numba_cuda", "verbose": True}, {"color": "red"})        
         ]
-CLFS_FLAGS_DEFAULT = [False, False, True, False, True]
-RANDOM_DTYPE_DEFAULT = np.int16
-NMM_MAGN_ORDERS_DEFAULT = [(5, 3, 3)] # only in case of data kind "random"
-TS_DEFAULT = [16, 32, 64]
+CLFS_FLAGS_DEFAULT = [True, True, True, True, True]
+RANDOM_DTYPE_DEFAULT = np.int8
+NMM_MAGN_ORDERS_DEFAULT = [(5, 5, 4)] # only in case of data kind "random"
+TS_DEFAULT = [1, 2, 4, 8]
 BS_DEFAULT = [8]
 SEED_DEFAULT = 0
 PLOTS_DEFAULT = True
@@ -50,10 +50,10 @@ PLOTS_VALUES_NAMES_DEFAULT = ["acc_test", "acc_train", "time_fit", "time_predict
 EPS = 1e-9
 
 # plot settings
-PLOT_FONTSIZE_SUPTITLE = 11
-PLOT_FONTSIZE_TITLE = 8
-PLOT_FONTSIZE_AXES = 10
-PLOT_FONTSIZE_LEGEND = 7
+PLOT_FONTSIZE_SUPTITLE = 13
+PLOT_FONTSIZE_TITLE = 10
+PLOT_FONTSIZE_AXES = 12
+PLOT_FONTSIZE_LEGEND = 10
 PLOT_FIGSIZE = (10, 6.5)
 PLOT_MARKERSIZE = 4
 PLOT_GRID_COLOR = (0.4, 0.4, 0.4) 
