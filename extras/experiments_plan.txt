@@ -1,6 +1,6 @@
 1. FDDB-PATCHES ('n': 3072, 'm_train': 11775, 'm_test': 1303)
 train order: 7.5, test order (at T = 1024): 6.1
-T = 16, ..., 1024
+T = 8, 16, 32, 64, 128, 256
 
 2. cifar10, T = 4, ..., 128 (all clfs, plots)
 
