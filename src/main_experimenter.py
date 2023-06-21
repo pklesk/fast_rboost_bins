@@ -316,8 +316,7 @@ def experimenter_real_data(real_data_defs=REAL_DATA_DEFS_DEFAULT, real_data_flag
     experiments_descr = np.empty(n_experiments, dtype=object)    
     results_descr = np.empty((n_experiments, len(clfs_defs)), dtype=object)
     clfs_names = np.empty((n_experiments, len(clfs_defs)), dtype=object)
-    #datas = [(data_name_full, globals()[reader_name]()) for data_name_short, reader_name, data_name_full in real_data_defs]
-    datas = [(data_name_full, read_data_fddb_patches()) for data_name_short, reader_name, data_name_full in real_data_defs]
+    datas = [(data_name_full, globals()[reader_name]()) for data_name_short, reader_name, data_name_full in real_data_defs]    
     data_names_mapper = {data_name_full: data_name_short for data_name_short, _, data_name_full in real_data_defs}   
     for experiment_id, ((data_name, data), T, B) in enumerate(product(datas, Ts, Bs)):
         print("=" * 196)
