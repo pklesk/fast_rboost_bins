@@ -17,7 +17,7 @@ that spread beyond the scope of a single block of threads, we introduce appropri
 
 To test the performance of the predict stage we compare FastRealBoostBins against three state-of-the-art ensemble classifiers from scikit-learn,
 using several large data sets and focusing on the response time. In an additional experiment, we make our ensemble classifiers operate as object 
-detectors under heavy computational load (e.g.~over $60$k queries per a video frame using ensembles of size $2048$).
+detectors under heavy computational load (e.g. over 60k queries per a video frame using ensembles of size 2048).
 
 ## License
 This work is licensed under <a rel="license" href="http://creativecommons.org/licenses/by-sa/4.0/">Creative Commons Attribution-ShareAlike 4.0 International License</a>.
