@@ -44,8 +44,8 @@ CV2_VIDEO_CAPTURE_IS_IT_MSWINDOWS = False
 
 # detection procedure settings
 DETECTION_SCALES = 9
-DETECTION_WINDOW_HEIGHT_MIN = 64
-DETECTION_WINDOW_WIDTH_MIN = 64
+DETECTION_WINDOW_HEIGHT_MIN = 96
+DETECTION_WINDOW_WIDTH_MIN = 96
 DETECTION_WINDOW_GROWTH = 1.2
 DETECTION_WINDOW_JUMP = 0.05
 DETECTION_DECISION_THRESHOLD = 4.0 # can be set to None (then classfiers' internal thresholds are used)
@@ -890,10 +890,10 @@ def experiment_some_rocs():
 # MAIN
 # ----------------------------------------------------------------------------------------------------------------------------------------------------------------
 if __name__ == "__main__":        
-    print("DEMONSTRATION OF \"FAST REAL BOOST WITH BINS\": AN ENSEMBLE CLASSIFIER IMPLEMENTED IN PYTHON VIA NUMBA.JIT AND NUMBA.CUDA.")
+    print("DEMONSTRATION OF \"FAST REAL BOOST WITH BINS\": AN ENSEMBLE CLASSIFIER FOR FAST PREDICTIONS IMPLEMENTED IN PYTHON VIA NUMBA.JIT AND NUMBA.CUDA.")
+    print("MAIN-DETECTOR STARTING...")    
     print(f"CPU AND SYSTEM PROPS: {cpu_and_system_props()}")
-    print(f"GPU PROPS: {gpu_props()}")
-    print("MAIN (OBJECT DETECTOR) STARTING...")    
+    print(f"GPU PROPS: {gpu_props()}")    
 
     n = haar.HAAR_TEMPLATES.shape[0] * S**2 * (2 * P - 1)**2    
     hinds = haar.haar_indexes(S, P)
@@ -958,4 +958,4 @@ if __name__ == "__main__":
         demo_detect_in_video_multiple_clfs(clfs, hcoords, decision_thresholds, postprocess=DETECTION_POSTPROCESS, 
                                            detector_title="face, hand".upper(), verbose_loop=DEMO_DETECT_IN_VIDEO_VERBOSE_LOOP, verbose_detect=DEMO_DETECT_IN_VIDEO_VERBOSE_DETECT)
 
-    print("MAIN (OBJECT DETECTOR) DONE.")
+    print("MAIN-DETECTOR DONE.")

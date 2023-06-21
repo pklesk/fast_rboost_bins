@@ -758,7 +758,7 @@ class FastRealBoostBins(BaseEstimator, ClassifierMixin):
     @staticmethod
     @cuda.jit(void(int8[:, :], int8[:], int8[:], float32[:, :], float32[:]))
     def _decision_function_numba_cuda_job_int8(X_selected, mins_selected, maxes_selected, logits, responses):
-        shared_logits = cuda.shared.array(8192, dtype=float32) # 8192 - assumed limit of features used at detection stage           
+        shared_logits = cuda.shared.array(1024, dtype=float32) # 1024 - corresponds to assumed max tpb           
         i = cuda.blockIdx.x
         tpb = cuda.blockDim.x
         tx = cuda.threadIdx.x
@@ -789,7 +789,7 @@ class FastRealBoostBins(BaseEstimator, ClassifierMixin):
     @staticmethod
     @cuda.jit(void(uint8[:, :], uint8[:], uint8[:], float32[:, :], float32[:]))
     def _decision_function_numba_cuda_job_uint8(X_selected, mins_selected, maxes_selected, logits, responses):
-        shared_logits = cuda.shared.array(8192, dtype=float32) # 8192 - assumed limit of features used at detection stage           
+        shared_logits = cuda.shared.array(1024, dtype=float32) # 1024 - corresponds to assumed max tpb           
         i = cuda.blockIdx.x
         tpb = cuda.blockDim.x
         tx = cuda.threadIdx.x
@@ -820,7 +820,7 @@ class FastRealBoostBins(BaseEstimator, ClassifierMixin):
     @staticmethod
     @cuda.jit(void(int16[:, :], int16[:], int16[:], float32[:, :], float32[:]))
     def _decision_function_numba_cuda_job_int16(X_selected, mins_selected, maxes_selected, logits, responses):
-        shared_logits = cuda.shared.array(8192, dtype=float32) # 8192 - assumed limit of features used at detection stage
+        shared_logits = cuda.shared.array(1024, dtype=float32) # 1024 - corresponds to assumed max tpb
         i = cuda.blockIdx.x
         tpb = cuda.blockDim.x
         tx = cuda.threadIdx.x
@@ -851,7 +851,7 @@ class FastRealBoostBins(BaseEstimator, ClassifierMixin):
     @staticmethod
     @cuda.jit(void(uint16[:, :], uint16[:], uint16[:], float32[:, :], float32[:]))
     def _decision_function_numba_cuda_job_uint16(X_selected, mins_selected, maxes_selected, logits, responses):
-        shared_logits = cuda.shared.array(8192, dtype=float32) # 8192 - assumed limit of features used at detection stage           
+        shared_logits = cuda.shared.array(1024, dtype=float32) # 1024 - corresponds to assumed max tpb           
         i = cuda.blockIdx.x
         tpb = cuda.blockDim.x
         tx = cuda.threadIdx.x
@@ -882,7 +882,7 @@ class FastRealBoostBins(BaseEstimator, ClassifierMixin):
     @staticmethod
     @cuda.jit(void(int32[:, :], int32[:], int32[:], float32[:, :], float32[:]))
     def _decision_function_numba_cuda_job_int32(X_selected, mins_selected, maxes_selected, logits, responses):
-        shared_logits = cuda.shared.array(8192, dtype=float32) # 8192 - assumed limit of features used at detection stage           
+        shared_logits = cuda.shared.array(1024, dtype=float32) # 1024 - corresponds to assumed max tpb           
         i = cuda.blockIdx.x
         tpb = cuda.blockDim.x
         tx = cuda.threadIdx.x
@@ -913,7 +913,7 @@ class FastRealBoostBins(BaseEstimator, ClassifierMixin):
     @staticmethod
     @cuda.jit(void(uint32[:, :], uint32[:], uint32[:], float32[:, :], float32[:]))
     def _decision_function_numba_cuda_job_uint32(X_selected, mins_selected, maxes_selected, logits, responses):
-        shared_logits = cuda.shared.array(8192, dtype=float32) # 8192 - assumed limit of features used at detection stage           
+        shared_logits = cuda.shared.array(1024, dtype=float32) # 1024 - corresponds to assumed max tpb           
         i = cuda.blockIdx.x
         tpb = cuda.blockDim.x
         tx = cuda.threadIdx.x
@@ -944,7 +944,7 @@ class FastRealBoostBins(BaseEstimator, ClassifierMixin):
     @staticmethod
     @cuda.jit(void(int64[:, :], int64[:], int64[:], float32[:, :], float32[:]))
     def _decision_function_numba_cuda_job_int64(X_selected, mins_selected, maxes_selected, logits, responses):
-        shared_logits = cuda.shared.array(8192, dtype=float32) # 8192 - assumed limit of features used at detection stage           
+        shared_logits = cuda.shared.array(1024, dtype=float32) # 1024 - corresponds to assumed max tpb           
         i = cuda.blockIdx.x
         tpb = cuda.blockDim.x
         tx = cuda.threadIdx.x
@@ -975,7 +975,7 @@ class FastRealBoostBins(BaseEstimator, ClassifierMixin):
     @staticmethod
     @cuda.jit(void(uint64[:, :], uint64[:], uint64[:], float32[:, :], float32[:]))
     def _decision_function_numba_cuda_job_uint64(X_selected, mins_selected, maxes_selected, logits, responses):
-        shared_logits = cuda.shared.array(8192, dtype=float32) # 8192 - assumed limit of features used at detection stage           
+        shared_logits = cuda.shared.array(1024, dtype=float32) # 1024 - corresponds to assumed max tpb           
         i = cuda.blockIdx.x
         tpb = cuda.blockDim.x
         tx = cuda.threadIdx.x
@@ -1006,7 +1006,7 @@ class FastRealBoostBins(BaseEstimator, ClassifierMixin):
     @staticmethod
     @cuda.jit(void(float32[:, :], float32[:], float32[:], float32[:, :], float32[:]))
     def _decision_function_numba_cuda_job_float32(X_selected, mins_selected, maxes_selected, logits, responses):
-        shared_logits = cuda.shared.array(8192, dtype=float32) # 8192 - assumed limit of features used at detection stage           
+        shared_logits = cuda.shared.array(1024, dtype=float32) # 1024 - corresponds to assumed max tpb           
         i = cuda.blockIdx.x
         tpb = cuda.blockDim.x
         tx = cuda.threadIdx.x
@@ -1037,7 +1037,7 @@ class FastRealBoostBins(BaseEstimator, ClassifierMixin):
     @staticmethod
     @cuda.jit(void(float64[:, :], float64[:], float64[:], float32[:, :], float32[:]))
     def _decision_function_numba_cuda_job_float64(X_selected, mins_selected, maxes_selected, logits, responses):
-        shared_logits = cuda.shared.array(8192, dtype=float32) # 8192 - assumed limit of features used at detection stage           
+        shared_logits = cuda.shared.array(1024, dtype=float32) # 1024 - corresponds to assumed max tpb           
         i = cuda.blockIdx.x
         tpb = cuda.blockDim.x
         tx = cuda.threadIdx.x
