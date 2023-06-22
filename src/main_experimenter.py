@@ -25,9 +25,9 @@ REAL_DATA_DEFS_DEFAULT = [
     ("cifar-10", "read_data_cifar_10", "CIFAR-10 (AIRPLANE)"),
     ("mnist-b", "read_data_mnist_b", "MNIST-B (DIGIT 0)"),
     ("fddb-hfs-100", "read_data_fddb_haar_npi_100", "FDDB-HFs (100NPI)"),
-    ("fddb-hfs-300", "read_data_fddb_haar_300", "FDDB-HFs (300NPI)"),    
-    ("hagrid-hfs-10", "read_data_hagrid_npi_10", "HaGRID-HFs (PALM, 10NPI)"),    
-    ("hagrid-hfs-30", "read_data_hagrid_haar_30", "HaGRID-HFs (PALM, 30NPI)")    
+    ("fddb-hfs-300", "read_data_fddb_haar_npi_300", "FDDB-HFs (300NPI)"),    
+    ("hagrid-hfs-10", "read_data_hagrid_haar_npi_10", "HaGRID-HFs (PALM, 10NPI)"),    
+    ("hagrid-hfs-30", "read_data_hagrid_haar_npi_30", "HaGRID-HFs (PALM, 30NPI)")    
     ]
 REAL_DATA_FLAGS_DEFAULT = [False, False, False, False, False, True, False]
 CLFS_DEFS_DEFAULT = [
@@ -143,12 +143,12 @@ def read_data_fddb_haar_npi_300():
     [X_train, y_train, X_test, y_test] = unpickle_objects(FOLDER_DATA + fname)
     return X_train, y_train, X_test, y_test
 
-def read_data_hagrid_haar_10(): 
-    fname = "data_hand_n_18225_S_5_P_5_NPI_30_SEED_0.bin"
+def read_data_hagrid_haar_npi_10(): 
+    fname = "data_hand_n_18225_S_5_P_5_NPI_10_SEED_0.bin"
     [X_train, y_train, X_test, y_test] = unpickle_objects(FOLDER_DATA + fname)
     return X_train, y_train, X_test, y_test
 
-def read_data_hagrid_haar_30(): 
+def read_data_hagrid_haar_npi_30(): 
     fname = "data_hand_n_18225_S_5_P_5_NPI_30_SEED_0.bin"
     [X_train, y_train, X_test, y_test] = unpickle_objects(FOLDER_DATA + fname)
     return X_train, y_train, X_test, y_test    
