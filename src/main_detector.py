@@ -21,13 +21,13 @@ __email__ = "pklesk@zut.edu.pl"
 KIND = "hand"
 S = 5 # parameter "scales" to generete Haar-like features
 P = 5 # parameter "positions" to generete Haar-like features
-NPI = 10 # "negatives per image" - no. of negatives (negative windows) to sample per image (image real or generated synthetically) 
+NPI = 30 # "negatives per image" - no. of negatives (negative windows) to sample per image (image real or generated synthetically) 
 T = 1024 # size of ensemble in FastRealBoostBins (equivalently, no. of boosting rounds when fitting)
 B = 8 # no. of bins
 SEED = 0 # randomization seed
 DEMO_HAAR_FEATURES_ALL = False
 DEMO_HAAR_FEATURES_SELECTED = False
-REGENERATE_DATA = True
+REGENERATE_DATA = False
 FIT_OR_REFIT_MODEL = False
 MEASURE_ACCS_OF_MODEL = False
 ADJUST_DECISION_THRESHOLD_OF_MODEL = False
@@ -36,16 +36,16 @@ DEMO_DETECT_IN_VIDEO_COMPUTATIONS = "gpu_cuda" # possible values: "cpu_simple", 
 DEMO_DETECT_IN_VIDEO_PARALLEL_JOBS = 8
 DEMO_DETECT_IN_VIDEO_VERBOSE_LOOP = True
 DEMO_DETECT_IN_VIDEO_VERBOSE_DETECT = True
-DEMO_DETECT_IN_VIDEO_MULTIPLE_CLFS = False
+DEMO_DETECT_IN_VIDEO_MULTIPLE_CLFS = True
 
 # cv2 camera settings
 CV2_VIDEO_CAPTURE_CAMERA_INDEX = 0
 CV2_VIDEO_CAPTURE_IS_IT_MSWINDOWS = False
 
 # detection procedure settings
-DETECTION_SCALES = 12
-DETECTION_WINDOW_HEIGHT_MIN = 64
-DETECTION_WINDOW_WIDTH_MIN = 64
+DETECTION_SCALES = 9 # 9 (lighter), 12 (heavier)
+DETECTION_WINDOW_HEIGHT_MIN = 96 # 96 (lighter), 64 (heavier) 
+DETECTION_WINDOW_WIDTH_MIN = 96 # 96 (lighter), 64 (heavier)
 DETECTION_WINDOW_GROWTH = 1.2
 DETECTION_WINDOW_JUMP = 0.05
 DETECTION_DECISION_THRESHOLD = 4.0 # can be set to None (then classfiers' internal thresholds are used)
@@ -151,7 +151,7 @@ def adjust_decision_threshold_via_precision(clf, X_test, y_test, heuristic_coeff
         responses_test = clf.decision_function(X_test)
         roc = roc_curve(y_test, responses_test)
         best_thr, _ = best_decision_threshold_via_precision(roc, y_test, heuristic_coeff)
-        print(f"[adjusting decision threshold within clf form {clf.decision_threshold_} to {best_thr}]")
+        print(f"[adjusting decision threshold within clf from {clf.decision_threshold_} to {best_thr}]")
         clf.decision_threshold_ = best_thr
         t2 = time.time()
         print(f"ADJUST DECISION THRESHOLD VIA PRECISION DONE. [time: {t2 - t1} s] ")
@@ -927,12 +927,12 @@ if __name__ == "__main__":
         clf = FastRealBoostBins(T=T, B=B, fit_mode="numba_cuda", decision_function_mode="numba_cuda", verbose=True, debug_verbose=False)
         clf.fit(X_train, y_train)
         pickle_objects(FOLDER_CLFS + CLF_NAME + ".bin", [clf])
-        clf.json_dump(FOLDER_CLFS + CLF_NAME + ".json")
+        clf.json_dump(FOLDER_CLFS + CLF_NAME + ".json")    
     
     if clf is None and (MEASURE_ACCS_OF_MODEL or ADJUST_DECISION_THRESHOLD_OF_MODEL or DEMO_HAAR_FEATURES_SELECTED or DEMO_DETECT_IN_VIDEO):
         [clf] = unpickle_objects(FOLDER_CLFS + CLF_NAME + ".bin")
         print(f"[unpickled clf {clf} with decision threshold: {clf.decision_threshold_}]")
-    
+        
     if DEMO_HAAR_FEATURES_SELECTED:        
         demo_haar_features(hinds, hcoords, n, selected_indexes=clf.features_selected_)
         

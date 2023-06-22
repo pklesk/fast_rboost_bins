@@ -11,6 +11,7 @@
     -1,
     1
   ],
+  "n_features_in_": 18225,
   "dtype_": "int16",
   "decision_function_numba_cuda_job_name_": "_decision_function_numba_cuda_job_int16",
   "decision_threshold_": 3.4954158663749695,

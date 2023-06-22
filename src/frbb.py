@@ -1083,7 +1083,8 @@ class FastRealBoostBins(BaseEstimator, ClassifierMixin):
         d["debug_verbose"] = self.verbose
         if self.classes_ is not None:
             d["classes_"] = self.classes_.tolist()
-            d["dtype_"] = str(self.dtype_)
+            d["n_features_in_"] = self.n_features_in_
+            d["dtype_"] = str(self.dtype_)            
             d["decision_function_numba_cuda_job_name_"] = self.decision_function_numba_cuda_job_name_
             d["decision_threshold_"] = self.decision_threshold_
             d["features_selected_"] = self.features_selected_.tolist()
@@ -1118,7 +1119,10 @@ class FastRealBoostBins(BaseEstimator, ClassifierMixin):
             params["verbose"] = d["verbose"]
             params["debug_verbose"] = d["debug_verbose"]                            
             clf = FastRealBoostBins(**params)
+            clf._set_cuda_constants()
+            clf._set_modes(clf.fit_mode, clf.decision_function_mode)
             clf.classes_ = np.array(d["classes_"])
+            clf.n_features_in_ = d["n_features_in_"]
             clf.dtype_ = d["dtype_"]
             clf.decision_function_numba_cuda_job_name_ = d["decision_function_numba_cuda_job_name_"]
             clf.decision_threshold_ = d["decision_threshold_"]            
