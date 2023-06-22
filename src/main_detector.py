@@ -43,9 +43,9 @@ CV2_VIDEO_CAPTURE_CAMERA_INDEX = 0
 CV2_VIDEO_CAPTURE_IS_IT_MSWINDOWS = False
 
 # detection procedure settings
-DETECTION_SCALES = 9
-DETECTION_WINDOW_HEIGHT_MIN = 96
-DETECTION_WINDOW_WIDTH_MIN = 96
+DETECTION_SCALES = 12
+DETECTION_WINDOW_HEIGHT_MIN = 64
+DETECTION_WINDOW_WIDTH_MIN = 64
 DETECTION_WINDOW_GROWTH = 1.2
 DETECTION_WINDOW_JUMP = 0.05
 DETECTION_DECISION_THRESHOLD = 4.0 # can be set to None (then classfiers' internal thresholds are used)
@@ -950,7 +950,7 @@ if __name__ == "__main__":
         
     if DEMO_DETECT_IN_VIDEO_MULTIPLE_CLFS:        
         clfs_names = ["clf_frbb_face_n_18225_S_5_P_5_NPI_300_SEED_0_T_1024_B_8.bin", "clf_frbb_hand_n_18225_S_5_P_5_NPI_30_SEED_0_T_1024_B_8.bin"]
-        decision_thresholds = [6.0, 6.0] # set to [None, None] if clfs' internal thresholds to be used
+        decision_thresholds = [5.0, 5.0] # set to [None, None] if clfs' internal thresholds to be used
         clfs = [unpickle_objects(FOLDER_CLFS + clf_name)[0] for clf_name in clfs_names]
         print(f"[about to start multiple clfs demo; unpickled clfs:]")
         for clf_name, clf in zip(clfs_names, clfs):
