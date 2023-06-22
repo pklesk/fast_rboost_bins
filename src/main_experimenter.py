@@ -29,7 +29,7 @@ REAL_DATA_DEFS_DEFAULT = [
     ("hagrid-hfs-10", "read_data_hagrid_npi_10", "HaGRID-HFs (PALM, 10NPI)"),    
     ("hagrid-hfs-30", "read_data_hagrid_haar_30", "HaGRID-HFs (PALM, 30NPI)")    
     ]
-REAL_DATA_FLAGS_DEFAULT = [True, False, False, False, False, False, False]
+REAL_DATA_FLAGS_DEFAULT = [False, False, True, False, False, False, False]
 CLFS_DEFS_DEFAULT = [
         (AdaBoostClassifier, {"algorithm": "SAMME.R"}, {"color": "black"}),
         (GradientBoostingClassifier, {"max_depth": 1}, {"color": "green"}),
