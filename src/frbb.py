@@ -49,7 +49,7 @@ class FastRealBoostBins(BaseEstimator, ClassifierMixin):
         
     B_MAX = 32                    
     OUTLIERS_RATIO_MAX = 0.25
-    LOGIT_MAX_MAX = 8.0
+    LOGIT_MAX_MAX = np.float32(8.0)
     FIT_MODES = ["numpy", "numba_jit", "numba_cuda"]
     DECISION_FUNCTION_MODES = ["numpy", "numba_jit", "numba_cuda"]    
     CUDA_MAX_MEMORY_PER_CALL = 8 * 1024**2 # applicable only for cuda-based fit, can be adjusted for given gpu device     
