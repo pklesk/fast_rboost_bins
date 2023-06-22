@@ -38,7 +38,7 @@ def _unlock(mutex):
 class FastRealBoostBins(BaseEstimator, ClassifierMixin):    
 
     # constants
-    T_DEFAULT = 64
+    T_DEFAULT = 256
     B_DEFAULT = 8
     OUTLIERS_RATIO_DEFAULT = 0.05
     LOGIT_MAX_DEFAULT = np.float(2.0)
@@ -159,7 +159,7 @@ class FastRealBoostBins(BaseEstimator, ClassifierMixin):
         self._validate_param("debug_verbose", self.debug_verbose, bool, False, False, False, True, self.DEBUG_VERBOSE_DEFAULT)
         self._set_cuda_constants()
         self._set_modes(self.fit_mode, self.decision_function_mode)
-        # initialization of estimated attributes (names with trailing underscores)
+        # initialization of attributes to be estimated (names with trailing underscores)
         self.features_selected_ = np.zeros(self.T, dtype=np.int32) # indexes of selected features
         self.logits_ = np.zeros((self.T, self.B), dtype=np.float32) # binned logits for selected features
         self.decision_threshold_ = 0.0 # default decision threshold

@@ -346,11 +346,6 @@ UNPICKLE OBJECTS DONE. [time: 0.01057577133178711 s]
 [0: {'time_fit': [713.9543452262878, 1.0], 'time_predict_train': [16.51475501060486, 1.0], 'time_predict_test': [1.3590977191925049, 1.0], 'acc_train': [0.9808067940552017, 1.0093514590007793], 'acc_test': [0.8948580199539524, 1.0]}]
 [1: GradientBoostingClassifier(max_depth=1, n_estimators=512)]
 [1: {'time_fit': [672.4479095935822, 1.0617243879273737], 'time_predict_train': [0.12218356132507324, 135.16347724279234], 'time_predict_test': [0.009806632995605469, 138.58963823786831], 'acc_train': [0.9263694267515924, 1.0686651998533185], 'acc_test': [0.8917881811204912, 1.0034423407917383]}]
-The PostScript backend does not support transparency; partially transparent artists will be rendered opaque.
-The PostScript backend does not support transparency; partially transparent artists will be rendered opaque.
-The PostScript backend does not support transparency; partially transparent artists will be rendered opaque.
-The PostScript backend does not support transparency; partially transparent artists will be rendered opaque.
-The PostScript backend does not support transparency; partially transparent artists will be rendered opaque.
 [2: HistGradientBoostingClassifier(early_stopping=False, max_bins=8, max_depth=1, max_iter=512)]
 [2: {'time_fit': [8.462529420852661, 84.36654216728877], 'time_predict_train': [0.15874648094177246, 104.032258936577], 'time_predict_test': [0.016995668411254883, 79.96730027354984], 'acc_train': [0.9198301486199575, 1.0762625796325362], 'acc_test': [0.8925556408288565, 1.002579535683577]}]
 [3: FastRealBoostBins(T=512, B=8, outliers_ratio=0.05, logit_max: 2.0, fit_mode='numba_jit', decision_function_mode='numba_jit')]

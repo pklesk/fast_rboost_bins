@@ -385,11 +385,6 @@ EXPERIMENTER REAL DATA...
 [predict train done; time: 0.38864874839782715 s, acc: 1.0]
 [predict test...]
 [predict test done; time: 0.034166574478149414 s, acc: 0.985]
-The PostScript backend does not support transparency; partially transparent artists will be rendered opaque.
-The PostScript backend does not support transparency; partially transparent artists will be rendered opaque.
-The PostScript backend does not support transparency; partially transparent artists will be rendered opaque.
-The PostScript backend does not support transparency; partially transparent artists will be rendered opaque.
-The PostScript backend does not support transparency; partially transparent artists will be rendered opaque.
 ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 [clf: FastRealBoostBins(T=1024, B=8, outliers_ratio=0.05, logit_max: 2.0, fit_mode='numba_cuda', decision_function_mode='numba_cuda')]
 [fit...]

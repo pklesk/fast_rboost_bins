@@ -352,11 +352,6 @@ EXPERIMENTER REAL DATA...
 [4: {'time_fit': [83.90523886680603, 36.30624638787504], 'time_predict_train': [0.16712212562561035, 416.5945366432655], 'time_predict_test': [0.02555108070373535, 551.798122591421], 'acc_train': [0.91676, 1.0009380863039399], 'acc_test': [0.8977, 1.0171549515428318]}]
 ====================================================================================================================================================================================================
 [experiment: 7/7, params: ('CIFAR-10 (AIRPLANE)', 1024, 8)]
-The PostScript backend does not support transparency; partially transparent artists will be rendered opaque.
-The PostScript backend does not support transparency; partially transparent artists will be rendered opaque.
-The PostScript backend does not support transparency; partially transparent artists will be rendered opaque.
-The PostScript backend does not support transparency; partially transparent artists will be rendered opaque.
-The PostScript backend does not support transparency; partially transparent artists will be rendered opaque.
 [description: {'T': 1024, 'B': 8, 'data_name': 'CIFAR-10 (AIRPLANE)', 'n': 3072, 'm_train': 50000, 'm_test': 10000}]
 ====================================================================================================================================================================================================
 [clf: AdaBoostClassifier(n_estimators=1024)]
