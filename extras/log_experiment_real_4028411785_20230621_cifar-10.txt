@@ -1,6 +1,3 @@
-2023-06-21 21:19:29.592623: I tensorflow/core/platform/cpu_feature_guard.cc:182] This TensorFlow binary is optimized to use available CPU instructions in performance-critical operations.
-To enable the following instructions: AVX2 FMA, in other operations, rebuild TensorFlow with the appropriate compiler flags.
-2023-06-21 21:19:30.140731: W tensorflow/compiler/tf2tensorrt/utils/py_utils.cc:38] TF-TRT Warning: Could not find TensorRT
 DEMONSTRATION OF "FAST REAL BOOST WITH BINS": AN ENSEMBLE CLASSIFIER FOR FAST PREDICTIONS IMPLEMENTED IN PYTHON VIA NUMBA.JIT AND NUMBA.CUDA.
 MAIN-EXPERIMENTER STARTING...]
 CPU AND SYSTEM PROPS: {'cpu_name': 'Intel(R) Core(TM) i7-10700 CPU @ 2.90GHz', 'ram_size': '125.7 GB', 'os_name': 'Linux 5.15.0-71-generic', 'os_version': '#78~20.04.1-Ubuntu SMP Wed Apr 19 11:26:48 UTC 2023', 'os_machine': 'x86_64'}
