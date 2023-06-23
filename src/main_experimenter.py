@@ -9,6 +9,7 @@ from matplotlib import pyplot as plt
 from utils import cpu_and_system_props, gpu_props
 import pickle
 from datetime import date
+import sys
 
 np.set_printoptions(linewidth=512)
 np.set_printoptions(threshold=np.inf)    
@@ -29,7 +30,7 @@ REAL_DATA_DEFS_DEFAULT = [
     ("hagrid-hfs-10", "read_data_hagrid_haar_npi_10", "HaGRID-HFs (PALM, 10NPI)"),    
     ("hagrid-hfs-30", "read_data_hagrid_haar_npi_30", "HaGRID-HFs (PALM, 30NPI)")    
     ]
-REAL_DATA_FLAGS_DEFAULT = [False, False, False, False, False, True, False]
+REAL_DATA_FLAGS_DEFAULT = [True, False, False, False, False, False, False]
 CLFS_DEFS_DEFAULT = [
         (AdaBoostClassifier, {"algorithm": "SAMME.R"}, {"color": "black"}),
         (GradientBoostingClassifier, {"max_depth": 1}, {"color": "green"}),
@@ -37,7 +38,7 @@ CLFS_DEFS_DEFAULT = [
         (FastRealBoostBins, {"fit_mode": "numba_jit", "decision_function_mode": "numba_jit"}, {"color": "blue"}),
         (FastRealBoostBins, {"fit_mode": "numba_cuda", "decision_function_mode": "numba_cuda"}, {"color": "red"})        
         ]
-CLFS_FLAGS_DEFAULT = [False, False, True, False, True]
+CLFS_FLAGS_DEFAULT = [True, True, True, True, True]
 RANDOM_DTYPE_DEFAULT = np.int8
 NMM_MAGN_ORDERS_DEFAULT = [(5, 5, 4)] # only in case of data kind "random"
 TS_DEFAULT = [16, 32, 64, 128, 256, 512, 1024]
@@ -49,9 +50,9 @@ PLOTS_VALUES_NAMES_DEFAULT = ["acc_test", "acc_train", "time_fit", "time_predict
 EPS = 1e-9
 
 # plot settings
-PLOT_FONTSIZE_SUPTITLE = 12
-PLOT_FONTSIZE_TITLE = 10.5
-PLOT_FONTSIZE_AXES = 14
+PLOT_FONTSIZE_SUPTITLE = 13
+PLOT_FONTSIZE_TITLE = 9.5
+PLOT_FONTSIZE_AXES = 12.5
 PLOT_FONTSIZE_LEGEND = 9.5
 PLOT_FIGSIZE = (10, 6.5)
 PLOT_MARKERSIZE = 4
@@ -278,7 +279,7 @@ def experimenter_random_data(dtype=RANDOM_DTYPE_DEFAULT, nmm_magn_orders=NMM_MAG
                 y_min = min(y_min, min(ys))
                 y_max = max(y_max, max(ys))                    
             plt.xticks(xs)    
-            plt.suptitle(f"{value_names_mapper[vn]} {key}", fontsize=PLOT_FONTSIZE_SUPTITLE)
+            plt.suptitle(f"{value_names_mapper[vn]}\n{key}", fontsize=PLOT_FONTSIZE_SUPTITLE)
             plt.title(f"\n{cpu_gpu_info}", fontsize=PLOT_FONTSIZE_TITLE)
             plt.xlabel(plots_arg_name.upper(), fontsize=PLOT_FONTSIZE_AXES)            
             plt.ylabel(value_names_mapper[vn], fontsize=PLOT_FONTSIZE_AXES)
@@ -418,7 +419,7 @@ def experimenter_real_data(real_data_defs=REAL_DATA_DEFS_DEFAULT, real_data_flag
                 y_min = min(y_min, min(ys))
                 y_max = max(y_max, max(ys))                    
             plt.xticks(xs)    
-            plt.suptitle(f"{value_names_mapper[vn]} {key}", fontsize=PLOT_FONTSIZE_SUPTITLE)
+            plt.suptitle(f"{value_names_mapper[vn]}\n{key}", fontsize=PLOT_FONTSIZE_SUPTITLE)
             plt.title(f"\n{cpu_gpu_info}", fontsize=PLOT_FONTSIZE_TITLE)
             plt.xlabel(plots_arg_name.upper(), fontsize=PLOT_FONTSIZE_AXES)            
             plt.ylabel(value_names_mapper[vn], fontsize=PLOT_FONTSIZE_AXES)
