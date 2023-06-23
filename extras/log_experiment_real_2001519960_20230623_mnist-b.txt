@@ -1,6 +1,3 @@
-2023-06-23 22:17:13.527727: I tensorflow/core/platform/cpu_feature_guard.cc:182] This TensorFlow binary is optimized to use available CPU instructions in performance-critical operations.
-To enable the following instructions: AVX2 FMA, in other operations, rebuild TensorFlow with the appropriate compiler flags.
-2023-06-23 22:17:14.058182: W tensorflow/compiler/tf2tensorrt/utils/py_utils.cc:38] TF-TRT Warning: Could not find TensorRT
 DEMONSTRATION OF "FAST REAL BOOST WITH BINS": AN ENSEMBLE CLASSIFIER FOR FAST PREDICTIONS IMPLEMENTED IN PYTHON VIA NUMBA.JIT AND NUMBA.CUDA.
 MAIN-EXPERIMENTER STARTING...]
 CPU AND SYSTEM PROPS: {'cpu_name': 'Intel(R) Core(TM) i7-10700 CPU @ 2.90GHz', 'ram_size': '125.7 GB', 'os_name': 'Linux 5.15.0-71-generic', 'os_version': '#78~20.04.1-Ubuntu SMP Wed Apr 19 11:26:48 UTC 2023', 'os_machine': 'x86_64'}
@@ -352,11 +349,6 @@ EXPERIMENTER REAL DATA...
 [3: FastRealBoostBins(T=512, B=8, outliers_ratio=0.05, logit_max: 2.0, fit_mode='numba_jit', decision_function_mode='numba_jit')]
 [3: {'time_fit': [255.71772003173828, 3.4404402637651277], 'time_predict_train': [0.19159698486328125, 117.21844637239677], 'time_predict_test': [0.01881265640258789, 163.38960281854358], 'acc_train': [0.9981666666666666, 1.0], 'acc_test': [0.9853, 1.002638790216178]}]
 [4: FastRealBoostBins(T=512, B=8, outliers_ratio=0.05, logit_max: 2.0, fit_mode='numba_cuda', decision_function_mode='numba_cuda')]
-The PostScript backend does not support transparency; partially transparent artists will be rendered opaque.
-The PostScript backend does not support transparency; partially transparent artists will be rendered opaque.
-The PostScript backend does not support transparency; partially transparent artists will be rendered opaque.
-The PostScript backend does not support transparency; partially transparent artists will be rendered opaque.
-The PostScript backend does not support transparency; partially transparent artists will be rendered opaque.
 [4: {'time_fit': [27.156550407409668, 32.39666036211147], 'time_predict_train': [0.1381971836090088, 162.51200139396627], 'time_predict_test': [0.010658502578735352, 288.3887708310032], 'acc_train': [0.99805, 1.0001168946111585], 'acc_test': [0.9843, 1.00365742151783]}]
 ====================================================================================================================================================================================================
 [experiment: 7/7, params: ('MNIST-B (DIGIT 0)', 1024, 8)]
