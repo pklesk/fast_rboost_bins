@@ -60,6 +60,7 @@ PLOT_GRID_COLOR = (0.4, 0.4, 0.4)
 PLOT_GRID_DASHES = (4.0, 4.0)
 PLOT_LEGEND_LOC = "best"
 PLOT_LEGEND_HANDLELENGTH = 4
+PLOT_LEGEND_LABELSPACING = 0.1
 
 def clean_name(name):
     name = name.replace("\n", "")
@@ -283,8 +284,8 @@ def experimenter_random_data(dtype=RANDOM_DTYPE_DEFAULT, nmm_magn_orders=NMM_MAG
             plt.title(f"\n{cpu_gpu_info}", fontsize=PLOT_FONTSIZE_TITLE)
             plt.xlabel(plots_arg_name.upper(), fontsize=PLOT_FONTSIZE_AXES)            
             plt.ylabel(value_names_mapper[vn], fontsize=PLOT_FONTSIZE_AXES)
-            plt.yscale("log")
-            plt.legend(loc=PLOT_LEGEND_LOC, prop={"size": PLOT_FONTSIZE_LEGEND}, handlelength=PLOT_LEGEND_HANDLELENGTH)        
+            plt.yscale("log")            
+            plt.legend(loc=PLOT_LEGEND_LOC, prop={"size": PLOT_FONTSIZE_LEGEND}, handlelength=PLOT_LEGEND_HANDLELENGTH, labelspacing=PLOT_LEGEND_LABELSPACING)        
             plt.grid(color=PLOT_GRID_COLOR, zorder=0, dashes=PLOT_GRID_DASHES)
             plt.tight_layout()
             fake_data_name = f"{nonargs[key]['n']}-{nonargs[key]['m_train']}-{nonargs[key]['m_test']}"
@@ -424,7 +425,7 @@ def experimenter_real_data(real_data_defs=REAL_DATA_DEFS_DEFAULT, real_data_flag
             plt.xlabel(plots_arg_name.upper(), fontsize=PLOT_FONTSIZE_AXES)            
             plt.ylabel(value_names_mapper[vn], fontsize=PLOT_FONTSIZE_AXES)
             plt.yscale("log")               
-            plt.legend(loc=PLOT_LEGEND_LOC, prop={"size": PLOT_FONTSIZE_LEGEND}, handlelength=PLOT_LEGEND_HANDLELENGTH)        
+            plt.legend(loc=PLOT_LEGEND_LOC, prop={"size": PLOT_FONTSIZE_LEGEND}, handlelength=PLOT_LEGEND_HANDLELENGTH, labelspacing=PLOT_LEGEND_LABELSPACING)        
             plt.grid(color=PLOT_GRID_COLOR, zorder=0, dashes=PLOT_GRID_DASHES)
             plt.tight_layout()
             fname = "fig_experiment_" + hash_str + "_" + data_names_mapper[nonargs[key]["data_name"]] + "_" + vn
