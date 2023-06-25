@@ -937,7 +937,6 @@ if __name__ == "__main__":
         demo_haar_features(hinds, hcoords, n, selected_indexes=clf.features_selected_)
         
     if MEASURE_ACCS_OF_MODEL:
-        clf.decision_threshold_ = 0.0 # TODO (remove this line after checks)
         measure_accs_of_model(clf, X_train, y_train, X_test, y_test)            
     
     if ADJUST_DECISION_THRESHOLD_OF_MODEL:    
