@@ -739,7 +739,8 @@ class FastRealBoostBins(BaseEstimator, ClassifierMixin):
     
     def _decision_function_numba_cuda(self, X):
         X_selected = X[:, self.features_selected_]
-        if not X_selected.data.c_contiguous: 
+        if not X_selected.data.c_contiguous:
+            print("[forcing c_contiguous array]") 
             X_selected = np.ascontiguousarray(X_selected)
         m = X_selected.shape[0]
         dev_X_selected = cuda.to_device(X_selected)
