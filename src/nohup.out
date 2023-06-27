@@ -1,0 +1,210 @@
+2023-06-27 00:27:21.707992: I tensorflow/core/platform/cpu_feature_guard.cc:182] This TensorFlow binary is optimized to use available CPU instructions in performance-critical operations.
+To enable the following instructions: AVX2 FMA, in other operations, rebuild TensorFlow with the appropriate compiler flags.
+2023-06-27 00:27:22.244362: W tensorflow/compiler/tf2tensorrt/utils/py_utils.cc:38] TF-TRT Warning: Could not find TensorRT
+DEMONSTRATION OF "FAST REAL BOOST WITH BINS": AN ENSEMBLE CLASSIFIER FOR FAST PREDICTIONS IMPLEMENTED IN PYTHON VIA NUMBA.JIT AND NUMBA.CUDA.
+MAIN-EXPERIMENTER STARTING...]
+CPU AND SYSTEM PROPS: {'cpu_name': 'Intel(R) Core(TM) i7-10700 CPU @ 2.90GHz', 'ram_size': '125.7 GB', 'os_name': 'Linux 5.15.0-71-generic', 'os_version': '#78~20.04.1-Ubuntu SMP Wed Apr 19 11:26:48 UTC 2023', 'os_machine': 'x86_64'}
+GPU PROPS: {'name': 'NVIDIA GeForce RTX 3090', 'max_threads_per_block': 1024, 'max_block_dim_x': 1024, 'max_block_dim_y': 1024, 'max_block_dim_z': 64, 'max_grid_dim_x': 2147483647, 'max_grid_dim_y': 65535, 'max_grid_dim_z': 65535, 'max_shared_memory_per_block': 49152, 'async_engine_count': 2, 'can_map_host_memory': 1, 'multiprocessor_count': 82, 'warp_size': 32, 'unified_addressing': 1, 'pci_bus_id': 1, 'pci_device_id': 0, 'compute_capability': (8, 6), 'cores_per_SM': 128, 'cores_total': 10496}
+[data kind: real, real data flags: [False, False, False, False, False, True, False], clfs flags: [False, False, True, False, True], seed: 0]
+EXPERIMENTER REAL DATA...
+[experiment hash string: real_1178284368_20230627]
+[data definitions:]
+[data def 0 (active: False): (name short: 'fddb-patches', reading function: read_data_fddb_patches(), name full: 'FDDB-PATCHES (3NPI))']
+[data def 1 (active: False): (name short: 'cifar-10', reading function: read_data_cifar_10(), name full: 'CIFAR-10 (AIRPLANE))']
+[data def 2 (active: False): (name short: 'mnist-b', reading function: read_data_mnist_b(), name full: 'MNIST-B (DIGIT 0))']
+[data def 3 (active: False): (name short: 'fddb-hfs-100', reading function: read_data_fddb_haar_npi_100(), name full: 'FDDB-HFs (100NPI))']
+[data def 4 (active: False): (name short: 'fddb-hfs-300', reading function: read_data_fddb_haar_npi_300(), name full: 'FDDB-HFs (300NPI))']
+[data def 5 (active: True): (name short: 'hagrid-hfs-10', reading function: read_data_hagrid_haar_npi_10(), name full: 'HaGRID-HFs (PALM, 10NPI))']
+[data def 6 (active: False): (name short: 'hagrid-hfs-30', reading function: read_data_hagrid_haar_npi_30(), name full: 'HaGRID-HFs (PALM, 30NPI))']
+[clfs definitions:]
+[clf def 0 (active: False): AdaBoostClassifier({'algorithm': 'SAMME.R'})]
+[clf def 1 (active: False): GradientBoostingClassifier({'max_depth': 1})]
+[clf def 2 (active: True): HistGradientBoostingClassifier({'max_depth': 1, 'early_stopping': False})]
+[clf def 3 (active: False): FastRealBoostBins({'fit_mode': 'numba_jit', 'decision_function_mode': 'numba_jit'})]
+[clf def 4 (active: True): FastRealBoostBins({'fit_mode': 'numba_cuda', 'decision_function_mode': 'numba_cuda'})]
+[other settings -> Ts: [32, 64, 128, 256, 512, 1024, 2048], Bs: [8], seed: 0]
+UNPICKLE OBJECTS... [from file: ../data/data_hand_n_18225_S_5_P_5_NPI_10_SEED_0.bin]
+UNPICKLE OBJECTS DONE. [time: 56.55846953392029 s]
+====================================================================================================================================================================================================
+[experiment: 1/7, params: ('HaGRID-HFs (PALM, 10NPI)', 32, 8)]
+[description: {'T': 32, 'B': 8, 'data_name': 'HaGRID-HFs (PALM, 10NPI)', 'n': 18225, 'm_train': 232299, 'm_test': 77433}]
+====================================================================================================================================================================================================
+[clf: HistGradientBoostingClassifier(early_stopping=False, max_bins=8, max_depth=1, max_iter=32)]
+[fit...]
+[fit done; time: 294.1398777961731 s]
+[predict train...]
+[predict train done; time: 3.4255738258361816 s, acc: 0.9144722964799676]
+[predict test...]
+[predict test done; time: 1.1380081176757812 s, acc: 0.9147133651027339]
+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+[clf: FastRealBoostBins(T=32, B=8, outliers_ratio=0.05, logit_max: 2.0, fit_mode='numba_cuda', decision_function_mode='numba_cuda')]
+[fit...]
+[fit done; time: 286.8381974697113 s]
+[predict train...]
+[predict train done; time: 0.10027360916137695 s, acc: 0.9763967989530734]
+[predict test...]
+[predict test done; time: 0.025119304656982422 s, acc: 0.9766636963568505]
+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+[results summary for experiment 1/7 ({'T': 32, 'B': 8, 'data_name': 'HaGRID-HFs (PALM, 10NPI)', 'n': 18225, 'm_train': 232299, 'm_test': 77433}):]
+[0: HistGradientBoostingClassifier(early_stopping=False, max_bins=8, max_depth=1, max_iter=32)]
+[0: {'time_fit': [294.1398777961731, 1.0], 'time_predict_train': [3.4255738258361816, 1.0], 'time_predict_test': [1.1380081176757812, 1.0], 'acc_train': [0.9144722964799676, 1.0677161054648332], 'acc_test': [0.9147133651027339, 1.06772649620918]}]
+[1: FastRealBoostBins(T=32, B=8, outliers_ratio=0.05, logit_max: 2.0, fit_mode='numba_cuda', decision_function_mode='numba_cuda')]
+[1: {'time_fit': [286.8381974697113, 1.0254557460996205], 'time_predict_train': [0.10027360916137695, 34.16226716566249], 'time_predict_test': [0.025119304656982422, 45.30412498338997], 'acc_train': [0.9763967989530734, 1.0], 'acc_test': [0.9766636963568505, 1.0]}]
+====================================================================================================================================================================================================
+[experiment: 2/7, params: ('HaGRID-HFs (PALM, 10NPI)', 64, 8)]
+[description: {'T': 64, 'B': 8, 'data_name': 'HaGRID-HFs (PALM, 10NPI)', 'n': 18225, 'm_train': 232299, 'm_test': 77433}]
+====================================================================================================================================================================================================
+[clf: HistGradientBoostingClassifier(early_stopping=False, max_bins=8, max_depth=1, max_iter=64)]
+[fit...]
+[fit done; time: 332.71526527404785 s]
+[predict train...]
+[predict train done; time: 3.5928964614868164 s, acc: 0.9198748165080349]
+[predict test...]
+[predict test done; time: 1.1908519268035889 s, acc: 0.9202665530200302]
+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+[clf: FastRealBoostBins(T=64, B=8, outliers_ratio=0.05, logit_max: 2.0, fit_mode='numba_cuda', decision_function_mode='numba_cuda')]
+[fit...]
+[fit done; time: 423.4239921569824 s]
+[predict train...]
+[predict train done; time: 0.18462181091308594 s, acc: 0.9822168842741467]
+[predict test...]
+[predict test done; time: 0.04487204551696777 s, acc: 0.9822168842741467]
+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+[results summary for experiment 2/7 ({'T': 64, 'B': 8, 'data_name': 'HaGRID-HFs (PALM, 10NPI)', 'n': 18225, 'm_train': 232299, 'm_test': 77433}):]
+[0: HistGradientBoostingClassifier(early_stopping=False, max_bins=8, max_depth=1, max_iter=64)]
+[0: {'time_fit': [332.71526527404785, 1.2726316954775743], 'time_predict_train': [3.5928964614868164, 1.0], 'time_predict_test': [1.1908519268035889, 1.0], 'acc_train': [0.9198748165080349, 1.0677723388523346], 'acc_test': [0.9202665530200302, 1.0673178124868437]}]
+[1: FastRealBoostBins(T=64, B=8, outliers_ratio=0.05, logit_max: 2.0, fit_mode='numba_cuda', decision_function_mode='numba_cuda')]
+[1: {'time_fit': [423.4239921569824, 1.0], 'time_predict_train': [0.18462181091308594, 19.460845084973396], 'time_predict_test': [0.04487204551696777, 26.538837556520214], 'acc_train': [0.9822168842741467, 1.0], 'acc_test': [0.9822168842741467, 1.0]}]
+====================================================================================================================================================================================================
+[experiment: 3/7, params: ('HaGRID-HFs (PALM, 10NPI)', 128, 8)]
+[description: {'T': 128, 'B': 8, 'data_name': 'HaGRID-HFs (PALM, 10NPI)', 'n': 18225, 'm_train': 232299, 'm_test': 77433}]
+====================================================================================================================================================================================================
+[clf: HistGradientBoostingClassifier(early_stopping=False, max_bins=8, max_depth=1, max_iter=128)]
+[fit...]
+[fit done; time: 406.54518961906433 s]
+[predict train...]
+[predict train done; time: 3.9055185317993164 s, acc: 0.9403570398495043]
+[predict test...]
+[predict test done; time: 1.2825708389282227 s, acc: 0.9399868273216846]
+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+[clf: FastRealBoostBins(T=128, B=8, outliers_ratio=0.05, logit_max: 2.0, fit_mode='numba_cuda', decision_function_mode='numba_cuda')]
+[fit...]
+[fit done; time: 696.7708895206451 s]
+[predict train...]
+[predict train done; time: 0.3445315361022949 s, acc: 0.9860998110194189]
+[predict test...]
+[predict test done; time: 0.08445215225219727 s, acc: 0.9859620575206953]
+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+[results summary for experiment 3/7 ({'T': 128, 'B': 8, 'data_name': 'HaGRID-HFs (PALM, 10NPI)', 'n': 18225, 'm_train': 232299, 'm_test': 77433}):]
+[0: HistGradientBoostingClassifier(early_stopping=False, max_bins=8, max_depth=1, max_iter=128)]
+[0: {'time_fit': [406.54518961906433, 1.7138830007397807], 'time_predict_train': [3.9055185317993164, 1.0], 'time_predict_test': [1.2825708389282227, 1.0], 'acc_train': [0.9403570398495043, 1.0486440460713042], 'acc_test': [0.9399868273216846, 1.0489105047674003]}]
+[1: FastRealBoostBins(T=128, B=8, outliers_ratio=0.05, logit_max: 2.0, fit_mode='numba_cuda', decision_function_mode='numba_cuda')]
+[1: {'time_fit': [696.7708895206451, 1.0], 'time_predict_train': [0.3445315361022949, 11.335735985107988], 'time_predict_test': [0.08445215225219727, 15.1869526675663], 'acc_train': [0.9860998110194189, 1.0], 'acc_test': [0.9859620575206953, 1.0]}]
+====================================================================================================================================================================================================
+[experiment: 4/7, params: ('HaGRID-HFs (PALM, 10NPI)', 256, 8)]
+[description: {'T': 256, 'B': 8, 'data_name': 'HaGRID-HFs (PALM, 10NPI)', 'n': 18225, 'm_train': 232299, 'm_test': 77433}]
+====================================================================================================================================================================================================
+[clf: HistGradientBoostingClassifier(early_stopping=False, max_bins=8, max_depth=1, max_iter=256)]
+[fit...]
+[fit done; time: 558.1112797260284 s]
+[predict train...]
+[predict train done; time: 4.629176378250122 s, acc: 0.9602538108213983]
+[predict test...]
+[predict test done; time: 1.5158581733703613 s, acc: 0.9603399067581005]
+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+[clf: FastRealBoostBins(T=256, B=8, outliers_ratio=0.05, logit_max: 2.0, fit_mode='numba_cuda', decision_function_mode='numba_cuda')]
+[fit...]
+[fit done; time: 1245.7131605148315 s]
+[predict train...]
+[predict train done; time: 0.6578102111816406 s, acc: 0.9892078743343707]
+[predict test...]
+[predict test done; time: 0.1641521453857422 s, acc: 0.9876538426768948]
+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+[results summary for experiment 4/7 ({'T': 256, 'B': 8, 'data_name': 'HaGRID-HFs (PALM, 10NPI)', 'n': 18225, 'm_train': 232299, 'm_test': 77433}):]
+[0: HistGradientBoostingClassifier(early_stopping=False, max_bins=8, max_depth=1, max_iter=256)]
+[0: {'time_fit': [558.1112797260284, 2.232015739094792], 'time_predict_train': [4.629176378250122, 1.0], 'time_predict_test': [1.5158581733703613, 1.0], 'acc_train': [0.9602538108213983, 1.0301525109160516], 'acc_test': [0.9603399067581005, 1.0284419461552943]}]
+[1: FastRealBoostBins(T=256, B=8, outliers_ratio=0.05, logit_max: 2.0, fit_mode='numba_cuda', decision_function_mode='numba_cuda')]
+[1: {'time_fit': [1245.7131605148315, 1.0], 'time_predict_train': [0.6578102111816406, 7.037252234097459], 'time_predict_test': [0.1641521453857422, 9.23447067845648], 'acc_train': [0.9892078743343707, 1.0], 'acc_test': [0.9876538426768948, 1.0]}]
+====================================================================================================================================================================================================
+[experiment: 5/7, params: ('HaGRID-HFs (PALM, 10NPI)', 512, 8)]
+[description: {'T': 512, 'B': 8, 'data_name': 'HaGRID-HFs (PALM, 10NPI)', 'n': 18225, 'm_train': 232299, 'm_test': 77433}]
+====================================================================================================================================================================================================
+[clf: HistGradientBoostingClassifier(early_stopping=False, max_bins=8, max_depth=1, max_iter=512)]
+[fit...]
+[fit done; time: 856.1909701824188 s]
+[predict train...]
+[predict train done; time: 5.851085424423218 s, acc: 0.974407982815251]
+[predict test...]
+[predict test done; time: 1.9024956226348877 s, acc: 0.9746490514380174]
+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+[clf: FastRealBoostBins(T=512, B=8, outliers_ratio=0.05, logit_max: 2.0, fit_mode='numba_cuda', decision_function_mode='numba_cuda')]
+[fit...]
+[fit done; time: 2335.199671268463 s]
+[predict train...]
+[predict train done; time: 1.3126838207244873 s, acc: 0.9930004003461057]
+[predict test...]
+[predict test done; time: 0.32669997215270996 s, acc: 0.9889581961179342]
+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+[results summary for experiment 5/7 ({'T': 512, 'B': 8, 'data_name': 'HaGRID-HFs (PALM, 10NPI)', 'n': 18225, 'm_train': 232299, 'm_test': 77433}):]
+[0: HistGradientBoostingClassifier(early_stopping=False, max_bins=8, max_depth=1, max_iter=512)]
+[0: {'time_fit': [856.1909701824188, 2.7274285207316877], 'time_predict_train': [5.851085424423218, 1.0], 'time_predict_test': [1.9024956226348877, 1.0], 'acc_train': [0.974407982815251, 1.0190807319508381], 'acc_test': [0.9746490514380174, 1.0146813303299325]}]
+[1: FastRealBoostBins(T=512, B=8, outliers_ratio=0.05, logit_max: 2.0, fit_mode='numba_cuda', decision_function_mode='numba_cuda')]
+[1: {'time_fit': [2335.199671268463, 1.0], 'time_predict_train': [1.3126838207244873, 4.457345578613079], 'time_predict_test': [0.32669997215270996, 5.823372466483103], 'acc_train': [0.9930004003461057, 1.0], 'acc_test': [0.9889581961179342, 1.0]}]
+====================================================================================================================================================================================================
+[experiment: 6/7, params: ('HaGRID-HFs (PALM, 10NPI)', 1024, 8)]
+[description: {'T': 1024, 'B': 8, 'data_name': 'HaGRID-HFs (PALM, 10NPI)', 'n': 18225, 'm_train': 232299, 'm_test': 77433}]
+====================================================================================================================================================================================================
+[clf: HistGradientBoostingClassifier(early_stopping=False, max_bins=8, max_depth=1, max_iter=1024)]
+[fit...]
+The PostScript backend does not support transparency; partially transparent artists will be rendered opaque.
+The PostScript backend does not support transparency; partially transparent artists will be rendered opaque.
+The PostScript backend does not support transparency; partially transparent artists will be rendered opaque.
+The PostScript backend does not support transparency; partially transparent artists will be rendered opaque.
+The PostScript backend does not support transparency; partially transparent artists will be rendered opaque.
+[fit done; time: 1463.3953437805176 s]
+[predict train...]
+[predict train done; time: 8.431314468383789 s, acc: 0.9822082746804764]
+[predict test...]
+[predict test done; time: 2.7503373622894287 s, acc: 0.9824235145222321]
+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+[clf: FastRealBoostBins(T=1024, B=8, outliers_ratio=0.05, logit_max: 2.0, fit_mode='numba_cuda', decision_function_mode='numba_cuda')]
+[fit...]
+[fit done; time: 4525.689813613892 s]
+[predict train...]
+[predict train done; time: 2.547710657119751 s, acc: 0.9981919853292524]
+[predict test...]
+[predict test done; time: 0.630598783493042 s, acc: 0.9899009466248241]
+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+[results summary for experiment 6/7 ({'T': 1024, 'B': 8, 'data_name': 'HaGRID-HFs (PALM, 10NPI)', 'n': 18225, 'm_train': 232299, 'm_test': 77433}):]
+[0: HistGradientBoostingClassifier(early_stopping=False, max_bins=8, max_depth=1, max_iter=1024)]
+[0: {'time_fit': [1463.3953437805176, 3.09259547178979], 'time_predict_train': [8.431314468383789, 1.0], 'time_predict_test': [2.7503373622894287, 1.0], 'acc_train': [0.9822082746804764, 1.0162732396588448], 'acc_test': [0.9824235145222321, 1.0076112104322221]}]
+[1: FastRealBoostBins(T=1024, B=8, outliers_ratio=0.05, logit_max: 2.0, fit_mode='numba_cuda', decision_function_mode='numba_cuda')]
+[1: {'time_fit': [4525.689813613892, 1.0], 'time_predict_train': [2.547710657119751, 3.309368921004395], 'time_predict_test': [0.630598783493042, 4.361469502136735], 'acc_train': [0.9981919853292524, 1.0], 'acc_test': [0.9899009466248241, 1.0]}]
+====================================================================================================================================================================================================
+[experiment: 7/7, params: ('HaGRID-HFs (PALM, 10NPI)', 2048, 8)]
+[description: {'T': 2048, 'B': 8, 'data_name': 'HaGRID-HFs (PALM, 10NPI)', 'n': 18225, 'm_train': 232299, 'm_test': 77433}]
+====================================================================================================================================================================================================
+[clf: HistGradientBoostingClassifier(early_stopping=False, max_bins=8, max_depth=1, max_iter=2048)]
+[fit...]
+[fit done; time: 2662.3645899295807 s]
+[predict train...]
+[predict train done; time: 13.666558265686035 s, acc: 0.9870554759168141]
+[predict test...]
+[predict test done; time: 4.493467092514038 s, acc: 0.986517376312425]
+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+[clf: FastRealBoostBins(T=2048, B=8, outliers_ratio=0.05, logit_max: 2.0, fit_mode='numba_cuda', decision_function_mode='numba_cuda')]
+[fit...]
+[fit done; time: 8908.143600463867 s]
+[predict train...]
+[predict train done; time: 5.0600340366363525 s, acc: 0.999961256828484]
+[predict test...]
+[predict test done; time: 1.276688814163208 s, acc: 0.9906887244456498]
+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+[results summary for experiment 7/7 ({'T': 2048, 'B': 8, 'data_name': 'HaGRID-HFs (PALM, 10NPI)', 'n': 18225, 'm_train': 232299, 'm_test': 77433}):]
+[0: HistGradientBoostingClassifier(early_stopping=False, max_bins=8, max_depth=1, max_iter=2048)]
+[0: {'time_fit': [2662.3645899295807, 3.3459518032049425], 'time_predict_train': [13.666558265686035, 1.0], 'time_predict_test': [4.493467092514038, 1.0], 'acc_train': [0.9870554759168141, 1.0130750309648833], 'acc_test': [0.986517376312425, 1.0042283574860256]}]
+[1: FastRealBoostBins(T=2048, B=8, outliers_ratio=0.05, logit_max: 2.0, fit_mode='numba_cuda', decision_function_mode='numba_cuda')]
+[1: {'time_fit': [8908.143600463867, 1.0], 'time_predict_train': [5.0600340366363525, 2.7008826752420134], 'time_predict_test': [1.276688814163208, 3.519625959485854], 'acc_train': [0.999961256828484, 1.0], 'acc_test': [0.9906887244456498, 1.0]}]
+[about to generate wanted plots]
+EXPERIMENT REAL DATA DONE. [time: 25122.358617544174 s, hash string: real_1178284368_20230627]
+MAIN-EXPERIMENTER DONE.
