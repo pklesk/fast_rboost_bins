@@ -1,0 +1,210 @@
+2023-06-27 09:48:52.841639: I tensorflow/core/platform/cpu_feature_guard.cc:182] This TensorFlow binary is optimized to use available CPU instructions in performance-critical operations.
+To enable the following instructions: AVX2 FMA, in other operations, rebuild TensorFlow with the appropriate compiler flags.
+2023-06-27 09:48:53.376289: W tensorflow/compiler/tf2tensorrt/utils/py_utils.cc:38] TF-TRT Warning: Could not find TensorRT
+DEMONSTRATION OF "FAST REAL BOOST WITH BINS": AN ENSEMBLE CLASSIFIER FOR FAST PREDICTIONS IMPLEMENTED IN PYTHON VIA NUMBA.JIT AND NUMBA.CUDA.
+MAIN-EXPERIMENTER STARTING...]
+CPU AND SYSTEM PROPS: {'cpu_name': 'Intel(R) Core(TM) i7-10700 CPU @ 2.90GHz', 'ram_size': '125.7 GB', 'os_name': 'Linux 5.15.0-71-generic', 'os_version': '#78~20.04.1-Ubuntu SMP Wed Apr 19 11:26:48 UTC 2023', 'os_machine': 'x86_64'}
+GPU PROPS: {'name': 'NVIDIA GeForce RTX 3090', 'max_threads_per_block': 1024, 'max_block_dim_x': 1024, 'max_block_dim_y': 1024, 'max_block_dim_z': 64, 'max_grid_dim_x': 2147483647, 'max_grid_dim_y': 65535, 'max_grid_dim_z': 65535, 'max_shared_memory_per_block': 49152, 'async_engine_count': 2, 'can_map_host_memory': 1, 'multiprocessor_count': 82, 'warp_size': 32, 'unified_addressing': 1, 'pci_bus_id': 1, 'pci_device_id': 0, 'compute_capability': (8, 6), 'cores_per_SM': 128, 'cores_total': 10496}
+[data kind: real, real data flags: [False, False, False, True, False, False, False], clfs flags: [False, False, True, False, True], seed: 0]
+EXPERIMENTER REAL DATA...
+[experiment hash string: real_2576942544_20230627]
+[data definitions:]
+[data def 0 (active: False): (name short: 'fddb-patches', reading function: read_data_fddb_patches(), name full: 'FDDB-PATCHES (3NPI))']
+[data def 1 (active: False): (name short: 'cifar-10', reading function: read_data_cifar_10(), name full: 'CIFAR-10 (AIRPLANE))']
+[data def 2 (active: False): (name short: 'mnist-b', reading function: read_data_mnist_b(), name full: 'MNIST-B (DIGIT 0))']
+[data def 3 (active: True): (name short: 'fddb-hfs-100', reading function: read_data_fddb_haar_npi_100(), name full: 'FDDB-HFs (100NPI))']
+[data def 4 (active: False): (name short: 'fddb-hfs-300', reading function: read_data_fddb_haar_npi_300(), name full: 'FDDB-HFs (300NPI))']
+[data def 5 (active: False): (name short: 'hagrid-hfs-10', reading function: read_data_hagrid_haar_npi_10(), name full: 'HaGRID-HFs (PALM, 10NPI))']
+[data def 6 (active: False): (name short: 'hagrid-hfs-30', reading function: read_data_hagrid_haar_npi_30(), name full: 'HaGRID-HFs (PALM, 30NPI))']
+[clfs definitions:]
+[clf def 0 (active: False): AdaBoostClassifier({'algorithm': 'SAMME.R'})]
+[clf def 1 (active: False): GradientBoostingClassifier({'max_depth': 1})]
+[clf def 2 (active: True): HistGradientBoostingClassifier({'max_depth': 1, 'early_stopping': False})]
+[clf def 3 (active: False): FastRealBoostBins({'fit_mode': 'numba_jit', 'decision_function_mode': 'numba_jit'})]
+[clf def 4 (active: True): FastRealBoostBins({'fit_mode': 'numba_cuda', 'decision_function_mode': 'numba_cuda'})]
+[other settings -> Ts: [32, 64, 128, 256, 512, 1024, 2048], Bs: [8], seed: 0]
+UNPICKLE OBJECTS... [from file: ../data/data_face_n_18225_S_5_P_5_NPI_100_SEED_0.bin]
+UNPICKLE OBJECTS DONE. [time: 2.7882041931152344 s]
+====================================================================================================================================================================================================
+[experiment: 1/7, params: ('FDDB-HFs (100NPI)', 32, 8)]
+[description: {'T': 32, 'B': 8, 'data_name': 'FDDB-HFs (100NPI)', 'n': 18225, 'm_train': 260580, 'm_test': 28463}]
+====================================================================================================================================================================================================
+[clf: HistGradientBoostingClassifier(early_stopping=False, max_bins=8, max_depth=1, max_iter=32)]
+[fit...]
+[fit done; time: 307.9064259529114 s]
+[predict train...]
+[predict train done; time: 3.9129583835601807 s, acc: 0.9843426203085425]
+[predict test...]
+[predict test done; time: 0.42849206924438477 s, acc: 0.9837332677511155]
+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+[clf: FastRealBoostBins(T=32, B=8, outliers_ratio=0.05, logit_max: 2.0, fit_mode='numba_cuda', decision_function_mode='numba_cuda')]
+[fit...]
+[fit done; time: 326.70433259010315 s]
+[predict train...]
+[predict train done; time: 0.11404871940612793 s, acc: 0.991100621690076]
+[predict test...]
+[predict test done; time: 0.009311199188232422 s, acc: 0.9909707339352845]
+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+[results summary for experiment 1/7 ({'T': 32, 'B': 8, 'data_name': 'FDDB-HFs (100NPI)', 'n': 18225, 'm_train': 260580, 'm_test': 28463}):]
+[0: HistGradientBoostingClassifier(early_stopping=False, max_bins=8, max_depth=1, max_iter=32)]
+[0: {'time_fit': [307.9064259529114, 1.061050712335788], 'time_predict_train': [3.9129583835601807, 1.0], 'time_predict_test': [0.42849206924438477, 1.0], 'acc_train': [0.9843426203085425, 1.0068654970760234], 'acc_test': [0.9837332677511155, 1.0073571428571428]}]
+[1: FastRealBoostBins(T=32, B=8, outliers_ratio=0.05, logit_max: 2.0, fit_mode='numba_cuda', decision_function_mode='numba_cuda')]
+[1: {'time_fit': [326.70433259010315, 1.0], 'time_predict_train': [0.11404871940612793, 34.30953371450074], 'time_predict_test': [0.009311199188232422, 46.018999334255135], 'acc_train': [0.991100621690076, 1.0], 'acc_test': [0.9909707339352845, 1.0]}]
+====================================================================================================================================================================================================
+[experiment: 2/7, params: ('FDDB-HFs (100NPI)', 64, 8)]
+[description: {'T': 64, 'B': 8, 'data_name': 'FDDB-HFs (100NPI)', 'n': 18225, 'm_train': 260580, 'm_test': 28463}]
+====================================================================================================================================================================================================
+[clf: HistGradientBoostingClassifier(early_stopping=False, max_bins=8, max_depth=1, max_iter=64)]
+[fit...]
+[fit done; time: 350.67355155944824 s]
+[predict train...]
+[predict train done; time: 4.029519081115723 s, acc: 0.9863650318520224]
+[predict test...]
+[predict test done; time: 0.4402308464050293 s, acc: 0.9857007342866178]
+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+[clf: FastRealBoostBins(T=64, B=8, outliers_ratio=0.05, logit_max: 2.0, fit_mode='numba_cuda', decision_function_mode='numba_cuda')]
+[fit...]
+[fit done; time: 479.9784080982208 s]
+[predict train...]
+[predict train done; time: 0.20737528800964355 s, acc: 0.992006293652621]
+[predict test...]
+[predict test done; time: 0.016779661178588867 s, acc: 0.99177880054808]
+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+[results summary for experiment 2/7 ({'T': 64, 'B': 8, 'data_name': 'FDDB-HFs (100NPI)', 'n': 18225, 'm_train': 260580, 'm_test': 28463}):]
+[0: HistGradientBoostingClassifier(early_stopping=False, max_bins=8, max_depth=1, max_iter=64)]
+[0: {'time_fit': [350.67355155944824, 1.3687328455874497], 'time_predict_train': [4.029519081115723, 1.0], 'time_predict_test': [0.4402308464050293, 1.0], 'acc_train': [0.9863650318520224, 1.0057192435036009], 'acc_test': [0.9857007342866178, 1.00616623895067]}]
+[1: FastRealBoostBins(T=64, B=8, outliers_ratio=0.05, logit_max: 2.0, fit_mode='numba_cuda', decision_function_mode='numba_cuda')]
+[1: {'time_fit': [479.9784080982208, 1.0], 'time_predict_train': [0.20737528800964355, 19.431047545686052], 'time_predict_test': [0.016779661178588867, 26.23597948251609], 'acc_train': [0.992006293652621, 1.0], 'acc_test': [0.99177880054808, 1.0]}]
+====================================================================================================================================================================================================
+[experiment: 3/7, params: ('FDDB-HFs (100NPI)', 128, 8)]
+[description: {'T': 128, 'B': 8, 'data_name': 'FDDB-HFs (100NPI)', 'n': 18225, 'm_train': 260580, 'm_test': 28463}]
+====================================================================================================================================================================================================
+[clf: HistGradientBoostingClassifier(early_stopping=False, max_bins=8, max_depth=1, max_iter=128)]
+[fit...]
+[fit done; time: 435.45070457458496 s]
+[predict train...]
+[predict train done; time: 4.455279350280762 s, acc: 0.9890129710645483]
+[predict test...]
+[predict test done; time: 0.4862983226776123 s, acc: 0.9887573340828444]
+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+[clf: FastRealBoostBins(T=128, B=8, outliers_ratio=0.05, logit_max: 2.0, fit_mode='numba_cuda', decision_function_mode='numba_cuda')]
+[fit...]
+[fit done; time: 786.9582333564758 s]
+[predict train...]
+[predict train done; time: 0.3993558883666992 s, acc: 0.9929196408012895]
+[predict test...]
+[predict test done; time: 0.03204059600830078 s, acc: 0.9923058005129466]
+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+[results summary for experiment 3/7 ({'T': 128, 'B': 8, 'data_name': 'FDDB-HFs (100NPI)', 'n': 18225, 'm_train': 260580, 'm_test': 28463}):]
+[0: HistGradientBoostingClassifier(early_stopping=False, max_bins=8, max_depth=1, max_iter=128)]
+[0: {'time_fit': [435.45070457458496, 1.8072269147555917], 'time_predict_train': [4.455279350280762, 1.0], 'time_predict_test': [0.4862983226776123, 1.0], 'acc_train': [0.9890129710645483, 1.00395006926202], 'acc_test': [0.9887573340828444, 1.0035888142699783]}]
+[1: FastRealBoostBins(T=128, B=8, outliers_ratio=0.05, logit_max: 2.0, fit_mode='numba_cuda', decision_function_mode='numba_cuda')]
+[1: {'time_fit': [786.9582333564758, 1.0], 'time_predict_train': [0.3993558883666992, 11.156162911487623], 'time_predict_test': [0.03204059600830078, 15.177567937613478], 'acc_train': [0.9929196408012895, 1.0], 'acc_test': [0.9923058005129466, 1.0]}]
+====================================================================================================================================================================================================
+[experiment: 4/7, params: ('FDDB-HFs (100NPI)', 256, 8)]
+[description: {'T': 256, 'B': 8, 'data_name': 'FDDB-HFs (100NPI)', 'n': 18225, 'm_train': 260580, 'm_test': 28463}]
+====================================================================================================================================================================================================
+[clf: HistGradientBoostingClassifier(early_stopping=False, max_bins=8, max_depth=1, max_iter=256)]
+[fit...]
+[fit done; time: 604.5054020881653 s]
+[predict train...]
+[predict train done; time: 5.113492727279663 s, acc: 0.9910200322357817]
+[predict test...]
+[predict test done; time: 0.5543992519378662 s, acc: 0.99083020061132]
+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+[clf: FastRealBoostBins(T=256, B=8, outliers_ratio=0.05, logit_max: 2.0, fit_mode='numba_cuda', decision_function_mode='numba_cuda')]
+[fit...]
+[fit done; time: 1399.5751702785492 s]
+[predict train...]
+[predict train done; time: 0.7494823932647705 s, acc: 0.9943894389438944]
+[predict test...]
+[predict test done; time: 0.05928516387939453 s, acc: 0.9930787337947511]
+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+[results summary for experiment 4/7 ({'T': 256, 'B': 8, 'data_name': 'FDDB-HFs (100NPI)', 'n': 18225, 'm_train': 260580, 'm_test': 28463}):]
+[0: HistGradientBoostingClassifier(early_stopping=False, max_bins=8, max_depth=1, max_iter=256)]
+[0: {'time_fit': [604.5054020881653, 2.3152401375470677], 'time_predict_train': [5.113492727279663, 1.0], 'time_predict_test': [0.5543992519378662, 1.0], 'acc_train': [0.9910200322357817, 1.0033999380421315], 'acc_test': [0.99083020061132, 1.0022693425998157]}]
+[1: FastRealBoostBins(T=256, B=8, outliers_ratio=0.05, logit_max: 2.0, fit_mode='numba_cuda', decision_function_mode='numba_cuda')]
+[1: {'time_fit': [1399.5751702785492, 1.0], 'time_predict_train': [0.7494823932647705, 6.822698936268692], 'time_predict_test': [0.05928516387939453, 9.351399501327114], 'acc_train': [0.9943894389438944, 1.0], 'acc_test': [0.9930787337947511, 1.0]}]
+====================================================================================================================================================================================================
+[experiment: 5/7, params: ('FDDB-HFs (100NPI)', 512, 8)]
+[description: {'T': 512, 'B': 8, 'data_name': 'FDDB-HFs (100NPI)', 'n': 18225, 'm_train': 260580, 'm_test': 28463}]
+====================================================================================================================================================================================================
+[clf: HistGradientBoostingClassifier(early_stopping=False, max_bins=8, max_depth=1, max_iter=512)]
+[fit...]
+[fit done; time: 938.8149797916412 s]
+[predict train...]
+[predict train done; time: 6.638131380081177 s, acc: 0.9926778724384067]
+[predict test...]
+[predict test done; time: 0.7198553085327148 s, acc: 0.9924814671679022]
+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+[clf: FastRealBoostBins(T=512, B=8, outliers_ratio=0.05, logit_max: 2.0, fit_mode='numba_cuda', decision_function_mode='numba_cuda')]
+[fit...]
+[fit done; time: 2626.208943128586 s]
+[predict train...]
+[predict train done; time: 1.5075175762176514 s, acc: 0.9967840970143526]
+[predict test...]
+[predict test done; time: 0.11913394927978516 s, acc: 0.9932895337806977]
+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+[results summary for experiment 5/7 ({'T': 512, 'B': 8, 'data_name': 'FDDB-HFs (100NPI)', 'n': 18225, 'm_train': 260580, 'm_test': 28463}):]
+[0: HistGradientBoostingClassifier(early_stopping=False, max_bins=8, max_depth=1, max_iter=512)]
+[0: {'time_fit': [938.8149797916412, 2.7973658278348323], 'time_predict_train': [6.638131380081177, 1.0], 'time_predict_test': [0.7198553085327148, 1.0], 'acc_train': [0.9926778724384067, 1.0041365126492237], 'acc_test': [0.9924814671679022, 1.0008141881128536]}]
+[1: FastRealBoostBins(T=512, B=8, outliers_ratio=0.05, logit_max: 2.0, fit_mode='numba_cuda', decision_function_mode='numba_cuda')]
+[1: {'time_fit': [2626.208943128586, 1.0], 'time_predict_train': [1.5075175762176514, 4.403352561060145], 'time_predict_test': [0.11913394927978516, 6.042402798568696], 'acc_train': [0.9967840970143526, 1.0], 'acc_test': [0.9932895337806977, 1.0]}]
+====================================================================================================================================================================================================
+[experiment: 6/7, params: ('FDDB-HFs (100NPI)', 1024, 8)]
+[description: {'T': 1024, 'B': 8, 'data_name': 'FDDB-HFs (100NPI)', 'n': 18225, 'm_train': 260580, 'm_test': 28463}]
+====================================================================================================================================================================================================
+[clf: HistGradientBoostingClassifier(early_stopping=False, max_bins=8, max_depth=1, max_iter=1024)]
+[fit...]
+[fit done; time: 1608.7454237937927 s]
+[predict train...]
+[predict train done; time: 9.518207311630249 s, acc: 0.99395579092793]
+[predict test...]
+The PostScript backend does not support transparency; partially transparent artists will be rendered opaque.
+The PostScript backend does not support transparency; partially transparent artists will be rendered opaque.
+The PostScript backend does not support transparency; partially transparent artists will be rendered opaque.
+The PostScript backend does not support transparency; partially transparent artists will be rendered opaque.
+The PostScript backend does not support transparency; partially transparent artists will be rendered opaque.
+[predict test done; time: 1.031872272491455 s, acc: 0.9936760004216]
+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+[clf: FastRealBoostBins(T=1024, B=8, outliers_ratio=0.05, logit_max: 2.0, fit_mode='numba_cuda', decision_function_mode='numba_cuda')]
+[fit...]
+[fit done; time: 5078.673530340195 s]
+[predict train...]
+[predict train done; time: 2.9506425857543945 s, acc: 0.9998234707191649]
+[predict test...]
+[predict test done; time: 0.23406434059143066 s, acc: 0.9936760004216]
+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+[results summary for experiment 6/7 ({'T': 1024, 'B': 8, 'data_name': 'FDDB-HFs (100NPI)', 'n': 18225, 'm_train': 260580, 'm_test': 28463}):]
+[0: HistGradientBoostingClassifier(early_stopping=False, max_bins=8, max_depth=1, max_iter=1024)]
+[0: {'time_fit': [1608.7454237937927, 3.156915603441787], 'time_predict_train': [9.518207311630249, 1.0], 'time_predict_test': [1.031872272491455, 1.0], 'acc_train': [0.99395579092793, 1.005903360938978], 'acc_test': [0.9936760004216, 1.0]}]
+[1: FastRealBoostBins(T=1024, B=8, outliers_ratio=0.05, logit_max: 2.0, fit_mode='numba_cuda', decision_function_mode='numba_cuda')]
+[1: {'time_fit': [5078.673530340195, 1.0], 'time_predict_train': [2.9506425857543945, 3.225808289212608], 'time_predict_test': [0.23406434059143066, 4.40849840639601], 'acc_train': [0.9998234707191649, 1.0], 'acc_test': [0.9936760004216, 1.0]}]
+====================================================================================================================================================================================================
+[experiment: 7/7, params: ('FDDB-HFs (100NPI)', 2048, 8)]
+[description: {'T': 2048, 'B': 8, 'data_name': 'FDDB-HFs (100NPI)', 'n': 18225, 'm_train': 260580, 'm_test': 28463}]
+====================================================================================================================================================================================================
+[clf: HistGradientBoostingClassifier(early_stopping=False, max_bins=8, max_depth=1, max_iter=2048)]
+[fit...]
+[fit done; time: 2948.2563650608063 s]
+[predict train...]
+[predict train done; time: 15.290249347686768 s, acc: 0.9950725305088648]
+[predict test...]
+[predict test done; time: 1.6728427410125732 s, acc: 0.9941678670554756]
+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+[clf: FastRealBoostBins(T=2048, B=8, outliers_ratio=0.05, logit_max: 2.0, fit_mode='numba_cuda', decision_function_mode='numba_cuda')]
+[fit...]
+[fit done; time: 9985.78899550438 s]
+[predict train...]
+[predict train done; time: 5.886939287185669 s, acc: 1.0]
+[predict test...]
+[predict test done; time: 0.4647676944732666 s, acc: 0.9941678670554756]
+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+[results summary for experiment 7/7 ({'T': 2048, 'B': 8, 'data_name': 'FDDB-HFs (100NPI)', 'n': 18225, 'm_train': 260580, 'm_test': 28463}):]
+[0: HistGradientBoostingClassifier(early_stopping=False, max_bins=8, max_depth=1, max_iter=2048)]
+[0: {'time_fit': [2948.2563650608063, 3.3870151571091163], 'time_predict_train': [15.290249347686768, 1.0], 'time_predict_test': [1.6728427410125732, 1.0], 'acc_train': [0.9950725305088648, 1.0049518696778972], 'acc_test': [0.9941678670554756, 1.0]}]
+[1: FastRealBoostBins(T=2048, B=8, outliers_ratio=0.05, logit_max: 2.0, fit_mode='numba_cuda', decision_function_mode='numba_cuda')]
+[1: {'time_fit': [9985.78899550438, 1.0], 'time_predict_train': [5.886939287185669, 2.5973173158027385], 'time_predict_test': [0.4647676944732666, 3.599309420394311], 'acc_train': [1.0, 1.0], 'acc_test': [0.9941678670554756, 1.0]}]
+[about to generate wanted plots]
+EXPERIMENT REAL DATA DONE. [time: 27948.09311914444 s, hash string: real_2576942544_20230627]
+MAIN-EXPERIMENTER DONE.
