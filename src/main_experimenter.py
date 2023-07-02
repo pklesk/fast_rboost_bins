@@ -30,11 +30,11 @@ REAL_DATA_DEFS_DEFAULT = [
     ("hagrid-hfs-10", "read_data_hagrid_haar_npi_10", "HaGRID-HFs (PALM, 10NPI)"),    
     ("hagrid-hfs-30", "read_data_hagrid_haar_npi_30", "HaGRID-HFs (PALM, 30NPI)")    
     ]
-REAL_DATA_FLAGS_DEFAULT = [False, False, False, True, False, False, False]
+REAL_DATA_FLAGS_DEFAULT = [False, False, False, False, True, False, False]
 CLFS_DEFS_DEFAULT = [
         (AdaBoostClassifier, {"algorithm": "SAMME.R"}, {"color": "black"}),
         (GradientBoostingClassifier, {"max_depth": 1}, {"color": "green"}),
-        (HistGradientBoostingClassifier, {"max_depth": 1, "early_stopping": False}, {"color": "orange"}),
+        (HistGradientBoostingClassifier, {"max_depth": 1, "early_stopping": False, "verbose": 1}, {"color": "orange"}), # TODO to remove verbosity
         (FastRealBoostBins, {"fit_mode": "numba_jit", "decision_function_mode": "numba_jit"}, {"color": "blue"}),
         (FastRealBoostBins, {"fit_mode": "numba_cuda", "decision_function_mode": "numba_cuda"}, {"color": "red"})        
         ]
