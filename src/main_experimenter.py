@@ -38,7 +38,7 @@ CLFS_DEFS_DEFAULT = [
         (FastRealBoostBins, {"fit_mode": "numba_jit", "decision_function_mode": "numba_jit"}, {"color": "blue"}),
         (FastRealBoostBins, {"fit_mode": "numba_cuda", "decision_function_mode": "numba_cuda"}, {"color": "red"})        
         ]
-CLFS_FLAGS_DEFAULT = [False, False, False, False, True]
+CLFS_FLAGS_DEFAULT = [True, True, True, True, True]
 RANDOM_DTYPE_DEFAULT = np.int8
 NMM_MAGN_ORDERS_DEFAULT = [(5, 5, 4)] # only in case of data kind "random"
 TS_DEFAULT = [16, 32, 64, 128, 256, 512, 1024]
