@@ -1,0 +1,44 @@
+2023-07-03 19:03:19.878494: I tensorflow/core/platform/cpu_feature_guard.cc:182] This TensorFlow binary is optimized to use available CPU instructions in performance-critical operations.
+To enable the following instructions: AVX2 FMA, in other operations, rebuild TensorFlow with the appropriate compiler flags.
+2023-07-03 19:03:20.416058: W tensorflow/compiler/tf2tensorrt/utils/py_utils.cc:38] TF-TRT Warning: Could not find TensorRT
+DEMONSTRATION OF "FAST REAL BOOST WITH BINS": AN ENSEMBLE CLASSIFIER FOR FAST PREDICTIONS IMPLEMENTED IN PYTHON VIA NUMBA.JIT AND NUMBA.CUDA.
+MAIN-EXPERIMENTER STARTING...]
+CPU AND SYSTEM PROPS: {'cpu_name': 'Intel(R) Core(TM) i7-10700 CPU @ 2.90GHz', 'ram_size': '125.7 GB', 'os_name': 'Linux 5.15.0-71-generic', 'os_version': '#78~20.04.1-Ubuntu SMP Wed Apr 19 11:26:48 UTC 2023', 'os_machine': 'x86_64'}
+GPU PROPS: {'name': 'NVIDIA GeForce RTX 3090', 'max_threads_per_block': 1024, 'max_block_dim_x': 1024, 'max_block_dim_y': 1024, 'max_block_dim_z': 64, 'max_grid_dim_x': 2147483647, 'max_grid_dim_y': 65535, 'max_grid_dim_z': 65535, 'max_shared_memory_per_block': 49152, 'async_engine_count': 2, 'can_map_host_memory': 1, 'multiprocessor_count': 82, 'warp_size': 32, 'unified_addressing': 1, 'pci_bus_id': 1, 'pci_device_id': 0, 'compute_capability': (8, 6), 'cores_per_SM': 128, 'cores_total': 10496}
+[data kind: random, clfs flags: [False, False, True, False, True], seed: 0]
+EXPERIMENTER RANDOM DATA...
+[experiment hash string: random_1568050911_20230703]
+[clfs definitions:]
+[clf def 0 (active: False): AdaBoostClassifier({'algorithm': 'SAMME.R'})]
+[clf def 1 (active: False): GradientBoostingClassifier({'max_depth': 1})]
+[clf def 2 (active: True): HistGradientBoostingClassifier({'max_depth': 1, 'early_stopping': False})]
+[clf def 3 (active: False): FastRealBoostBins({'fit_mode': 'numba_jit', 'decision_function_mode': 'numba_jit'})]
+[clf def 4 (active: True): FastRealBoostBins({'fit_mode': 'numba_cuda', 'decision_function_mode': 'numba_cuda'})]
+[other settings -> dtype: int8, nmm_magn_orders: [(4, 4, 5)], Ts: [2048], Bs: [8], seed: 0]
+====================================================================================================================================================================================================
+[experiment: 1/1, params: ((4, 4, 5), 2048, 8)]
+[description: {'T': 2048, 'B': 8, 'n': 10000, 'm_train': 10000, 'm_test': 100000}]
+====================================================================================================================================================================================================
+[clf: HistGradientBoostingClassifier(early_stopping=False, max_bins=8, max_depth=1, max_iter=2048)]
+[fit...]
+[fit done; time: 64.55886054039001 s]
+[predict train...]
+[predict train done; time: 0.5408825874328613 s, acc: 0.8056]
+[predict test...]
+[predict test done; time: 5.2563254833221436 s, acc: 0.50298]
+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+[clf: FastRealBoostBins(T=2048, B=8, outliers_ratio=0.05, logit_max: 2.0, fit_mode='numba_cuda', decision_function_mode='numba_cuda')]
+[fit...]
+[fit done; time: 214.3933002948761 s]
+[predict train...]
+[predict train done; time: 0.11770105361938477 s, acc: 1.0]
+[predict test...]
+[predict test done; time: 1.2955522537231445 s, acc: 0.49741]
+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+[results summary for experiment 1/1 ({'T': 2048, 'B': 8, 'n': 10000, 'm_train': 10000, 'm_test': 100000}):]
+[0: HistGradientBoostingClassifier(early_stopping=False, max_bins=8, max_depth=1, max_iter=2048)]
+[0: {'time_fit': [64.55886054039001, 3.320896597311302], 'time_predict_train': [0.5408825874328613, 1.0], 'time_predict_test': [5.2563254833221436, 1.0], 'acc_train': [0.8056, 1.2413108242303874], 'acc_test': [0.50298, 1.0]}]
+[1: FastRealBoostBins(T=2048, B=8, outliers_ratio=0.05, logit_max: 2.0, fit_mode='numba_cuda', decision_function_mode='numba_cuda')]
+[1: {'time_fit': [214.3933002948761, 1.0], 'time_predict_train': [0.11770105361938477, 4.595392911111381], 'time_predict_test': [1.2955522537231445, 4.057208397589962], 'acc_train': [1.0, 1.0], 'acc_test': [0.49741, 1.0111980056693672]}]
+EXPERIMENT RANDOM DATA DONE. [time: 292.6471345424652 s, hash string: random_1568050911_20230703]
+MAIN-EXPERIMENTER DONE.
