@@ -30,23 +30,23 @@ REAL_DATA_DEFS_DEFAULT = [
     ("hagrid-hfs-10", "read_data_hagrid_haar_npi_10", "HaGRID-HFs (PALM, 10NPI)"),    
     ("hagrid-hfs-30", "read_data_hagrid_haar_npi_30", "HaGRID-HFs (PALM, 30NPI)")    
     ]
-REAL_DATA_FLAGS_DEFAULT = [True, False, False, False, False, False, False]
+REAL_DATA_FLAGS_DEFAULT = [False, False, False, False, True, False, False]
 CLFS_DEFS_DEFAULT = [
         (AdaBoostClassifier, {"algorithm": "SAMME.R"}, {"color": "black"}),
         (GradientBoostingClassifier, {"max_depth": 1}, {"color": "green"}),
-        (HistGradientBoostingClassifier, {"max_depth": 1, "early_stopping": False, "verbose": 1}, {"color": "orange"}), # TODO to remove verbosity
+        (HistGradientBoostingClassifier, {"max_depth": 1, "early_stopping": False}, {"color": "orange"}),
         (FastRealBoostBins, {"fit_mode": "numba_jit", "decision_function_mode": "numba_jit"}, {"color": "blue"}),
         (FastRealBoostBins, {"fit_mode": "numba_cuda", "decision_function_mode": "numba_cuda"}, {"color": "red"})        
         ]
-CLFS_FLAGS_DEFAULT = [False, False, True, False, True]
+CLFS_FLAGS_DEFAULT = [False, False, False, False, True]
 RANDOM_DTYPE_DEFAULT = np.int8
 NMM_MAGN_ORDERS_DEFAULT = [(5, 5, 4)] # only in case of data kind "random"
 #TS_DEFAULT = [16, 32, 64, 128, 256, 512, 1024]
 #TS_DEFAULT = [32, 64, 128, 256, 512, 1024, 2048]
-TS_DEFAULT = [8, 16, 32]
+TS_DEFAULT = [2048]
 BS_DEFAULT = [8]
 SEED_DEFAULT = 0
-PLOTS_DEFAULT = True
+PLOTS_DEFAULT = False
 PLOTS_ARG_NAME_DEFAULT = "T"
 PLOTS_VALUES_NAMES_DEFAULT = ["acc_test", "acc_train", "time_fit", "time_predict_train", "time_predict_test"]
 EPS = 1e-9
