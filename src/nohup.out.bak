@@ -1,0 +1,44 @@
+2023-07-03 04:58:51.617896: I tensorflow/core/platform/cpu_feature_guard.cc:182] This TensorFlow binary is optimized to use available CPU instructions in performance-critical operations.
+To enable the following instructions: AVX2 FMA, in other operations, rebuild TensorFlow with the appropriate compiler flags.
+2023-07-03 04:58:54.582199: W tensorflow/compiler/tf2tensorrt/utils/py_utils.cc:38] TF-TRT Warning: Could not find TensorRT
+DEMONSTRATION OF "FAST REAL BOOST WITH BINS": AN ENSEMBLE CLASSIFIER FOR FAST PREDICTIONS IMPLEMENTED IN PYTHON VIA NUMBA.JIT AND NUMBA.CUDA.
+MAIN-EXPERIMENTER STARTING...]
+CPU AND SYSTEM PROPS: {'cpu_name': 'Intel(R) Core(TM) i7-10700 CPU @ 2.90GHz', 'ram_size': '125.7 GB', 'os_name': 'Linux 5.15.0-71-generic', 'os_version': '#78~20.04.1-Ubuntu SMP Wed Apr 19 11:26:48 UTC 2023', 'os_machine': 'x86_64'}
+GPU PROPS: {'name': 'NVIDIA GeForce RTX 3090', 'max_threads_per_block': 1024, 'max_block_dim_x': 1024, 'max_block_dim_y': 1024, 'max_block_dim_z': 64, 'max_grid_dim_x': 2147483647, 'max_grid_dim_y': 65535, 'max_grid_dim_z': 65535, 'max_shared_memory_per_block': 49152, 'async_engine_count': 2, 'can_map_host_memory': 1, 'multiprocessor_count': 82, 'warp_size': 32, 'unified_addressing': 1, 'pci_bus_id': 1, 'pci_device_id': 0, 'compute_capability': (8, 6), 'cores_per_SM': 128, 'cores_total': 10496}
+[data kind: real, real data flags: [False, False, False, False, False, False, True], clfs flags: [False, False, False, False, True], seed: 0]
+EXPERIMENTER REAL DATA...
+[experiment hash string: real_2871521584_20230703]
+[data definitions:]
+[data def 0 (active: False): (name short: 'fddb-patches', reading function: read_data_fddb_patches(), name full: 'FDDB-PATCHES (3NPI))']
+[data def 1 (active: False): (name short: 'cifar-10', reading function: read_data_cifar_10(), name full: 'CIFAR-10 (AIRPLANE))']
+[data def 2 (active: False): (name short: 'mnist-b', reading function: read_data_mnist_b(), name full: 'MNIST-B (DIGIT 0))']
+[data def 3 (active: False): (name short: 'fddb-hfs-100', reading function: read_data_fddb_haar_npi_100(), name full: 'FDDB-HFs (100NPI))']
+[data def 4 (active: False): (name short: 'fddb-hfs-300', reading function: read_data_fddb_haar_npi_300(), name full: 'FDDB-HFs (300NPI))']
+[data def 5 (active: False): (name short: 'hagrid-hfs-10', reading function: read_data_hagrid_haar_npi_10(), name full: 'HaGRID-HFs (PALM, 10NPI))']
+[data def 6 (active: True): (name short: 'hagrid-hfs-30', reading function: read_data_hagrid_haar_npi_30(), name full: 'HaGRID-HFs (PALM, 30NPI))']
+[clfs definitions:]
+[clf def 0 (active: False): AdaBoostClassifier({'algorithm': 'SAMME.R'})]
+[clf def 1 (active: False): GradientBoostingClassifier({'max_depth': 1})]
+[clf def 2 (active: False): HistGradientBoostingClassifier({'max_depth': 1, 'early_stopping': False})]
+[clf def 3 (active: False): FastRealBoostBins({'fit_mode': 'numba_jit', 'decision_function_mode': 'numba_jit'})]
+[clf def 4 (active: True): FastRealBoostBins({'fit_mode': 'numba_cuda', 'decision_function_mode': 'numba_cuda'})]
+[other settings -> Ts: [2048], Bs: [8], seed: 0]
+UNPICKLE OBJECTS... [from file: ../data/data_hand_n_18225_S_5_P_5_NPI_30_SEED_0.bin]
+UNPICKLE OBJECTS DONE. [time: 316.2943103313446 s]
+====================================================================================================================================================================================================
+[experiment: 1/1, params: ('HaGRID-HFs (PALM, 30NPI)', 2048, 8)]
+[description: {'T': 2048, 'B': 8, 'data_name': 'HaGRID-HFs (PALM, 30NPI)', 'n': 18225, 'm_train': 657189, 'm_test': 219063}]
+====================================================================================================================================================================================================
+[clf: FastRealBoostBins(T=2048, B=8, outliers_ratio=0.05, logit_max: 2.0, fit_mode='numba_cuda', decision_function_mode='numba_cuda')]
+[fit...]
+[fit done; time: 25130.025926828384 s]
+[predict train...]
+[predict train done; time: 17.608346462249756 s, acc: 0.9997854498477607]
+[predict test...]
+[predict test done; time: 4.919656038284302 s, acc: 0.9953483701035775]
+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+[results summary for experiment 1/1 ({'T': 2048, 'B': 8, 'data_name': 'HaGRID-HFs (PALM, 30NPI)', 'n': 18225, 'm_train': 657189, 'm_test': 219063}):]
+[0: FastRealBoostBins(T=2048, B=8, outliers_ratio=0.05, logit_max: 2.0, fit_mode='numba_cuda', decision_function_mode='numba_cuda')]
+[0: {'time_fit': [25130.025926828384, 1.0], 'time_predict_train': [17.608346462249756, 1.0], 'time_predict_test': [4.919656038284302, 1.0], 'acc_train': [0.9997854498477607, 1.0], 'acc_test': [0.9953483701035775, 1.0]}]
+EXPERIMENT REAL DATA DONE. [time: 25468.850832223892 s, hash string: real_2871521584_20230703]
+MAIN-EXPERIMENTER DONE.
