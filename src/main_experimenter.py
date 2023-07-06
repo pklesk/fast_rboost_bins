@@ -40,7 +40,7 @@ CLFS_DEFS_DEFAULT = [
         ]
 CLFS_FLAGS_DEFAULT = [False, False, True, False, True]
 RANDOM_DTYPE_DEFAULT = np.int8
-NMM_MAGN_ORDERS_DEFAULT = [(4, 5, 5)] # only in case of data kind "random"
+NMM_MAGN_ORDERS_DEFAULT = [(5, 3, 5)] # only in case of data kind "random"
 #TS_DEFAULT = [16, 32, 64, 128, 256, 512, 1024]
 TS_DEFAULT = [2048]
 BS_DEFAULT = [8]
