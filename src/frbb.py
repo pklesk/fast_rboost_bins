@@ -761,7 +761,7 @@ class FastRealBoostBins(BaseEstimator, ClassifierMixin):
         tpb = cuda.blockDim.x
         tx = cuda.threadIdx.x
         T, B = logits.shape
-        fpt = int((T + tpb - 1) / tpb) # features per thread to be translated onto appropriate logits and stored in shared memory (summed if fpt > 1)
+        fpt = int((T + tpb - 1) / tpb) # features per thread to be translated onto appropriate logits and stored in shared memory (summed later if fpt > 1)
         t = tx # feature index
         shared_logits[tx] = float32(0.0)
         cuda.syncthreads()
