@@ -15,8 +15,8 @@ finding the error minimizer, and examples reweighting. The GPU-based predict is 
 We apply suitable reduction patterns to carry out summations and `argmin' operations. For reductions 
 that spread beyond the scope of a single block of threads, we introduce appropriate mutex mechanisms.
 
-To test the performance of the predict stage we compare FastRealBoostBins against three state-of-the-art classifiers `sklearn.ensemble`,
-using several large data sets and focusing on the response time. In an additional experiment, we make our ensemble classifiers operate as object 
+To test the performance of the predict stage we compare FastRealBoostBins against state-of-the-art classifiers `sklearn.ensemble`,
+using several large data sets and focusing on response times. In an additional experiment, we make our ensemble classifiers operate as object 
 detectors under heavy computational load (e.g. over 60k queries per a video frame using ensembles of size 2048).
 
 ## License
