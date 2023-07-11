@@ -16,7 +16,7 @@ We apply suitable reduction patterns to carry out summations and `argmin' operat
 that spread beyond the scope of a single block of threads, we introduce appropriate mutex mechanisms.
 
 To test the performance of the predict stage we compare FastRealBoostBins against state-of-the-art classifiers `sklearn.ensemble`,
-using several large data sets and focusing on response times. In an additional experiment, we make our ensemble classifiers operate as object 
+using several large data sets and focusing on response times. In an additional experiment, we make our classifiers operate as object 
 detectors under heavy computational load (e.g. over 60k queries per a video frame using ensembles of size 2048).
 
 ## License
