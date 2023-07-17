@@ -579,7 +579,7 @@ def demo_detect_in_video(clf, hcoords, decision_threshold, computations="gpu_cud
     print(f"[decision threshold: {decision_threshold}, source: {decision_threshold_source}]")    
     print(f"[about to start video camera...]")
     h_scale = frame_h / resized_height
-    w_scale = frame_w / resized_width 
+    w_scale = frame_w / resized_width
     n_frames = 0
     ma_decay = 0.9
     fps_disp_ma = 0.0    
@@ -677,9 +677,9 @@ def demo_detect_in_video(clf, hcoords, decision_threshold, computations="gpu_cud
             time_comps_frbb += times["frbb"]
         cv2.putText(frame, f"FPS (COMPUTATIONS): {fps_comps:.2f} {comps_details}", (0, frame_h - 1 - 1 * text_shift), cv2.FONT_HERSHEY_PLAIN, font_size, color_info, 1)
         cv2.putText(frame, f"FPS (DISPLAY): {fps_disp:.2f}", (0, frame_h - 1), cv2.FONT_HERSHEY_PLAIN, font_size, color_info, 1)                    
-        imshow_name = "FAST REAL BOOST BINS ['esc' to quit]"             
-        cv2.imshow(imshow_name, frame)
-        cv2.namedWindow(imshow_name)
+        imshow_name = "FAST REAL BOOST BINS ['esc' to quit]"
+        cv2.namedWindow(imshow_name)             
+        cv2.imshow(imshow_name, frame)        
         if cv2.waitKey(1) & 0xFF == 27: # esc key
             break       
         t2_other = time.time()        
@@ -837,9 +837,9 @@ def demo_detect_in_video_multiple_clfs(clfs, hcoords, decision_thresholds, postp
             time_comps_frbb += times_frbb
         cv2.putText(frame, f"FPS (COMPUTATIONS): {fps_comps:.2f} {comps_details}", (0, frame_h - 1 - 1 * text_shift), cv2.FONT_HERSHEY_PLAIN, font_size, color_info, 1)
         cv2.putText(frame, f"FPS (DISPLAY): {fps_disp:.2f}", (0, frame_h - 1), cv2.FONT_HERSHEY_PLAIN, font_size, color_info, 1)                    
-        imshow_name = "FAST REAL BOOST BINS ['esc' to quit]"             
-        cv2.imshow(imshow_name, frame)
-        cv2.namedWindow(imshow_name)
+        imshow_name = "FAST REAL BOOST BINS ['esc' to quit]"
+        cv2.namedWindow(imshow_name)                     
+        cv2.imshow(imshow_name, frame)        
         if cv2.waitKey(1) & 0xFF == 27: # esc key
             break
         n_frames += 1
@@ -950,7 +950,7 @@ if __name__ == "__main__":
         
     if DEMO_DETECT_IN_VIDEO_MULTIPLE_CLFS:        
         clfs_names = ["clf_frbb_face_n_18225_S_5_P_5_NPI_300_SEED_0_T_1024_B_8.bin", "clf_frbb_hand_n_18225_S_5_P_5_NPI_30_SEED_0_T_1024_B_8.bin"]
-        decision_thresholds = [5.0, 5.0] # set to [None, None] if clfs' internal thresholds to be used
+        decision_thresholds = [4.5, 4.5] # set to [None, None] if clfs' internal thresholds to be used
         clfs = [unpickle_objects(FOLDER_CLFS + clf_name)[0] for clf_name in clfs_names]
         print(f"[about to start multiple clfs demo; unpickled clfs:]")
         for clf_name, clf in zip(clfs_names, clfs):
