@@ -12,17 +12,18 @@ from functools import reduce
 from sklearn.metrics import roc_curve
 from matplotlib import pyplot as plt
 from utils import cpu_and_system_props, gpu_props
+import argparse
 
 __author__ = "Przemysław Klęsk"
 __email__ = "pklesk@zut.edu.pl"
 
 
 # main settings
-KIND = "hand"
+KIND = "face"
 S = 5 # parameter "scales" to generete Haar-like features
 P = 5 # parameter "positions" to generete Haar-like features
-NPI = 30 # "negatives per image" - no. of negatives (negative windows) to sample per image (image real or generated synthetically) 
-T = 2048 # size of ensemble in FastRealBoostBins (equivalently, no. of boosting rounds when fitting)
+NPI = 300 # "negatives per image" - no. of negatives (negative windows) to sample per image (image real or generated synthetically) 
+T = 1024 # size of ensemble in FastRealBoostBins (equivalently, no. of boosting rounds when fitting)
 B = 8 # no. of bins
 SEED = 0 # randomization seed
 DEMO_HAAR_FEATURES_ALL = False
@@ -32,10 +33,11 @@ FIT_OR_REFIT_MODEL = False
 MEASURE_ACCS_OF_MODEL = False
 ADJUST_DECISION_THRESHOLD_OF_MODEL = False
 DEMO_DETECT_IN_VIDEO = False
-DEMO_DETECT_IN_VIDEO_COMPUTATIONS = "gpu_cuda" # possible values: "cpu_simple", "cpu_parallel", "gpu_cuda"
+DEMO_DETECT_IN_VIDEO_COMPUTATIONS = "gpu_cuda" # choices: "cpu_simple", "cpu_parallel", "gpu_cuda"
 DEMO_DETECT_IN_VIDEO_PARALLEL_JOBS = 8
-DEMO_DETECT_IN_VIDEO_VERBOSE_LOOP = False
+DEMO_DETECT_IN_VIDEO_VERBOSE_LOOP = True
 DEMO_DETECT_IN_VIDEO_VERBOSE_DETECT = False
+DEMO_DETECT_IN_VIDEO_FRAMES = None # if not None but integer then detection is stopped after seeing given number of frames
 DEMO_DETECT_IN_VIDEO_MULTIPLE_CLFS = True
 
 # cv2 camera settings
@@ -48,8 +50,12 @@ DETECTION_WINDOW_HEIGHT_MIN = 96 # 96 (lighter), 64 (heavier)
 DETECTION_WINDOW_WIDTH_MIN = 96 # 96 (lighter), 64 (heavier)
 DETECTION_WINDOW_GROWTH = 1.2
 DETECTION_WINDOW_JUMP = 0.05
-DETECTION_DECISION_THRESHOLD = 4.0 # can be set to None (then classfiers' internal thresholds are used)
-DETECTION_POSTPROCESS = "avg" # possible values: None, "nms", "avg"
+DETECTION_DECISION_THRESHOLD = None # can be set to None (then classfier's internal threshold is used)
+DETECTION_POSTPROCESS = "avg" # choices: None, "avg", "nms"
+
+# settings for detection with multiple classifiers (special option)
+MC_CLFS_NAMES = ["clf_frbb_face_n_18225_S_5_P_5_NPI_300_SEED_0_T_1024_B_8.bin", "clf_frbb_hand_n_18225_S_5_P_5_NPI_30_SEED_0_T_1024_B_8.bin"]
+MC_DECISION_THRESHOLDS = [None, None]
 
 # folders
 FOLDER_DATA = "../data/"
@@ -167,10 +173,11 @@ def draw_feature_at(i, j0, k0, shcoords_one_feature):
 
 def demo_haar_features(hinds, hcoords, n, selected_indexes=None):
     print(f"DEMO OF HAAR FEATURES... [hcoords.shape: {hcoords.shape}]")
+    print("[with focus placed on display window press 'esc' to quit or any other key to continue]")
     if KIND == "face":
         i = cv2.imread(FOLDER_EXTRAS + "photo_for_face_features_demo.jpg")
-        j0, k0 = 107, 96
-        w = h = 241
+        j0, k0 = 94, 88
+        w = h = 251
     elif KIND == "hand": 
         i = cv2.imread(FOLDER_EXTRAS + "photo_for_hand_features_demo.jpg")
         j0, k0 = 172, 53
@@ -179,16 +186,15 @@ def demo_haar_features(hinds, hcoords, n, selected_indexes=None):
     i_gray = cv2.cvtColor(i_resized, cv2.COLOR_BGR2GRAY)
     ii = haar.integral_image_numba_jit(i_gray)
     cv2.rectangle(i_resized, (k0, j0), (k0 + w - 1, j0 + h - 1), (0, 0, 255), 1)
-    title = "['esc' to quit or other to continue]"
+    title = "['esc' to quit or other to continue]"    
     font_size = 1.0
     text_shift = int(font_size * 16)
     color_info = (255, 255, 255)
     cv2.putText(i_resized, f"DEMO OF FEATURES [KIND: {KIND.upper()}]", (0, 0 + 1 * text_shift), cv2.FONT_HERSHEY_PLAIN, font_size, color_info, 1)        
     cv2.imshow(title, i_resized)
-    cv2.waitKey()
+    cv2.waitKey()    
     if selected_indexes is None:
         selected_indexes = np.arange(n)
-    #for ord_ind, (ind, c) in enumerate(zip(hinds, hcoords)):
     for ord_ind in selected_indexes:
         ind = hinds[ord_ind]
         c = hcoords[ord_ind]
@@ -201,7 +207,7 @@ def demo_haar_features(hinds, hcoords, n, selected_indexes=None):
         print(f"[feature hcoords (cartesian):\n {c}]")
         print(f"[feature hcoords in window:\n {hcoords_window}]")
         print(f"[feature value: {feature_value}]")
-        print("-" * 196)
+        print("-" * 160)
         cv2.imshow(title, i_temp)
         key = cv2.waitKey()
         if key & 0xFF == 27: # esc key
@@ -552,14 +558,31 @@ def postprocess_avg(detections, responses, iou_threshold=0.25):
         r_final.append(r_avg)
     return d_final, r_final
 
+def short_cpu_name(cpu_name):
+    cpu_name = cpu_name.replace("CPU", "")
+    cpu_name = cpu_name.replace("cpu", "")
+    cpu_name = cpu_name.replace("  ", " ")
+    cpu_name = cpu_name.replace(" @ ", " ")
+    cpu_name = cpu_name.replace("(R)", "")
+    return cpu_name    
+
+def color_by_detector_title(colors_detect, detector_title):
+    mappings = {"face" : 0, "hand": 1}
+    title = detector_title.lower()
+    index = 0
+    if title in mappings:
+        index = mappings[title]
+    return colors_detect[index]  
+
 def demo_detect_in_video(clf, hcoords, decision_threshold, computations="gpu_cuda", postprocess="avg", n_jobs=8, detector_title=None, verbose_loop=True, verbose_detect=False):
-    print("DEMO OF DETECT IN VIDEO...")
-    color_detect = (0, 255, 255)
+    print(f"DEMO OF DETECT IN VIDEO... [computations: {computations}]")
+    colors_detect = [(0, 255, 255), (255, 255, 0), (255, 0, 255), (255, 0, 0), (0, 0, 255), (255, 0, 0)]
+    color_detect = color_by_detector_title(colors_detect, detector_title)
     color_info = (255, 255, 255)
-    font_size = 0.9
+    font_size = 1.0
     text_shift = int(font_size * 16)
     gpu_name = gpu_props()["name"]
-    cpu_name = cpu_and_system_props()["cpu_name"]
+    cpu_name = short_cpu_name(cpu_and_system_props()["cpu_name"])
     features_indexes = clf.features_selected_
     video = cv2.VideoCapture(CV2_VIDEO_CAPTURE_CAMERA_INDEX + (cv2.CAP_DSHOW if CV2_VIDEO_CAPTURE_IS_IT_MSWINDOWS else 0))
     video.set(cv2.CAP_PROP_FRAME_WIDTH, 640)
@@ -612,7 +635,7 @@ def demo_detect_in_video(clf, hcoords, decision_threshold, computations="gpu_cud
     while(True):
         t1 = time.time()
         if verbose_loop:            
-            print("-" * 196)
+            print("-" * 160)
             print(f"[frame: {n_frames}]")        
         t1_read = time.time()
         _, frame = video.read()
@@ -679,11 +702,11 @@ def demo_detect_in_video(clf, hcoords, decision_threshold, computations="gpu_cud
         cv2.putText(frame, f"FPS (DISPLAY): {fps_disp:.2f}", (0, frame_h - 1), cv2.FONT_HERSHEY_PLAIN, font_size, color_info, 1)                    
         imshow_name = "FAST REAL BOOST BINS ['esc' to quit]"
         cv2.namedWindow(imshow_name)             
-        cv2.imshow(imshow_name, frame)        
-        if cv2.waitKey(1) & 0xFF == 27: # esc key
+        cv2.imshow(imshow_name, frame)
+        n_frames += 1        
+        if cv2.waitKey(1) & 0xFF == 27 or (DEMO_DETECT_IN_VIDEO_FRAMES is not None and n_frames >= DEMO_DETECT_IN_VIDEO_FRAMES): # esc key
             break       
-        t2_other = time.time()        
-        n_frames += 1
+        t2_other = time.time()                
         if verbose_loop:
             print(f"[computations time: {t2_comps - t1_comps} s]")
             print(f"[postprocess time: {t2_post - t1_post} s]")
@@ -762,7 +785,7 @@ def demo_detect_in_video_multiple_clfs(clfs, hcoords, decision_thresholds, postp
     while(True):
         t1 = time.time()
         if verbose_loop:
-            print("-" * 196)
+            print("-" * 160)
             print(f"[frame: {n_frames}]")        
         t1_read = time.time()
         _, frame = video.read()
@@ -839,10 +862,10 @@ def demo_detect_in_video_multiple_clfs(clfs, hcoords, decision_thresholds, postp
         cv2.putText(frame, f"FPS (DISPLAY): {fps_disp:.2f}", (0, frame_h - 1), cv2.FONT_HERSHEY_PLAIN, font_size, color_info, 1)                    
         imshow_name = "FAST REAL BOOST BINS ['esc' to quit]"
         cv2.namedWindow(imshow_name)                     
-        cv2.imshow(imshow_name, frame)        
-        if cv2.waitKey(1) & 0xFF == 27: # esc key
-            break
-        n_frames += 1
+        cv2.imshow(imshow_name, frame)
+        n_frames += 1        
+        if cv2.waitKey(1) & 0xFF == 27 or (DEMO_DETECT_IN_VIDEO_FRAMES is not None and n_frames >= DEMO_DETECT_IN_VIDEO_FRAMES): # esc key
+            break        
         if verbose_loop:
             print(f"[computations time: {tpf_comps} s]")
             print(f"[postprocess time: {tpf_post} s]")
@@ -871,7 +894,7 @@ def experiment_some_rocs():
         "clf_frbb_face_n_18225_S_5_P_5_NPI_200_SEED_0_T_2048_B_8.bin"                                      
         ]    
     for clf_name in clfs_names:                                                                          
-        print("-" * 196)        
+        print("-" * 160)        
         print(f"[clf_name: {clf_name}]")                            
         [clf] = unpickle_objects(FOLDER_CLFS + clf_name)                
         responses_test = clf.decision_function(X_test)
@@ -885,12 +908,68 @@ def experiment_some_rocs():
     plt.legend(loc="lower right", fontsize=8)
     plt.show()
 
-        
+def str_to_float_or_none(s):
+    if s.lower() == "none":
+        return None
+    return float(s)
+
+def str_to_int_or_none(s):
+    if s.lower() == "none":
+        return None
+    return int(s)
+
+def parse_args():
+    parser = argparse.ArgumentParser()
+    parser.add_argument("-k", "--KIND", type=str, default=KIND, choices=["face", "hand"], help=f"detector kind (default: {KIND})")
+    parser.add_argument("-s", "--S", type=int, default=S, help=f"'scales' parameter of Haar-like features (default: {S})")
+    parser.add_argument("-p", "--P", type=int, default=P, help=f"'positions' parameter of Haar-like features (default: {P})")
+    parser.add_argument("-npi", "--NPI", type=int, default=NPI, help=f"'negatives per image' parameter, used in procedures generating data sets from images (default: {NPI} with -k set to {KIND})")
+    parser.add_argument("-t", "--T", type=int, default=T, help=f"number of boosting rounds, (default: {T})")
+    parser.add_argument("-b", "--B", type=int, default=B, help=f"numbet of bins, (default: {B})")
+    parser.add_argument("-seed", "--SEED", type=int, default=SEED, help=f"randomization seed, (default: {SEED})")
+    parser.add_argument("-dhfsa", "--DEMO_HAAR_FEATURES_ALL", action="store_true", help="turn on demo of all Haar-like features")
+    parser.add_argument("-dhfss", "--DEMO_HAAR_FEATURES_SELECTED", action="store_true", help="turn on demo of selected Haar-like features")
+    parser.add_argument("-rd", "--REGENERATE_DATA", action="store_true", help="turn on data regeneration")
+    parser.add_argument("-form", "--FIT_OR_REFIT_MODEL", action="store_true", help="fit new or refit an existing model")
+    parser.add_argument("-maom", "--MEASURE_ACCS_OF_MODEL", action="store_true", help="measure accuracies of a model")
+    parser.add_argument("-adtom", "--ADJUST_DECISION_THRESHOLD_OF_MODEL", action="store_true", help="adjust decision threshold of a model (based on ROC for testing data)")
+    parser.add_argument("-ddiv", "--DEMO_DETECT_IN_VIDEO", action="store_true", help="turn on demo of detection in video")
+    parser.add_argument("-ddivc", "--DEMO_DETECT_IN_VIDEO_COMPUTATIONS", type=str, choices=["gpu_cuda", "cpu_simple", "cpu_parallel"], default=DEMO_DETECT_IN_VIDEO_COMPUTATIONS, 
+                        help=f"type of computations for demo of detection in video (default: {DEMO_DETECT_IN_VIDEO_COMPUTATIONS})")
+    parser.add_argument("-ddivpj", "--DEMO_DETECT_IN_VIDEO_PARALLEL_JOBS", type=int, default=DEMO_DETECT_IN_VIDEO_PARALLEL_JOBS, 
+                        help=f"number of parallel jobs (only in case of 'cpu_parallel' set for -ddivc) (default: {DEMO_DETECT_IN_VIDEO_PARALLEL_JOBS})")
+    parser.add_argument("-ddivvl", "--DEMO_DETECT_IN_VIDEO_VERBOSE_LOOP", action="store_true", help="turn on verbosity for main loop of detection in video")
+    parser.add_argument("-ddivvd", "--DEMO_DETECT_IN_VIDEO_VERBOSE_DETECT", action="store_true", help="turn on detailed verbosity for detection in video")
+    parser.add_argument("-ddivf", "--DEMO_DETECT_IN_VIDEO_FRAMES", type=str_to_float_or_none, default=DEMO_DETECT_IN_VIDEO_FRAMES, help="limit overall detection in video to given number of frames")
+    parser.add_argument("-ddivmc", "--DEMO_DETECT_IN_VIDEO_MULTIPLE_CLFS", action="store_true", help="turn on demo of detection in video with multiple classifiers (currently: face and hand detectors)")
+    parser.add_argument("-cv2vcci", "--CV2_VIDEO_CAPTURE_CAMERA_INDEX", type=int, default=CV2_VIDEO_CAPTURE_CAMERA_INDEX, help=f"video camera index (default: {CV2_VIDEO_CAPTURE_CAMERA_INDEX})")
+    parser.add_argument("-cv2iim", "--CV2_VIDEO_CAPTURE_IS_IT_MSWINDOWS", action="store_true", help="specify if OS is MS Windows (for cv2 and directx purposes)")
+    parser.add_argument("-ds", "--DETECTION_SCALES", type=int, default=DETECTION_SCALES, help=f"number of detection scales (default: {DETECTION_SCALES})")
+    parser.add_argument("-dwhm", "--DETECTION_WINDOW_HEIGHT_MIN", type=int, default=DETECTION_WINDOW_HEIGHT_MIN, help=f"minimum height of detection window (default: {DETECTION_WINDOW_HEIGHT_MIN})")
+    parser.add_argument("-dwwm", "--DETECTION_WINDOW_WIDTH_MIN", type=int, default=DETECTION_WINDOW_WIDTH_MIN, help=f"minimum width of detection window (default: {DETECTION_WINDOW_WIDTH_MIN})")
+    parser.add_argument("-dwg", "--DETECTION_WINDOW_GROWTH", type=int, default=DETECTION_WINDOW_GROWTH, help=f"growth factor of detection window (default: {DETECTION_WINDOW_GROWTH})")
+    parser.add_argument("-dwj", "--DETECTION_WINDOW_JUMP", type=int, default=DETECTION_WINDOW_JUMP, help=f"relative jump of detection window (default: {DETECTION_WINDOW_JUMP})")    
+    parser.add_argument("-ddt", "--DETECTION_DECISION_THRESHOLD", type=str_to_float_or_none, default=DETECTION_DECISION_THRESHOLD, 
+                        help=f"decision threshold, can be set to None then classifier's internal threshold is used (default: {DETECTION_DECISION_THRESHOLD})")
+    parser.add_argument("-dp", "--DETECTION_POSTPROCESS", choices=["None", "avg", "nms"], default=DETECTION_POSTPROCESS, help=f"type of detection postprocessing (default: {DETECTION_POSTPROCESS})")
+    parser.add_argument("-mccn", "--MC_CLFS_NAMES", type=str, default=MC_CLFS_NAMES, nargs="+", 
+                        help=f"classifiers names (list) for detection with multiple classifiers (default: {MC_CLFS_NAMES})")    
+    parser.add_argument("-mcdt", "--MC_DECISION_THRESHOLDS", type=str_to_float_or_none, default=MC_DECISION_THRESHOLDS, nargs="+", 
+                        help=f"decision thresholds (list) for detection with multiple classifiers, any can be set to None (default: {MC_DECISION_THRESHOLDS})")                                    
+    args = parser.parse_args()
+    if args.DETECTION_DECISION_THRESHOLD == "None":
+        args.DETECTION_DECISION_THRESHOLD = None
+    if args.DETECTION_POSTPROCESS == "None":
+        args.DETECTION_POSTPROCESS = None
+    globals().update(vars(args))    
+
+
 # ----------------------------------------------------------------------------------------------------------------------------------------------------------------
 # MAIN
 # ----------------------------------------------------------------------------------------------------------------------------------------------------------------
 if __name__ == "__main__":        
-    print("DEMONSTRATION OF \"FAST REAL BOOST WITH BINS\": AN ENSEMBLE CLASSIFIER FOR FAST PREDICTIONS IMPLEMENTED IN PYTHON VIA NUMBA.JIT AND NUMBA.CUDA.")
+    print("\"FAST-REAL-BOOST-BINS\": AN ENSEMBLE CLASSIFIER FOR FAST PREDICTIONS IMPLEMENTED IN PYTHON VIA NUMBA.JIT AND NUMBA.CUDA.", flush=True)
+    parse_args()
     print("MAIN-DETECTOR STARTING...")    
     print(f"CPU AND SYSTEM PROPS: {cpu_and_system_props()}")
     print(f"GPU PROPS: {gpu_props()}")    
@@ -935,7 +1014,7 @@ if __name__ == "__main__":
     
     if DEMO_HAAR_FEATURES_SELECTED:        
         demo_haar_features(hinds, hcoords, n, selected_indexes=clf.features_selected_)
-        
+    
     if MEASURE_ACCS_OF_MODEL:
         measure_accs_of_model(clf, X_train, y_train, X_test, y_test)            
     
@@ -943,14 +1022,14 @@ if __name__ == "__main__":
         adjust_decision_threshold_via_precision(clf, X_test, y_test)
         pickle_objects(FOLDER_CLFS + CLF_NAME + ".bin", [clf])
         clf.json_dump(FOLDER_CLFS + CLF_NAME + ".json")    
-        
+    
     if DEMO_DETECT_IN_VIDEO:            
         demo_detect_in_video(clf, hcoords, decision_threshold=DETECTION_DECISION_THRESHOLD, computations=DEMO_DETECT_IN_VIDEO_COMPUTATIONS, postprocess=DETECTION_POSTPROCESS, n_jobs=DEMO_DETECT_IN_VIDEO_PARALLEL_JOBS, 
                              detector_title=KIND.upper(), verbose_loop=DEMO_DETECT_IN_VIDEO_VERBOSE_LOOP, verbose_detect=DEMO_DETECT_IN_VIDEO_VERBOSE_DETECT)
-        
+    
     if DEMO_DETECT_IN_VIDEO_MULTIPLE_CLFS:        
-        clfs_names = ["clf_frbb_face_n_18225_S_5_P_5_NPI_300_SEED_0_T_1024_B_8.bin", "clf_frbb_hand_n_18225_S_5_P_5_NPI_30_SEED_0_T_1024_B_8.bin"]
-        decision_thresholds = [4.5, 4.5] # set to [None, None] if clfs' internal thresholds to be used
+        clfs_names = MC_CLFS_NAMES
+        decision_thresholds = MC_DECISION_THRESHOLDS
         clfs = [unpickle_objects(FOLDER_CLFS + clf_name)[0] for clf_name in clfs_names]
         print(f"[about to start multiple clfs demo; unpickled clfs:]")
         for clf_name, clf in zip(clfs_names, clfs):

@@ -435,7 +435,7 @@ def experimenter_real_data(real_data_defs=REAL_DATA_DEFS_DEFAULT, real_data_flag
             plt.close()                                                                                    
 
 if __name__ == "__main__":
-    print("DEMONSTRATION OF \"FAST REAL BOOST WITH BINS\": AN ENSEMBLE CLASSIFIER FOR FAST PREDICTIONS IMPLEMENTED IN PYTHON VIA NUMBA.JIT AND NUMBA.CUDA.")
+    print("\"FAST-REAL-BOOST-BINS\": AN ENSEMBLE CLASSIFIER FOR FAST PREDICTIONS IMPLEMENTED IN PYTHON VIA NUMBA.JIT AND NUMBA.CUDA.")
     print(f"MAIN-EXPERIMENTER STARTING...]")
     cpu_props = cpu_and_system_props()
     gpu_props = gpu_props()

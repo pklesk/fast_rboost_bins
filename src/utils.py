@@ -6,7 +6,7 @@ from numba import cuda
 def cpu_and_system_props():    
     props = {}    
     info = cpuinfo.get_cpu_info()
-    un = platform.uname()    
+    un = platform.uname()
     props["cpu_name"] = info["brand_raw"]
     props["ram_size"] = f"{psutil.virtual_memory().total / 1024**3:.1f} GB"
     props["os_name"] = f"{un.system} {un.release}"
