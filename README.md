@@ -24,13 +24,6 @@ To test the predict stage performance we compare `FastRealBoostBins` against sta
 using large data sets and focusing on response times. In an additional experiment, we make our
 classifiers operate as object detectors under heavy computational load (over 60k queries per a video frame using ensembles of size 2048).
 
-## Selected results and snapshots
-|fit times|predict times|
-|-|-|
-|<img src="/extras/fig_experiment_real_1903270360_20230625_fddb-patches_time_fit.png"/>|<img src="/extras/fig_experiment_real_1903270360_20230625_fddb-patches_time_predict_test.png"/>|
-|<img src="/extras/fig_experiment_real_2001519960_20230626_mnist-b_time_fit.png"/>|<img src="/extras/fig_experiment_real_2001519960_20230626_mnist-b_time_predict_test.png"/>|
-|<img src="/extras/fig_experiment_real_1178284368_20230627_hagrid-hfs-10_time_fit.png"/>|<img src="/extras/fig_experiment_real_1178284368_20230627_hagrid-hfs-10_time_predict_test.png"/>|
-
 ## Simple example of usage
 With `frbb.py` file (containing `FastRealBoostBins` class) included to some project, one can write e.g.:
 ```python
@@ -54,6 +47,12 @@ TRAIN ACC: 1.0
 TEST ACC: 0.958041958041958
 ```
 
+## Selected results and snapshots
+|fit times|predict times|
+|-|-|
+|<img src="/extras/fig_experiment_real_1903270360_20230625_fddb-patches_time_fit.png"/>|<img src="/extras/fig_experiment_real_1903270360_20230625_fddb-patches_time_predict_test.png"/>|
+|<img src="/extras/fig_experiment_real_2001519960_20230626_mnist-b_time_fit.png"/>|<img src="/extras/fig_experiment_real_2001519960_20230626_mnist-b_time_predict_test.png"/>|
+|<img src="/extras/fig_experiment_real_1178284368_20230627_hagrid-hfs-10_time_fit.png"/>|<img src="/extras/fig_experiment_real_1178284368_20230627_hagrid-hfs-10_time_predict_test.png"/>|
 
 ## License
 This work is licensed under <a rel="license" href="http://creativecommons.org/licenses/by-sa/4.0/">Creative Commons Attribution-ShareAlike 4.0 International License</a>.
