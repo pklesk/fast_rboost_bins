@@ -47,14 +47,20 @@ TRAIN ACC: 1.0
 TEST ACC: 0.958041958041958
 ```
 
-## Selected results and snapshots
+## Selected experimental results
 
 ### Comparison against state-of-the-art classifier from `sklearn.ensemble`
 
-| classifier                        | fit time [s] | fit speedup | predict time [s] | predict speedup | acc [%] | predict time [s] | predict speedup | acc [%] |
-|-----------------------------------|--------------|-------------|------------------|-----------------|---------|------------------|-----------------|---------|
-|<td colspan="9">1: ‘FDDB-PATCHES (3NPI)’, T = 1024</td>|
- 
+#### **'FDDB-PATCHES (3NPI)':** &nbsp;&nbsp; train data: (11 775 $\times$ 3 072) ~ 10<sup>7.6</sup>, &nbsp;&nbsp; test data: (1 303 $\times$ 3 072 $\rightarrow$ 1 024) ~ 10<sup>6.1</sup>
+| classifier                        | fit time [s] | fit speedup $\approx$ | predict time [s]         | predict speedup $\approx$ | acc [%] | predict time [s] | predict speedup $\approx$ | acc [%] |
+|:----------------------------------|-------------:|----------------------:|-------------------------:|--------------------------:|--------:|-----------------:|--------------------------:|--------:|
+|                                   |      (train) |               (train) |                  (train) |                   (train) | (train) |          (test)  |                    (test) |  (test) |
+| `AdaBoostClassifier`              |        1 421 |            $\times$ 1 |                   33.285 |                $\times$ 1 |   99.94 |            2.702 |                $\times$ 1 |   89.56 |
+| `GradientBoostingClassifier`      |        1 341 |            $\times$ 1 |                    0.191 |              $\times$ 174 |   94.04 |            0.013 |              $\times$ 208 |   90.18 |
+| `HistGradientBoostingClassifier`  |           14 |          $\times$ 102 |                    0.288 |              $\times$ 116 |   93.17 |            0.030 |               $\times$ 90 |   90.02 |
+| `FastRealBoostBins('numba_jit')`  |          395 |            $\times$ 4 |                    0.096 |              $\times$ 347 |   99.98 |            0.009 |              $\times$ 300 |   88.41 |
+| `FastRealBoostBins('numba_cuda')` |           43 |           $\times$ 33 |                    0.068 |              $\times$ 489 |   99.97 |            0.003 |              $\times$ 901 |   88.33 |
+
 ### Fit and predict times along growing ensemble sizes
 |fit times|predict times|
 |-|-|
