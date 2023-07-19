@@ -48,6 +48,14 @@ TEST ACC: 0.958041958041958
 ```
 
 ## Selected results and snapshots
+
+### Comparison against state-of-the-art classifier from `sklearn.ensemble`
+
+| classifier                        | fit time [s] | fit speedup | predict time [s] | predict speedup | acc [%] | predict time [s] | predict speedup | acc [%] |
+|-----------------------------------|--------------|-------------|------------------|-----------------|---------|------------------|-----------------|---------|
+|<td colspan="9">1: ‘FDDB-PATCHES (3NPI)’, T = 1024</td>|
+ 
+### Fit and predict times along growing ensemble sizes
 |fit times|predict times|
 |-|-|
 |<img src="/extras/fig_experiment_real_1903270360_20230625_fddb-patches_time_fit.png"/>|<img src="/extras/fig_experiment_real_1903270360_20230625_fddb-patches_time_predict_test.png"/>|
