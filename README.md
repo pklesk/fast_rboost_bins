@@ -1,9 +1,9 @@
-# [under developement]
+[under developement]
 # FastRealBoostBins: An ensemble classifier for fast predictions implemented in Python using numba.jit and numba.cuda
 <table>
 <tr>
     <td><img src="/extras/fig_experiment_real_1903270360_20230625_fddb-patches_time_predict_test.png"/></td>
-    <td><img src="/extras/video_quadro_screenshot.jpg"/></td>
+    <td><br/><img src="/extras/video_quadro_screenshot.jpg"/></td>
 </tr>
 </table>
 
@@ -25,6 +25,10 @@ using large data sets and focusing on response times. In an additional experimen
 classifiers operate as object detectors under heavy computational load (over 60k queries per a video frame using ensembles of size 2048).
 
 ## Selected results and snapshots
+|fit times|predict times|
+|<img src="/extras/fig_experiment_real_1903270360_20230625_fddb-patches_time_fit.png"/>|<img src="/extras/fig_experiment_real_1903270360_20230625_fddb-patches_time_predict_test.png"/>|
+|<img src="/extras/fig_experiment_real_2001519960_20230626_mnist-b_time_fit.png"/>|<img src="/extras/fig_experiment_real_2001519960_20230626_mnist-b_time_predict_test.png"/>|
+|<img src="/extras/fig_experiment_real_1178284368_20230627_hagrid-hfs-10_time_fit.png"/>|<img src="/extras/fig_experiment_real_1178284368_20230627_hagrid-hfs-10_time_predict_test.png"/>|
 
 ## Simple example of usage
 With `frbb.py` file (containing `FastRealBoostBins` class) included to some project, one can write e.g.:
