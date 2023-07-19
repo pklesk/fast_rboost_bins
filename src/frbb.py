@@ -41,9 +41,9 @@ class FastRealBoostBins(BaseEstimator, ClassifierMixin):
     T_DEFAULT = 256
     B_DEFAULT = 8
     OUTLIERS_RATIO_DEFAULT = 0.05
-    LOGIT_MAX_DEFAULT = np.float(2.0)
-    FIT_MODE_DEFAULT = "numba_jit"
-    DECISION_FUNCTION_MODE_DEFAULT = "numba_jit"
+    LOGIT_MAX_DEFAULT = np.float32(2.0)
+    FIT_MODE_DEFAULT = "numba_cuda"
+    DECISION_FUNCTION_MODE_DEFAULT = "numba_cuda"
     VERBOSE_DEFAULT = False
     DEBUG_VERBOSE_DEFAULT = False
         
@@ -154,7 +154,7 @@ class FastRealBoostBins(BaseEstimator, ClassifierMixin):
         self._validate_param("T", self.T, int, False, 1, True, inf, self.T_DEFAULT)
         self._validate_param("B", self.B, int, False, 1, False, self.B_MAX, self.B_DEFAULT)    
         self._validate_param("outliers_ratio", self.outliers_ratio, float, False, 0.0, False, self.OUTLIERS_RATIO_MAX, self.OUTLIERS_RATIO_DEFAULT)
-        self._validate_param("logit_max", self.logit_max, float, True, 0.0, False, self.LOGIT_MAX_MAX, self.LOGIT_MAX_DEFAULT)
+        self._validate_param("logit_max", self.logit_max, np.float32, True, 0.0, False, self.LOGIT_MAX_MAX, self.LOGIT_MAX_DEFAULT)
         self._validate_param("verbose", self.verbose, bool, False, False, False, True, self.VERBOSE_DEFAULT) 
         self._validate_param("debug_verbose", self.debug_verbose, bool, False, False, False, True, self.DEBUG_VERBOSE_DEFAULT)
         self._set_cuda_constants()
