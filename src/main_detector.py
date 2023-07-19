@@ -888,7 +888,7 @@ def experiment_some_rocs():
     data_name = "data_face_n_18225_S_5_P_5_NPI_10_SEED_0.bin"    
     print(f"[data_name: {data_name}]")
     [X_train, y_train, X_test, y_test] = unpickle_objects(FOLDER_DATA + data_name)    
-    print(f"[X_train.shape: {X_train.shape} (positives: {np.sum(y_train == 1)}), X_test.shape: {X_test.shape} (positives: {np.sum(y_test == 1)})]")
+    print(f"[X_train.shape: {X_train.shape} with {np.sum(y_train == 1)} positives, X_test.shape: {X_test.shape} with {np.sum(y_test == 1)} positives]")
     clfs_names = [
         "clf_frbb_face_n_18225_S_5_P_5_NPI_200_SEED_0_T_1024_B_8.bin",
         "clf_frbb_face_n_18225_S_5_P_5_NPI_200_SEED_0_T_2048_B_8.bin"                                      
@@ -1000,7 +1000,7 @@ if __name__ == "__main__":
     if FIT_OR_REFIT_MODEL or MEASURE_ACCS_OF_MODEL or ADJUST_DECISION_THRESHOLD_OF_MODEL:
         if not REGENERATE_DATA: 
             [X_train, y_train, X_test, y_test] = unpickle_objects(FOLDER_DATA + DATA_NAME + ".bin")
-        print(f"[X_train.shape: {X_train.shape} (positives: {np.sum(y_train == 1)}), X_test.shape: {X_test.shape} (positives: {np.sum(y_test == 1)})]")
+        print(f"[X_train.shape: {X_train.shape} with {np.sum(y_train == 1)} positives, X_test.shape: {X_test.shape} with {np.sum(y_test == 1)} positives]")
     
     if FIT_OR_REFIT_MODEL: 
         clf = FastRealBoostBins(T=T, B=B, fit_mode="numba_cuda", decision_function_mode="numba_cuda", verbose=True, debug_verbose=False)
