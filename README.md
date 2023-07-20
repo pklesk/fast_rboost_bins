@@ -103,7 +103,7 @@ Software: Linux 5.15.0-71-generic, Python 3.8.10, GCC 9.4.0, numpy 1.22.3, numba
 |:----------------------------------|-------------:|----------------------:|-------------------------:|--------------------------:|------------:|-----------------:|--------------------------:|-----------:|
 |                                   |  **(train)** |           **(train)** |              **(train)** |               **(train)** | **(train)** |       **(test)** |                **(test)** | **(test)** |
 | `HistGradientBoostingClassifier`  |        2 662 |          $\times$ 3.3 |                   13.667 |              $\times$ 1.0 |       98.71 |            4.493 |              $\times$ 1.0 |      98.65 |
-| `FastRealBoostBins('numba_cuda')` |        8 908 |            $\times$ 1 |                    5.060 |              $\times$ 2.7 |      100.00 |            1.277 |              $\times$ 3.5 |      99.07 |
+| `FastRealBoostBins('numba_cuda')` |        8 908 |          $\times$ 1.0 |                    5.060 |              $\times$ 2.7 |      100.00 |            1.277 |              $\times$ 3.5 |      99.07 |
 
 |fit times along growing T|predict times (test) along growing T|
 |-|-|
@@ -115,7 +115,7 @@ TODO
 ## Script for object detection: `main_detector` 
 By executing `python main_detector.py -h` (or `--help`) one obtains help on script arguments:
 ```bash
-"FAST-REAL-BOOST-BINS": AN ENSEMBLE CLASSIFIER FOR FAST PREDICTIONS IMPLEMENTED IN PYTHON VIA NUMBA.JIT AND NUMBA.CUDA.
+"FAST-REAL-BOOST-BINS": AN ENSEMBLE CLASSIFIER FOR FAST PREDICTIONS IMPLEMENTED IN PYTHON VIA NUMBA.JIT AND NUMBA.CUDA. [main_detector]
 usage: main_detector.py [-h] [-k {face,hand}] [-s S] [-p P] [-npi NPI] [-t T] [-b B] [-seed SEED] [-dhfsa] [-dhfss] [-rd] [-form] [-maom] [-adtom] [-ddiv] [-ddivc {gpu_cuda,cpu_simple,cpu_parallel}]
                         [-ddivpj DEMO_DETECT_IN_VIDEO_PARALLEL_JOBS] [-ddivvl] [-ddivvd] [-ddivf DEMO_DETECT_IN_VIDEO_FRAMES] [-ddivmc] [-cv2vcci CV2_VIDEO_CAPTURE_CAMERA_INDEX] [-cv2iim] [-ds DETECTION_SCALES]
                         [-dwhm DETECTION_WINDOW_HEIGHT_MIN] [-dwwm DETECTION_WINDOW_WIDTH_MIN] [-dwg DETECTION_WINDOW_GROWTH] [-dwj DETECTION_WINDOW_JUMP] [-ddt DETECTION_DECISION_THRESHOLD] [-dp {None,avg,nms}]
@@ -178,8 +178,9 @@ optional arguments:
                         type of detection postprocessing (default: avg)
   -mccn MC_CLFS_NAMES [MC_CLFS_NAMES ...], --MC_CLFS_NAMES MC_CLFS_NAMES [MC_CLFS_NAMES ...]
                         classifiers names (list) for detection with multiple classifiers (default: ['clf_frbb_face_n_18225_S_5_P_5_NPI_300_SEED_0_T_1024_B_8.bin', 'clf_frbb_hand_n_18225_S_5_P_5_NPI_30_SEED_0_T_1024_B_8.bin'])
+                        (attention: type them using spaces as separators)
   -mcdt MC_DECISION_THRESHOLDS [MC_DECISION_THRESHOLDS ...], --MC_DECISION_THRESHOLDS MC_DECISION_THRESHOLDS [MC_DECISION_THRESHOLDS ...]
-                        decision thresholds (list) for detection with multiple classifiers, any can be set to None (default: [None, None])
+                        decision thresholds (list) for detection with multiple classifiers, any can be set to None (default: [None, None]) (attention: type them using spaces as separators)
 ```
 
 ## License
