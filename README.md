@@ -51,6 +51,16 @@ TEST ACC: 0.958041958041958
 
 ### Comparison against state-of-the-art classifier from `sklearn.ensemble`
 
+In tables below we write for shortness `FastRealBoostBins('numba_jit')` which, in fact, stands for `FastRealBoostBins(fit_mode='numba_jit', decision_function_mode='numba_jit')`,
+and `FastRealBoostBins('numba_cuda')` standing for `FastRealBoostBins(fit_mode='numba_cuda', decision_function_mode='numba_cuda')`.
+To have approximately equal conditions for comparison (e.g. same number of weak learners, each learner based on 1 feature) we forced the following settings on classifiers
+from `sklearn.ensemble`:
+```python
+AdaBoostClassifier(algorithm="SAMME.R", max_depth=1, n_estimators=T)
+GradientBoostingClassifier(max_depth=1, n_estimators=T)
+HistGradientBoostingClassifier(early_stopping=False, max_iter=T, max_bins=B)
+```
+
 #### **'FDDB-PATCHES (3NPI)':** &nbsp;&nbsp; train data: (11 775 $\times$ 3 072) ~ 10<sup>7.6</sup>, &nbsp;&nbsp; test data: (1 303 $\times$ 3 072 $\rightarrow$ 1 024) ~ 10<sup>6.1</sup>
 | classifier                        | fit time [s] | fit speedup $\approx$ | predict time [s]         | predict speedup $\approx$ | acc [%]     | predict time [s] | predict speedup $\approx$ | acc [%]    |
 |:----------------------------------|-------------:|----------------------:|-------------------------:|--------------------------:|------------:|-----------------:|--------------------------:|-----------:|
