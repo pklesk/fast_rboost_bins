@@ -47,6 +47,9 @@ TRAIN ACC: 1.0
 TEST ACC: 0.958041958041958
 ```
 
+## Constructor parameters and estimated attributes
+TODO
+
 ## Selected experimental results
 
 ### Comparison against state-of-the-art classifier from `sklearn.ensemble`
