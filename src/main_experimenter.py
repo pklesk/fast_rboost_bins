@@ -453,9 +453,9 @@ def str_to_bool(s):
 def parse_args():
     parser = argparse.ArgumentParser()
     parser.add_argument("-dk", "--DATA_KIND", type=str, default=DATA_KIND, choices=["real", "random"], help=f"kind of data on which to experiment (default: {DATA_KIND})")
-    parser.add_argument("-rdf", "--REAL_DATA_FLAGS", type=str_to_bool, default=REAL_DATA_FLAGS, nargs="+", 
+    parser.add_argument("-rdf", "--REAL_DATA_FLAGS", type=str_to_bool, default=REAL_DATA_FLAGS, nargs=7, 
                         help=f"boolean flags (list) specifying which data sets from the predefined set will participate in experiments on real data (default: {REAL_DATA_FLAGS}) (attention: type them using spaces as separators)")
-    parser.add_argument("-cf", "--CLFS_FLAGS", type=str_to_bool, default=CLFS_FLAGS, nargs="+", 
+    parser.add_argument("-cf", "--CLFS_FLAGS", type=str_to_bool, default=CLFS_FLAGS, nargs=5, 
                         help=f"boolean flags (list) specifying which classifiers from the predefined set will participate in experiments (default: {CLFS_FLAGS}) (attention: type them using spaces as separators)")
     parser.add_argument("-rd", "--RANDOM_DTYPE", type=str_to_dtype, default=RANDOM_DTYPE, choices=[np.int8, np.uint8, np.int16, np.uint16, np.int32, np.uint32, np.int64, np.uint64, np.float32, np.float64], 
                         help=f"dtype of input numpy arrays for experiments on random data (default: {RANDOM_DTYPE}) (attention: please type it as e.g. 'np.uint8', 'np.float32', etc.)")
