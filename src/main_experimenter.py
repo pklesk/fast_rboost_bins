@@ -10,6 +10,7 @@ from utils import cpu_and_system_props, gpu_props
 import pickle
 from datetime import date
 import sys
+import argparse
 
 np.set_printoptions(linewidth=512)
 np.set_printoptions(threshold=np.inf)    
@@ -19,9 +20,9 @@ FOLDER_EXTRAS = "../extras/"
 FOLDER_DATA_RAW = "../data_raw/"
 FOLDER_DATA = "../data/"
 
-# constants
-DATA_KIND_DEFAULT = "random" # possible values: "real" or "random"
-REAL_DATA_DEFS_DEFAULT = [
+# main settings and constants
+DATA_KIND = "random" # possible values: "real" or "random"
+REAL_DATA_DEFS = [
     ("fddb-patches", "read_data_fddb_patches", "FDDB-PATCHES (3NPI)"),
     ("cifar-10", "read_data_cifar_10", "CIFAR-10 (AIRPLANE)"),
     ("mnist-b", "read_data_mnist_b", "MNIST-B (DIGIT 0)"),
@@ -30,24 +31,23 @@ REAL_DATA_DEFS_DEFAULT = [
     ("hagrid-hfs-10", "read_data_hagrid_haar_npi_10", "HaGRID-HFs (PALM, 10NPI)"),    
     ("hagrid-hfs-30", "read_data_hagrid_haar_npi_30", "HaGRID-HFs (PALM, 30NPI)")    
     ]
-REAL_DATA_FLAGS_DEFAULT = [False, False, False, False, False, False, False]
-CLFS_DEFS_DEFAULT = [
+REAL_DATA_FLAGS = [True, False, False, False, False, False, False]
+CLFS_DEFS = [
         (AdaBoostClassifier, {"algorithm": "SAMME.R"}, {"color": "black"}),
         (GradientBoostingClassifier, {"max_depth": 1}, {"color": "green"}),
         (HistGradientBoostingClassifier, {"max_depth": 1, "early_stopping": False}, {"color": "orange"}),
         (FastRealBoostBins, {"fit_mode": "numba_jit", "decision_function_mode": "numba_jit"}, {"color": "blue"}),
         (FastRealBoostBins, {"fit_mode": "numba_cuda", "decision_function_mode": "numba_cuda"}, {"color": "red"})        
         ]
-CLFS_FLAGS_DEFAULT = [False, False, True, False, True]
-RANDOM_DTYPE_DEFAULT = np.int8
-NMM_MAGN_ORDERS_DEFAULT = [(5, 3, 5)] # only in case of data kind "random"
-#TS_DEFAULT = [16, 32, 64, 128, 256, 512, 1024]
-TS_DEFAULT = [2048]
-BS_DEFAULT = [8]
-SEED_DEFAULT = 0
-PLOTS_DEFAULT = False
-PLOTS_ARG_NAME_DEFAULT = "T"
-PLOTS_VALUES_NAMES_DEFAULT = ["acc_test", "acc_train", "time_fit", "time_predict_train", "time_predict_test"]
+CLFS_FLAGS = [True, True, True, True, True]
+RANDOM_DTYPE = np.int8 # possible values: TODO
+NMM_MAGN_ORDERS = [(5, 3, 5)] # only in case of data kind "random"
+TS = [16, 32, 64, 128, 256, 512, 1024]
+BS = [8]
+SEED = 0
+PLOTS = False
+PLOTS_ARG_NAME = "T"
+PLOTS_VALUES_NAMES = ["acc_test", "acc_train", "time_fit", "time_predict_train", "time_predict_test"]
 EPS = 1e-9
 
 # plot settings
@@ -78,6 +78,13 @@ def hash_function(s):
 
 def experiment_hash_str(kind="real", params=None, digits=10):
     return kind + "_" + str((hash_function(str(params)) & ((1 << 32) - 1)) % 10**digits).rjust(digits, "0") + "_" + date.today().strftime("%Y%m%d")
+
+def list_to_str(l):
+    list_str = ""
+    for i, elem in enumerate(l):
+        list_str += "[" if i == 0 else " "  
+        list_str += str(elem) + (",\n" if i < len(l) - 1 else "]")
+    return list_str 
 
 def unpickle_objects(fname):
     print(f"UNPICKLE OBJECTS... [from file: {fname}]")
@@ -156,10 +163,10 @@ def read_data_hagrid_haar_npi_30():
     [X_train, y_train, X_test, y_test] = unpickle_objects(FOLDER_DATA + fname)
     return X_train, y_train, X_test, y_test    
     
-def experimenter_random_data(dtype=RANDOM_DTYPE_DEFAULT, nmm_magn_orders=NMM_MAGN_ORDERS_DEFAULT,
-                             clfs_defs=CLFS_DEFS_DEFAULT, clfs_flags=CLFS_FLAGS_DEFAULT, 
-                             Ts=TS_DEFAULT, Bs=BS_DEFAULT, seed=0, 
-                             plots=PLOTS_DEFAULT, plots_arg_name=PLOTS_ARG_NAME_DEFAULT, plots_values_names=PLOTS_VALUES_NAMES_DEFAULT,
+def experimenter_random_data(dtype=RANDOM_DTYPE, nmm_magn_orders=NMM_MAGN_ORDERS,
+                             clfs_defs=CLFS_DEFS, clfs_flags=CLFS_FLAGS, 
+                             Ts=TS, Bs=BS, seed=0, 
+                             plots=PLOTS, plots_arg_name=PLOTS_ARG_NAME, plots_values_names=PLOTS_VALUES_NAMES,
                              cpu_props=None, gpu_props=None):
     print("EXPERIMENTER RANDOM DATA...")
     hash_str = experiment_hash_str("random", locals())
@@ -295,10 +302,10 @@ def experimenter_random_data(dtype=RANDOM_DTYPE_DEFAULT, nmm_magn_orders=NMM_MAG
             plt.savefig(FOLDER_EXTRAS +  fname + ".pdf")
             plt.close()
             
-def experimenter_real_data(real_data_defs=REAL_DATA_DEFS_DEFAULT, real_data_flags=REAL_DATA_FLAGS_DEFAULT,
-                           clfs_defs=CLFS_DEFS_DEFAULT, clfs_flags=CLFS_FLAGS_DEFAULT,
-                           Ts=TS_DEFAULT, Bs=BS_DEFAULT, seed=SEED_DEFAULT, 
-                           plots=PLOTS_DEFAULT, plots_arg_name=PLOTS_ARG_NAME_DEFAULT, plots_values_names=PLOTS_VALUES_NAMES_DEFAULT,
+def experimenter_real_data(real_data_defs=REAL_DATA_DEFS, real_data_flags=REAL_DATA_FLAGS,
+                           clfs_defs=CLFS_DEFS, clfs_flags=CLFS_FLAGS,
+                           Ts=TS, Bs=BS, seed=SEED, 
+                           plots=PLOTS, plots_arg_name=PLOTS_ARG_NAME, plots_values_names=PLOTS_VALUES_NAMES,
                            cpu_props=None, gpu_props=None):
     print("EXPERIMENTER REAL DATA...")    
     hash_str = experiment_hash_str("real", locals())
@@ -432,27 +439,66 @@ def experimenter_real_data(real_data_defs=REAL_DATA_DEFS_DEFAULT, real_data_flag
             fname = "fig_experiment_" + hash_str + "_" + data_names_mapper[nonargs[key]["data_name"]] + "_" + vn
             plt.savefig(FOLDER_EXTRAS +  fname + ".eps")
             plt.savefig(FOLDER_EXTRAS +  fname + ".pdf")
-            plt.close()                                                                                    
+            plt.close()       
+            
+def str_to_dtype(s):
+    return eval(s)
 
+def str_to_tuple(s):
+    return eval(s)
+
+def str_to_bool(s):
+    return eval(s)
+            
+def parse_args():
+    parser = argparse.ArgumentParser()
+    parser.add_argument("-dk", "--DATA_KIND", type=str, default=DATA_KIND, choices=["real", "random"], help=f"kind of data on which to experiment (default: {DATA_KIND})")
+    parser.add_argument("-rdf", "--REAL_DATA_FLAGS", type=str_to_bool, default=REAL_DATA_FLAGS, nargs="+", 
+                        help=f"boolean flags (list) specifying which data sets from the predefined set will participate in experiments on real data (default: {REAL_DATA_FLAGS}) (attention: type them using spaces as separators)")
+    parser.add_argument("-cf", "--CLFS_FLAGS", type=str_to_bool, default=CLFS_FLAGS, nargs="+", 
+                        help=f"boolean flags (list) specifying which classifiers from the predefined set will participate in experiments (default: {CLFS_FLAGS}) (attention: type them using spaces as separators)")
+    parser.add_argument("-rd", "--RANDOM_DTYPE", type=str_to_dtype, default=RANDOM_DTYPE, choices=[np.int8, np.uint8, np.int16, np.uint16, np.int32, np.uint32, np.int64, np.uint64, np.float32, np.float64], 
+                        help=f"dtype of input numpy arrays for experiments on random data (default: {RANDOM_DTYPE}) (attention: please type it as e.g. 'np.uint8', 'np.float32', etc.)")
+    parser.add_argument("-nmm", "--NMM_MAGN_ORDERS", type=str_to_tuple, default=NMM_MAGN_ORDERS, nargs="+", 
+                        help=f"list of tuples represented as strings defining orders of magnitude for random input arrays in experiments on random data (default: {NMM_MAGN_ORDERS}) (attention: type them using spaces as separators and with each tuple in quotation marks)")
+    parser.add_argument("-ts", "--TS", type=int, default=TS, nargs="+", 
+                        help=f"ensemble sizes (list) to impose on each type of classifier in experiments (default: {TS}) (attention: type them using spaces as separators)")
+    parser.add_argument("-bs", "--BS", type=int, default=BS, nargs="+", 
+                        help=f"bins counts (list) to impose on each type of classifier in experiments (default: {BS}) (attention: type them using spaces as separators)")
+    parser.add_argument("-s", "--SEED", type=int, default=SEED, help=f"randomization seed, (default: {SEED})")    
+    parser.add_argument("-p", "--PLOTS", type=str_to_bool, default=PLOTS, help=f"boolean flag indicating if plots should be generated after experiments (default: {PLOTS})")
+    parser.add_argument("-pan", "--PLOTS_ARG_NAME", type=str, default=PLOTS_ARG_NAME, choices=["T", "B", "n", "m_train", "m_test"], 
+                        help=f"name of argument quantity to be placed on horizontal axis in plots (default: {PLOTS_ARG_NAME})")
+    parser.add_argument("-pvn", "--PLOTS_VALUES_NAMES", type=str, default=PLOTS_VALUES_NAMES, choices=PLOTS_VALUES_NAMES, nargs="+", 
+                        help=f"names of value quantities to be placed on vertical axis in plots (default: {PLOTS_VALUES_NAMES}) (attention: type them using spaces as separators)")
+    args = parser.parse_args()
+    globals().update(vars(args))                                                                              
+
+# ----------------------------------------------------------------------------------------------------------------------------------------------------------------
+# MAIN
+# ----------------------------------------------------------------------------------------------------------------------------------------------------------------
 if __name__ == "__main__":
-    print("\"FAST-REAL-BOOST-BINS\": AN ENSEMBLE CLASSIFIER FOR FAST PREDICTIONS IMPLEMENTED IN PYTHON VIA NUMBA.JIT AND NUMBA.CUDA.")
-    print(f"MAIN-EXPERIMENTER STARTING...]")
+    print("\"FAST-REAL-BOOST-BINS\": AN ENSEMBLE CLASSIFIER FOR FAST PREDICTIONS IMPLEMENTED IN PYTHON VIA NUMBA.JIT AND NUMBA.CUDA. [main_experimenter]", flush=True)
+    print(f"REAL DATA DEFINITIONS:\n{list_to_str(REAL_DATA_DEFS)}")
+    print(f"CLASSIFIERS DEFINITIONS:\n{list_to_str(CLFS_DEFS)}")    
+    parse_args()
+    print(f"MAIN-EXPERIMENTER STARTING...")    
     cpu_props = cpu_and_system_props()
     gpu_props = gpu_props()
     print(f"CPU AND SYSTEM PROPS: {cpu_props}")
-    print(f"GPU PROPS: {gpu_props}")        
-    data_kind = DATA_KIND_DEFAULT
-    clfs_defs = CLFS_DEFS_DEFAULT
-    clfs_flags = CLFS_FLAGS_DEFAULT
-    Ts = TS_DEFAULT
-    Bs = BS_DEFAULT
-    seed = SEED_DEFAULT
-    plots = PLOTS_DEFAULT
-    plots_arg_name = PLOTS_ARG_NAME_DEFAULT
-    plots_values_names = PLOTS_VALUES_NAMES_DEFAULT
+    print(f"GPU PROPS: {gpu_props}")   
+    data_kind = DATA_KIND
+    clfs_defs = CLFS_DEFS
+    clfs_flags = CLFS_FLAGS
+    Ts = TS
+    Bs = BS
+    seed = SEED
+    plots = PLOTS
+    plots_arg_name = PLOTS_ARG_NAME
+    plots_values_names = PLOTS_VALUES_NAMES
     if data_kind == "real":        
-        real_data_flags = REAL_DATA_FLAGS_DEFAULT
-        real_data_defs = REAL_DATA_DEFS_DEFAULT        
+        real_data_flags = REAL_DATA_FLAGS
+        real_data_defs = REAL_DATA_DEFS        
         print(f"[data kind: {data_kind}, real data flags: {real_data_flags}, clfs flags: {clfs_flags}, seed: {seed}]")        
         experimenter_real_data(real_data_defs=real_data_defs, real_data_flags=real_data_flags,
                                clfs_defs=clfs_defs, clfs_flags=clfs_flags, 
@@ -461,10 +507,10 @@ if __name__ == "__main__":
                                cpu_props=cpu_props, gpu_props=gpu_props)
     elif data_kind == "random":
         print(f"[data kind: {data_kind}, clfs flags: {clfs_flags}, seed: {seed}]")
-        random_dtype = RANDOM_DTYPE_DEFAULT
-        experimenter_random_data(dtype=random_dtype, nmm_magn_orders=NMM_MAGN_ORDERS_DEFAULT,
+        random_dtype = RANDOM_DTYPE
+        experimenter_random_data(dtype=random_dtype, nmm_magn_orders=NMM_MAGN_ORDERS,
                                  clfs_defs=clfs_defs, clfs_flags=clfs_flags,                                
                                  Ts=Ts, Bs=Bs, seed=seed, 
                                  plots=plots, plots_arg_name=plots_arg_name, plots_values_names=plots_values_names,
-                                 cpu_props=cpu_props, gpu_props=gpu_props)            
+                                 cpu_props=cpu_props, gpu_props=gpu_props)      
     print("MAIN-EXPERIMENTER DONE.")

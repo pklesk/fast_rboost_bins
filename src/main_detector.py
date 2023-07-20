@@ -953,9 +953,9 @@ def parse_args():
                         help=f"decision threshold, can be set to None then classifier's internal threshold is used (default: {DETECTION_DECISION_THRESHOLD})")
     parser.add_argument("-dp", "--DETECTION_POSTPROCESS", choices=["None", "avg", "nms"], default=DETECTION_POSTPROCESS, help=f"type of detection postprocessing (default: {DETECTION_POSTPROCESS})")
     parser.add_argument("-mccn", "--MC_CLFS_NAMES", type=str, default=MC_CLFS_NAMES, nargs="+", 
-                        help=f"classifiers names (list) for detection with multiple classifiers (default: {MC_CLFS_NAMES})")    
+                        help=f"classifiers names (list) for detection with multiple classifiers (default: {MC_CLFS_NAMES}) (attention: type them using spaces as separators)")    
     parser.add_argument("-mcdt", "--MC_DECISION_THRESHOLDS", type=str_to_float_or_none, default=MC_DECISION_THRESHOLDS, nargs="+", 
-                        help=f"decision thresholds (list) for detection with multiple classifiers, any can be set to None (default: {MC_DECISION_THRESHOLDS})")                                    
+                        help=f"decision thresholds (list) for detection with multiple classifiers, any can be set to None (default: {MC_DECISION_THRESHOLDS}) (attention: type them using spaces as separators)")                                    
     args = parser.parse_args()
     if args.DETECTION_DECISION_THRESHOLD == "None":
         args.DETECTION_DECISION_THRESHOLD = None
@@ -968,9 +968,9 @@ def parse_args():
 # MAIN
 # ----------------------------------------------------------------------------------------------------------------------------------------------------------------
 if __name__ == "__main__":        
-    print("\"FAST-REAL-BOOST-BINS\": AN ENSEMBLE CLASSIFIER FOR FAST PREDICTIONS IMPLEMENTED IN PYTHON VIA NUMBA.JIT AND NUMBA.CUDA.", flush=True)
+    print("\"FAST-REAL-BOOST-BINS\": AN ENSEMBLE CLASSIFIER FOR FAST PREDICTIONS IMPLEMENTED IN PYTHON VIA NUMBA.JIT AND NUMBA.CUDA. [main_detector]", flush=True)
     parse_args()
-    print("MAIN-DETECTOR STARTING...")    
+    print("MAIN-DETECTOR STARTING...")  
     print(f"CPU AND SYSTEM PROPS: {cpu_and_system_props()}")
     print(f"GPU PROPS: {gpu_props()}")    
 
