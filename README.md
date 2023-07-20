@@ -47,7 +47,10 @@ TRAIN ACC: 1.0
 TEST ACC: 0.958041958041958
 ```
 
-## Constructor parameters and estimated attributes
+## Constructor parameters
+TODO
+
+## Estimated attributes
 TODO
 
 ## Selected experimental results
@@ -80,6 +83,79 @@ HistGradientBoostingClassifier(early_stopping=False, max_iter=T, max_bins=B)
 |<img src="/extras/fig_experiment_real_1903270360_20230625_fddb-patches_time_fit.png"/>|<img src="/extras/fig_experiment_real_1903270360_20230625_fddb-patches_time_predict_test.png"/>|
 |<img src="/extras/fig_experiment_real_2001519960_20230626_mnist-b_time_fit.png"/>|<img src="/extras/fig_experiment_real_2001519960_20230626_mnist-b_time_predict_test.png"/>|
 |<img src="/extras/fig_experiment_real_1178284368_20230627_hagrid-hfs-10_time_fit.png"/>|<img src="/extras/fig_experiment_real_1178284368_20230627_hagrid-hfs-10_time_predict_test.png"/>|
+
+## Script for experiments: `main_experimenter` 
+TODO
+
+## Script for object detection: `main_detector` 
+By executing `python main_detector.py -h` (or `--help`) one obtains help on script arguments:
+```bash
+"FAST-REAL-BOOST-BINS": AN ENSEMBLE CLASSIFIER FOR FAST PREDICTIONS IMPLEMENTED IN PYTHON VIA NUMBA.JIT AND NUMBA.CUDA.
+usage: main_detector.py [-h] [-k {face,hand}] [-s S] [-p P] [-npi NPI] [-t T] [-b B] [-seed SEED] [-dhfsa] [-dhfss] [-rd] [-form] [-maom] [-adtom] [-ddiv] [-ddivc {gpu_cuda,cpu_simple,cpu_parallel}]
+                        [-ddivpj DEMO_DETECT_IN_VIDEO_PARALLEL_JOBS] [-ddivvl] [-ddivvd] [-ddivf DEMO_DETECT_IN_VIDEO_FRAMES] [-ddivmc] [-cv2vcci CV2_VIDEO_CAPTURE_CAMERA_INDEX] [-cv2iim] [-ds DETECTION_SCALES]
+                        [-dwhm DETECTION_WINDOW_HEIGHT_MIN] [-dwwm DETECTION_WINDOW_WIDTH_MIN] [-dwg DETECTION_WINDOW_GROWTH] [-dwj DETECTION_WINDOW_JUMP] [-ddt DETECTION_DECISION_THRESHOLD] [-dp {None,avg,nms}]
+                        [-mccn MC_CLFS_NAMES [MC_CLFS_NAMES ...]] [-mcdt MC_DECISION_THRESHOLDS [MC_DECISION_THRESHOLDS ...]]
+
+optional arguments:
+  -h, --help            show this help message and exit
+  -k {face,hand}, --KIND {face,hand}
+                        detector kind (default: face)
+  -s S, --S S           'scales' parameter of Haar-like features (default: 5)
+  -p P, --P P           'positions' parameter of Haar-like features (default: 5)
+  -npi NPI, --NPI NPI   'negatives per image' parameter, used in procedures generating data sets from images (default: 300 with -k set to face)
+  -t T, --T T           number of boosting rounds, (default: 1024)
+  -b B, --B B           numbet of bins, (default: 8)
+  -seed SEED, --SEED SEED
+                        randomization seed, (default: 0)
+  -dhfsa, --DEMO_HAAR_FEATURES_ALL
+                        turn on demo of all Haar-like features
+  -dhfss, --DEMO_HAAR_FEATURES_SELECTED
+                        turn on demo of selected Haar-like features
+  -rd, --REGENERATE_DATA
+                        turn on data regeneration
+  -form, --FIT_OR_REFIT_MODEL
+                        fit new or refit an existing model
+  -maom, --MEASURE_ACCS_OF_MODEL
+                        measure accuracies of a model
+  -adtom, --ADJUST_DECISION_THRESHOLD_OF_MODEL
+                        adjust decision threshold of a model (based on ROC for testing data)
+  -ddiv, --DEMO_DETECT_IN_VIDEO
+                        turn on demo of detection in video
+  -ddivc {gpu_cuda,cpu_simple,cpu_parallel}, --DEMO_DETECT_IN_VIDEO_COMPUTATIONS {gpu_cuda,cpu_simple,cpu_parallel}
+                        type of computations for demo of detection in video (default: gpu_cuda)
+  -ddivpj DEMO_DETECT_IN_VIDEO_PARALLEL_JOBS, --DEMO_DETECT_IN_VIDEO_PARALLEL_JOBS DEMO_DETECT_IN_VIDEO_PARALLEL_JOBS
+                        number of parallel jobs (only in case of 'cpu_parallel' set for -ddivc) (default: 8)
+  -ddivvl, --DEMO_DETECT_IN_VIDEO_VERBOSE_LOOP
+                        turn on verbosity for main loop of detection in video
+  -ddivvd, --DEMO_DETECT_IN_VIDEO_VERBOSE_DETECT
+                        turn on detailed verbosity for detection in video
+  -ddivf DEMO_DETECT_IN_VIDEO_FRAMES, --DEMO_DETECT_IN_VIDEO_FRAMES DEMO_DETECT_IN_VIDEO_FRAMES
+                        limit overall detection in video to given number of frames
+  -ddivmc, --DEMO_DETECT_IN_VIDEO_MULTIPLE_CLFS
+                        turn on demo of detection in video with multiple classifiers (currently: face and hand detectors)
+  -cv2vcci CV2_VIDEO_CAPTURE_CAMERA_INDEX, --CV2_VIDEO_CAPTURE_CAMERA_INDEX CV2_VIDEO_CAPTURE_CAMERA_INDEX
+                        video camera index (default: 0)
+  -cv2iim, --CV2_VIDEO_CAPTURE_IS_IT_MSWINDOWS
+                        specify if OS is MS Windows (for cv2 and directx purposes)
+  -ds DETECTION_SCALES, --DETECTION_SCALES DETECTION_SCALES
+                        number of detection scales (default: 9)
+  -dwhm DETECTION_WINDOW_HEIGHT_MIN, --DETECTION_WINDOW_HEIGHT_MIN DETECTION_WINDOW_HEIGHT_MIN
+                        minimum height of detection window (default: 96)
+  -dwwm DETECTION_WINDOW_WIDTH_MIN, --DETECTION_WINDOW_WIDTH_MIN DETECTION_WINDOW_WIDTH_MIN
+                        minimum width of detection window (default: 96)
+  -dwg DETECTION_WINDOW_GROWTH, --DETECTION_WINDOW_GROWTH DETECTION_WINDOW_GROWTH
+                        growth factor of detection window (default: 1.2)
+  -dwj DETECTION_WINDOW_JUMP, --DETECTION_WINDOW_JUMP DETECTION_WINDOW_JUMP
+                        relative jump of detection window (default: 0.05)
+  -ddt DETECTION_DECISION_THRESHOLD, --DETECTION_DECISION_THRESHOLD DETECTION_DECISION_THRESHOLD
+                        decision threshold, can be set to None then classifier's internal threshold is used (default: None)
+  -dp {None,avg,nms}, --DETECTION_POSTPROCESS {None,avg,nms}
+                        type of detection postprocessing (default: avg)
+  -mccn MC_CLFS_NAMES [MC_CLFS_NAMES ...], --MC_CLFS_NAMES MC_CLFS_NAMES [MC_CLFS_NAMES ...]
+                        classifiers names (list) for detection with multiple classifiers (default: ['clf_frbb_face_n_18225_S_5_P_5_NPI_300_SEED_0_T_1024_B_8.bin', 'clf_frbb_hand_n_18225_S_5_P_5_NPI_30_SEED_0_T_1024_B_8.bin'])
+  -mcdt MC_DECISION_THRESHOLDS [MC_DECISION_THRESHOLDS ...], --MC_DECISION_THRESHOLDS MC_DECISION_THRESHOLDS [MC_DECISION_THRESHOLDS ...]
+                        decision thresholds (list) for detection with multiple classifiers, any can be set to None (default: [None, None])
+```
 
 ## License
 This work is licensed under <a rel="license" href="http://creativecommons.org/licenses/by-sa/4.0/">Creative Commons Attribution-ShareAlike 4.0 International License</a>.
