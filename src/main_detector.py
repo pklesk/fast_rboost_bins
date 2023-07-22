@@ -1,3 +1,5 @@
+"""This is a fake documentation for main_detector.py file"""
+
 import sys
 import numpy as np
 from frbb import FastRealBoostBins
@@ -13,13 +15,14 @@ from sklearn.metrics import roc_curve
 from matplotlib import pyplot as plt
 from utils import cpu_and_system_props, gpu_props
 import argparse
+import colorama
 
 __author__ = "Przemysław Klęsk"
 __email__ = "pklesk@zut.edu.pl"
 
 
 # main settings
-KIND = "face"
+KIND = "face" # choices: {"face", "hand"}
 S = 5 # parameter "scales" to generete Haar-like features
 P = 5 # parameter "positions" to generete Haar-like features
 NPI = 300 # "negatives per image" - no. of negatives (negative windows) to sample per image (image real or generated synthetically) 
@@ -33,12 +36,12 @@ FIT_OR_REFIT_MODEL = False
 MEASURE_ACCS_OF_MODEL = False
 ADJUST_DECISION_THRESHOLD_OF_MODEL = False
 DEMO_DETECT_IN_VIDEO = False
-DEMO_DETECT_IN_VIDEO_COMPUTATIONS = "gpu_cuda" # choices: "cpu_simple", "cpu_parallel", "gpu_cuda"
+DEMO_DETECT_IN_VIDEO_COMPUTATIONS = "gpu_cuda" # choices: {"cpu_simple", "cpu_parallel", "gpu_cuda"}
 DEMO_DETECT_IN_VIDEO_PARALLEL_JOBS = 8
-DEMO_DETECT_IN_VIDEO_VERBOSE_LOOP = True
+DEMO_DETECT_IN_VIDEO_VERBOSE_LOOP = False
 DEMO_DETECT_IN_VIDEO_VERBOSE_DETECT = False
 DEMO_DETECT_IN_VIDEO_FRAMES = None # if not None but integer then detection is stopped after seeing given number of frames
-DEMO_DETECT_IN_VIDEO_MULTIPLE_CLFS = True
+DEMO_DETECT_IN_VIDEO_MULTIPLE_CLFS = False
 
 # cv2 camera settings
 CV2_VIDEO_CAPTURE_CAMERA_INDEX = 0
@@ -51,7 +54,7 @@ DETECTION_WINDOW_WIDTH_MIN = 96 # 96 (lighter), 64 (heavier)
 DETECTION_WINDOW_GROWTH = 1.2
 DETECTION_WINDOW_JUMP = 0.05
 DETECTION_DECISION_THRESHOLD = None # can be set to None (then classfier's internal threshold is used)
-DETECTION_POSTPROCESS = "avg" # choices: None, "avg", "nms"
+DETECTION_POSTPROCESS = "avg" # choices: {None, "avg", "nms"}
 
 # settings for detection with multiple classifiers (special option)
 MC_CLFS_NAMES = ["clf_frbb_face_n_18225_S_5_P_5_NPI_300_SEED_0_T_1024_B_8.bin", "clf_frbb_hand_n_18225_S_5_P_5_NPI_30_SEED_0_T_1024_B_8.bin"]
@@ -62,6 +65,8 @@ FOLDER_DATA = "../data/"
 FOLDER_CLFS = "../models/"
 FOLDER_EXTRAS = "../extras/"
   
+# colorama-related
+SILVER = "\x1b[48;5;250m"
                             
 def pickle_objects(fname, some_list):
     print(f"PICKLE OBJECTS... [to file: {fname}]")
@@ -963,12 +968,13 @@ def parse_args():
         args.DETECTION_POSTPROCESS = None
     globals().update(vars(args))    
 
-
 # ----------------------------------------------------------------------------------------------------------------------------------------------------------------
 # MAIN
 # ----------------------------------------------------------------------------------------------------------------------------------------------------------------
-if __name__ == "__main__":        
-    print("\"FAST-REAL-BOOST-BINS\": AN ENSEMBLE CLASSIFIER FOR FAST PREDICTIONS IMPLEMENTED IN PYTHON VIA NUMBA.JIT AND NUMBA.CUDA. [main_detector]", flush=True)
+if __name__ == "__main__":   
+    colorama.init()     
+    print(colorama.Fore.LIGHTYELLOW_EX + "\"FAST-REAL-BOOST-BINS\": AN ENSEMBLE CLASSIFIER FOR FAST PREDICTIONS IMPLEMENTED IN PYTHON VIA NUMBA.JIT AND NUMBA.CUDA. [main_detector]", flush=True)
+    print(colorama.Fore.YELLOW + "[for help use -h or --help switch]" + colorama.Style.RESET_ALL)
     parse_args()
     print("MAIN-DETECTOR STARTING...")  
     print(f"CPU AND SYSTEM PROPS: {cpu_and_system_props()}")

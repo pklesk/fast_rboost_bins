@@ -1,9 +1,16 @@
+"""This is a fake documentation for utils.py file."""
+
 import cpuinfo
 import platform
 import psutil
 from numba import cuda
  
-def cpu_and_system_props():    
+#__author__ = "Przemysław Klęsk"
+#__email__ = "pklesk@zut.edu.pl"
+
+
+def cpu_and_system_props():
+    """Returns a dictionary with info on CPU and OS."""
     props = {}    
     info = cpuinfo.get_cpu_info()
     un = platform.uname()

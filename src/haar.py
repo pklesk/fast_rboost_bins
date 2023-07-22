@@ -8,6 +8,7 @@ import warnings
 __author__ = "Przemysław Klęsk"
 __email__ = "pklesk@zut.edu.pl"
 
+
 warnings.simplefilter("ignore", category=NumbaPerformanceWarning)
 np.set_printoptions(linewidth=512)
 

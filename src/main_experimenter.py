@@ -11,6 +11,11 @@ import pickle
 from datetime import date
 import sys
 import argparse
+import colorama
+
+__author__ = "Przemysław Klęsk"
+__email__ = "pklesk@zut.edu.pl"
+
 
 np.set_printoptions(linewidth=512)
 np.set_printoptions(threshold=np.inf)    
@@ -21,7 +26,7 @@ FOLDER_DATA_RAW = "../data_raw/"
 FOLDER_DATA = "../data/"
 
 # main settings and constants
-DATA_KIND = "random" # possible values: "real" or "random"
+DATA_KIND = "real" # choices: {"real", "random"}
 REAL_DATA_DEFS = [
     ("fddb-patches", "read_data_fddb_patches", "FDDB-PATCHES (3NPI)"),
     ("cifar-10", "read_data_cifar_10", "CIFAR-10 (AIRPLANE)"),
@@ -31,7 +36,7 @@ REAL_DATA_DEFS = [
     ("hagrid-hfs-10", "read_data_hagrid_haar_npi_10", "HaGRID-HFs (PALM, 10NPI)"),    
     ("hagrid-hfs-30", "read_data_hagrid_haar_npi_30", "HaGRID-HFs (PALM, 30NPI)")    
     ]
-REAL_DATA_FLAGS = [True, False, False, False, False, False, False]
+REAL_DATA_FLAGS = [False, False, False, False, False, False, False]
 CLFS_DEFS = [
         (AdaBoostClassifier, {"algorithm": "SAMME.R"}, {"color": "black"}),
         (GradientBoostingClassifier, {"max_depth": 1}, {"color": "green"}),
@@ -40,7 +45,7 @@ CLFS_DEFS = [
         (FastRealBoostBins, {"fit_mode": "numba_cuda", "decision_function_mode": "numba_cuda"}, {"color": "red"})        
         ]
 CLFS_FLAGS = [True, True, True, True, True]
-RANDOM_DTYPE = np.int8 # possible values: TODO
+RANDOM_DTYPE = np.int8 # choices: {np.int8, np.uint8, ..., np.int64, np.uint64} or {np.float32, np.float64}
 NMM_MAGN_ORDERS = [(5, 3, 5)] # only in case of data kind "random"
 TS = [16, 32, 64, 128, 256, 512, 1024]
 BS = [8]
@@ -478,9 +483,11 @@ def parse_args():
 # MAIN
 # ----------------------------------------------------------------------------------------------------------------------------------------------------------------
 if __name__ == "__main__":
-    print("\"FAST-REAL-BOOST-BINS\": AN ENSEMBLE CLASSIFIER FOR FAST PREDICTIONS IMPLEMENTED IN PYTHON VIA NUMBA.JIT AND NUMBA.CUDA. [main_experimenter]", flush=True)
+    colorama.init()     
+    print(colorama.Fore.LIGHTYELLOW_EX + "\"FAST-REAL-BOOST-BINS\": AN ENSEMBLE CLASSIFIER FOR FAST PREDICTIONS IMPLEMENTED IN PYTHON VIA NUMBA.JIT AND NUMBA.CUDA. [main_experimenter]" + colorama.Style.RESET_ALL, flush=True)
+    print(colorama.Fore.YELLOW + "[for help use -h or --help switch]")    
     print(f"REAL DATA DEFINITIONS:\n{list_to_str(REAL_DATA_DEFS)}")
-    print(f"CLASSIFIERS DEFINITIONS:\n{list_to_str(CLFS_DEFS)}")    
+    print(f"CLASSIFIERS DEFINITIONS:\n{list_to_str(CLFS_DEFS)}" + colorama.Style.RESET_ALL)    
     parse_args()
     print(f"MAIN-EXPERIMENTER STARTING...")    
     cpu_props = cpu_and_system_props()

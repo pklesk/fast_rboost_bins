@@ -1,4 +1,5 @@
 "FAST-REAL-BOOST-BINS": AN ENSEMBLE CLASSIFIER FOR FAST PREDICTIONS IMPLEMENTED IN PYTHON VIA NUMBA.JIT AND NUMBA.CUDA. [main_experimenter]
+[for help use -h or --help switch]
 REAL DATA DEFINITIONS:
 [('fddb-patches', 'read_data_fddb_patches', 'FDDB-PATCHES (3NPI)'),
  ('cifar-10', 'read_data_cifar_10', 'CIFAR-10 (AIRPLANE)'),

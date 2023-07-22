@@ -8,6 +8,7 @@ import json
 __author__ = "Przemysław Klęsk"
 __email__ = "pklesk@zut.edu.pl"
 
+
 # folders
 FOLDER_DATA_RAW = "../data_raw/"
 FOLDER_DATA_RAW_FDDB = FOLDER_DATA_RAW + "fddb/"

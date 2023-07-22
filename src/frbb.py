@@ -1,3 +1,48 @@
+"""This module contains the core machine learning functionalities of the project, embodied by the class FastRealBoostBins (compliant with scikit-learn).
+Main classes and functions include:
+
+- `FastRealBoostBins`: Class representing ensemble classifier for fast predictions implemented using numba.jit and numba.cuda,
+
+- `_lock`, `_unlock`: utility functions (placed outside the class, related to mutex mechanisms in case of the fit performed using 'numba_cuda' mode).
+
+Example Usage
+------------
+With frbb.py file (containing FastRealBoostBins class) included to some project, one can write e.g.:
+
+.. code-block:: python
+
+    from frbb import FastRealBoostBins
+    from sklearn.datasets import load_breast_cancer
+    from sklearn.model_selection import train_test_split    
+    if __name__ == "__main__":    
+        X, y = load_breast_cancer(return_X_y=True)
+        X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.25, stratify=y, random_state=0)
+        clf = FastRealBoostBins()
+        clf.fit(X_train, y_train)
+        print(f"CLF: {clf}")
+        print(f"TRAIN ACC: {clf.score(X_train, y_train)}")
+        print(f"TEST ACC: {clf.score(X_test, y_test)}")
+
+Running the script above produces the following output:
+        
+.. code-block:: console
+
+    CLF: FastRealBoostBins(T=256, B=8, outliers_ratio=0.05, logit_max: 2.0, fit_mode='numba_cuda', decision_function_mode='numba_cuda')
+    TRAIN ACC: 1.0
+    TEST ACC: 0.958041958041958
+
+Dependencies
+------------
+- numpy, math: Required for mathematical computations.
+
+- numba: Required for just-in-time compilation of crucial computational functions and CUDA kernels (decorated by numba.jit and numba.cuda) 
+
+- sklearn: Required for inheritence and other sklearn API purposes.
+
+- json: Required for load / dump methods pertaining to json files 
+
+"""
+
 import numpy as np
 from numpy import inf
 from numba import cuda, jit
@@ -14,9 +59,9 @@ from sklearn.utils import check_array, check_X_y
 from sklearn.utils.validation import column_or_1d, check_is_fitted
 from sklearn.utils.multiclass import check_classification_targets
         
-__version__ = "0.8.0"
+__version__ = "1.0.0"
 __author__ = "Przemysław Klęsk"
-__email__ = "pklesk@zut.edu.pl"
+__email__ = "pklesk@zut.edu.pl"   
         
 warnings.simplefilter("ignore", category=NumbaPerformanceWarning)
 np.set_printoptions(linewidth=512)
@@ -35,7 +80,16 @@ def _unlock(mutex):
 
 
 # the class
-class FastRealBoostBins(BaseEstimator, ClassifierMixin):    
+class FastRealBoostBins(BaseEstimator, ClassifierMixin):
+    """An ensemble classifier for fast predictions implemented using numba.jit and numba.cuda. 
+    Bins with logit transform values play the role of 'weak learners'.
+       
+    Attributes:
+        features_selected_ (ndarray[np.int32]): indexes of selected features, array of shape (T,)
+        dtype_ (np.dtype): type of input data array, one of: {np.int8, np.uint8, ..., np.int64, np.uint64}
+            or {np.float32, np.float64} - numeric types are only allowed
+        mins_selected_ (ndarray): left ends of ranges for selected features (type matching dtype_)        
+    """
 
     # constants
     T_DEFAULT = 256
@@ -57,16 +111,18 @@ class FastRealBoostBins(BaseEstimator, ClassifierMixin):
     # error messages
     SKLEARN_ERR_MESSAGE_UNKNOWN_LABEL_TYPE = "Unknown label type"
     SKLEARN_ERR_MESSAGE_DISCREPANCY_IN_NO_OF_FEATURES = "Number of features in predict or decision_function is different from the number of features in fit"
-
-    def _get_tags(self=None):
-        tags = super()._get_tags()
-        tags["binary_only"] = True
-        tags["non_deterministic"] = True # in case of cuda computations  
-        return tags
     
     def __init__(self, T=T_DEFAULT, B=B_DEFAULT, outliers_ratio=OUTLIERS_RATIO_DEFAULT, logit_max=LOGIT_MAX_DEFAULT, 
                  fit_mode=FIT_MODE_DEFAULT, decision_function_mode=DECISION_FUNCTION_MODE_DEFAULT, 
                  verbose=VERBOSE_DEFAULT, debug_verbose=DEBUG_VERBOSE_DEFAULT):
+        """Constructor of FastRealBoostBins instances.
+         
+        Args:
+            T (int): number of boosting rounds (=number of weak estimators), defaults to  256 
+            B (int): number of bins, defaults to 8
+            
+        """
+
         super().__init__()
         self.T = T
         self.B = B    
@@ -76,6 +132,12 @@ class FastRealBoostBins(BaseEstimator, ClassifierMixin):
         self.decision_function_mode = decision_function_mode
         self.verbose = verbose
         self.debug_verbose = debug_verbose        
+
+    def _get_tags(self=None):
+        tags = super()._get_tags()
+        tags["binary_only"] = True
+        tags["non_deterministic"] = True # in case of cuda computations  
+        return tags
     
     def __str__(self):
         return f"{self.__class__.__name__}(T={self.T}, B={self.B}, outliers_ratio={self.outliers_ratio}, logit_max: {self.logit_max}, fit_mode='{self.fit_mode}', decision_function_mode='{self.decision_function_mode}')"
