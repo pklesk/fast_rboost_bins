@@ -7,7 +7,7 @@
 </tr>
 </table>
 
-Takin advantage of [Numba](https://numba.pydata.org/) (a high-performance just-in-time Python compiler) 
+Taking advantage of [Numba](https://numba.pydata.org/) (a high-performance just-in-time Python compiler) 
 we provide a fast operating implementation of a boosting algorithm
 in which bins with logit transform values play the role of “weak learners”.
 
