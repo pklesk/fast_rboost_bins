@@ -71,7 +71,7 @@ Hardware environment: Intel(R) Core(TM) i7-10700 CPU @ 2.90GHz, 125.7 GB RAM, NV
 Software environment: Linux 5.15.0-71-generic, Python 3.8.10, GCC 9.4.0, numpy 1.22.3, numba 0.57.0, sklearn 1.0.2, cv2 4.6.0, nvcc 11.7.
 
 #### 'FDDB-PATCHES (3NPI)', T=1024: &nbsp;&nbsp; train data: (11 775 $\times$ 3 072) ~ 10<sup>7.6</sup>, &nbsp; test data: (1 303 $\times$ 3 072 $\rightarrow$ 1 024) ~ 10<sup>6.1</sup>
-| classifier                        | fit time [s] | fit speedup $\approx$ | predict time [s]         | predict speedup $\approx$ | acc [%]     | predict time [s] | predict speedup $\approx$ | acc [%]    |
+| classifier                        | fit time [s] | fit speed <br/>-up $\approx$ | predict time [s]         | predict speed <br/>-up $\approx$ | acc [%]     | predict time [s] | predict speed <br/>-up $\approx$ | acc [%]    |
 |:----------------------------------|-------------:|----------------------:|-------------------------:|--------------------------:|------------:|-----------------:|--------------------------:|-----------:|
 |                                   |  **(train)** |           **(train)** |              **(train)** |               **(train)** | **(train)** |       **(test)** |                **(test)** | **(test)** |
 | `AdaBoostClassifier`              |        1 421 |            $\times$ 1 |                   33.285 |                $\times$ 1 |       99.94 |            2.702 |                $\times$ 1 |      89.56 |
