@@ -3,9 +3,11 @@
 <table>
 <tr>
     <td><img src="/extras/fig_experiment_real_1903270360_20230625_fddb-patches_time_predict_test.png"/></td>
-    <td><br/><img src="/extras/video_quadro_screenshot.jpg"/><br/>[video](/videos/video_quadro.mp4)</td>
+    <td><br/><img src="/extras/video_quadro_screenshot.jpg"/><br/></td>
 </tr>
 </table>
+
+[video](/videos/video_quadro.mp4)
 
 Taking advantage of [Numba](https://numba.pydata.org/) (a high-performance just-in-time Python compiler) 
 we provide a fast operating implementation of a boosting algorithm
