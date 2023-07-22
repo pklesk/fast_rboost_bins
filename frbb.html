@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>frbb module &mdash; fast_rboost_bins 1.0.0 documentation</title>
+      <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
+        <script src="_static/jquery.js"></script>
+        <script src="_static/underscore.js"></script>
+        <script src="_static/doctools.js"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="haar module" href="haar.html" />
+    <link rel="prev" title="datagenerator module" href="datagenerator.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="index.html" class="icon icon-home">
+            fast_rboost_bins
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="modules.html">src</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="datagenerator.html">datagenerator module</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">frbb module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#example-usage">Example Usage</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#dependencies">Dependencies</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="haar.html">haar module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="main_detector.html">main_detector module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="main_experimenter.html">main_experimenter module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="utils.html">utils module</a></li>
+</ul>
+</li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">fast_rboost_bins</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="modules.html">src</a></li>
+      <li class="breadcrumb-item active">frbb module</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/frbb.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="module-frbb">
+<span id="frbb-module"></span><h1>frbb module<a class="headerlink" href="#module-frbb" title="Permalink to this headline"></a></h1>
+<p>This module contains the core machine learning functionalities of the project, embodied by the class FastRealBoostBins (compliant with scikit-learn).
+Main classes and functions include:</p>
+<ul class="simple">
+<li><p><cite>FastRealBoostBins</cite>: Class representing ensemble classifier for fast predictions implemented using numba.jit and numba.cuda,</p></li>
+<li><p><cite>_lock</cite>, <cite>_unlock</cite>: utility functions (placed outside the class, related to mutex mechanisms in case of the fit performed using ‘numba_cuda’ mode).</p></li>
+</ul>
+<section id="example-usage">
+<h2>Example Usage<a class="headerlink" href="#example-usage" title="Permalink to this headline"></a></h2>
+<p>With frbb.py file (containing FastRealBoostBins class) included to some project, one can write e.g.:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">frbb</span> <span class="kn">import</span> <span class="n">FastRealBoostBins</span>
+<span class="kn">from</span> <span class="nn">sklearn.datasets</span> <span class="kn">import</span> <span class="n">load_breast_cancer</span>
+<span class="kn">from</span> <span class="nn">sklearn.model_selection</span> <span class="kn">import</span> <span class="n">train_test_split</span>    
+<span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s2">&quot;__main__&quot;</span><span class="p">:</span>    
+    <span class="n">X</span><span class="p">,</span> <span class="n">y</span> <span class="o">=</span> <span class="n">load_breast_cancer</span><span class="p">(</span><span class="n">return_X_y</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="n">X_train</span><span class="p">,</span> <span class="n">X_test</span><span class="p">,</span> <span class="n">y_train</span><span class="p">,</span> <span class="n">y_test</span> <span class="o">=</span> <span class="n">train_test_split</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">test_size</span><span class="o">=</span><span class="mf">0.25</span><span class="p">,</span> <span class="n">stratify</span><span class="o">=</span><span class="n">y</span><span class="p">,</span> <span class="n">random_state</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+    <span class="n">clf</span> <span class="o">=</span> <span class="n">FastRealBoostBins</span><span class="p">()</span>
+    <span class="n">clf</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">X_train</span><span class="p">,</span> <span class="n">y_train</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;CLF: </span><span class="si">{</span><span class="n">clf</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;TRAIN ACC: </span><span class="si">{</span><span class="n">clf</span><span class="o">.</span><span class="n">score</span><span class="p">(</span><span class="n">X_train</span><span class="p">,</span> <span class="n">y_train</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;TEST ACC: </span><span class="si">{</span><span class="n">clf</span><span class="o">.</span><span class="n">score</span><span class="p">(</span><span class="n">X_test</span><span class="p">,</span> <span class="n">y_test</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Running the script above produces the following output:</p>
+<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="go">CLF: FastRealBoostBins(T=256, B=8, outliers_ratio=0.05, logit_max: 2.0, fit_mode=&#39;numba_cuda&#39;, decision_function_mode=&#39;numba_cuda&#39;)</span>
+<span class="go">TRAIN ACC: 1.0</span>
+<span class="go">TEST ACC: 0.958041958041958</span>
+</pre></div>
+</div>
+</section>
+<section id="dependencies">
+<h2>Dependencies<a class="headerlink" href="#dependencies" title="Permalink to this headline"></a></h2>
+<ul class="simple">
+<li><p>numpy, math: Required for mathematical computations.</p></li>
+<li><p>numba: Required for just-in-time compilation of crucial computational functions and CUDA kernels (decorated by numba.jit and numba.cuda)</p></li>
+<li><p>sklearn: Required for inheritence and other sklearn API purposes.</p></li>
+<li><p>json: Required for load / dump methods pertaining to json files</p></li>
+</ul>
+<dl class="py class">
+<dt class="sig sig-object py" id="frbb.FastRealBoostBins">
+<em class="property"><span class="pre">class</span> </em><span class="sig-prename descclassname"><span class="pre">frbb.</span></span><span class="sig-name descname"><span class="pre">FastRealBoostBins</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">T</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">256</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">B</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">8</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">outliers_ratio</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.05</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">logit_max</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">2.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fit_mode</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'numba_cuda'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">decision_function_mode</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'numba_cuda'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">verbose</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">debug_verbose</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/frbb.html#FastRealBoostBins"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#frbb.FastRealBoostBins" title="Permalink to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">sklearn.base.BaseEstimator</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">sklearn.base.ClassifierMixin</span></code></p>
+<p>An ensemble classifier for fast predictions implemented using numba.jit and numba.cuda. 
+Bins with logit transform values play the role of ‘weak learners’.</p>
+<dl>
+<dt>Attributes:</dt><dd><p><a href="#id1"><span class="problematic" id="id2">features_selected_</span></a> (ndarray[np.int32]): indexes of selected features, array of shape (T,)
+<a href="#id3"><span class="problematic" id="id4">dtype_</span></a> (np.dtype): type of input data array, one of: {np.int8, np.uint8, …, np.int64, np.uint64}</p>
+<blockquote>
+<div><p>or {np.float32, np.float64} - numeric types are only allowed</p>
+</div></blockquote>
+<p><a href="#id5"><span class="problematic" id="id6">mins_selected_</span></a> (ndarray): left ends of ranges for selected features (type matching <a href="#id7"><span class="problematic" id="id8">dtype_</span></a>)</p>
+</dd>
+</dl>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="frbb.FastRealBoostBins.B_DEFAULT">
+<span class="sig-name descname"><span class="pre">B_DEFAULT</span></span><em class="property"> <span class="pre">=</span> <span class="pre">8</span></em><a class="headerlink" href="#frbb.FastRealBoostBins.B_DEFAULT" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="frbb.FastRealBoostBins.B_MAX">
+<span class="sig-name descname"><span class="pre">B_MAX</span></span><em class="property"> <span class="pre">=</span> <span class="pre">32</span></em><a class="headerlink" href="#frbb.FastRealBoostBins.B_MAX" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="frbb.FastRealBoostBins.CUDA_MAX_MEMORY_PER_CALL">
+<span class="sig-name descname"><span class="pre">CUDA_MAX_MEMORY_PER_CALL</span></span><em class="property"> <span class="pre">=</span> <span class="pre">8388608</span></em><a class="headerlink" href="#frbb.FastRealBoostBins.CUDA_MAX_MEMORY_PER_CALL" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="frbb.FastRealBoostBins.DEBUG_VERBOSE_DEFAULT">
+<span class="sig-name descname"><span class="pre">DEBUG_VERBOSE_DEFAULT</span></span><em class="property"> <span class="pre">=</span> <span class="pre">False</span></em><a class="headerlink" href="#frbb.FastRealBoostBins.DEBUG_VERBOSE_DEFAULT" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="frbb.FastRealBoostBins.DECISION_FUNCTION_MODES">
+<span class="sig-name descname"><span class="pre">DECISION_FUNCTION_MODES</span></span><em class="property"> <span class="pre">=</span> <span class="pre">['numpy',</span> <span class="pre">'numba_jit',</span> <span class="pre">'numba_cuda']</span></em><a class="headerlink" href="#frbb.FastRealBoostBins.DECISION_FUNCTION_MODES" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="frbb.FastRealBoostBins.DECISION_FUNCTION_MODE_DEFAULT">
+<span class="sig-name descname"><span class="pre">DECISION_FUNCTION_MODE_DEFAULT</span></span><em class="property"> <span class="pre">=</span> <span class="pre">'numba_cuda'</span></em><a class="headerlink" href="#frbb.FastRealBoostBins.DECISION_FUNCTION_MODE_DEFAULT" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="frbb.FastRealBoostBins.FIT_MODES">
+<span class="sig-name descname"><span class="pre">FIT_MODES</span></span><em class="property"> <span class="pre">=</span> <span class="pre">['numpy',</span> <span class="pre">'numba_jit',</span> <span class="pre">'numba_cuda']</span></em><a class="headerlink" href="#frbb.FastRealBoostBins.FIT_MODES" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="frbb.FastRealBoostBins.FIT_MODE_DEFAULT">
+<span class="sig-name descname"><span class="pre">FIT_MODE_DEFAULT</span></span><em class="property"> <span class="pre">=</span> <span class="pre">'numba_cuda'</span></em><a class="headerlink" href="#frbb.FastRealBoostBins.FIT_MODE_DEFAULT" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="frbb.FastRealBoostBins.LOGIT_MAX_DEFAULT">
+<span class="sig-name descname"><span class="pre">LOGIT_MAX_DEFAULT</span></span><em class="property"> <span class="pre">=</span> <span class="pre">2.0</span></em><a class="headerlink" href="#frbb.FastRealBoostBins.LOGIT_MAX_DEFAULT" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="frbb.FastRealBoostBins.LOGIT_MAX_MAX">
+<span class="sig-name descname"><span class="pre">LOGIT_MAX_MAX</span></span><em class="property"> <span class="pre">=</span> <span class="pre">8.0</span></em><a class="headerlink" href="#frbb.FastRealBoostBins.LOGIT_MAX_MAX" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="frbb.FastRealBoostBins.OUTLIERS_RATIO_DEFAULT">
+<span class="sig-name descname"><span class="pre">OUTLIERS_RATIO_DEFAULT</span></span><em class="property"> <span class="pre">=</span> <span class="pre">0.05</span></em><a class="headerlink" href="#frbb.FastRealBoostBins.OUTLIERS_RATIO_DEFAULT" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="frbb.FastRealBoostBins.OUTLIERS_RATIO_MAX">
+<span class="sig-name descname"><span class="pre">OUTLIERS_RATIO_MAX</span></span><em class="property"> <span class="pre">=</span> <span class="pre">0.25</span></em><a class="headerlink" href="#frbb.FastRealBoostBins.OUTLIERS_RATIO_MAX" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="frbb.FastRealBoostBins.SKLEARN_ERR_MESSAGE_DISCREPANCY_IN_NO_OF_FEATURES">
+<span class="sig-name descname"><span class="pre">SKLEARN_ERR_MESSAGE_DISCREPANCY_IN_NO_OF_FEATURES</span></span><em class="property"> <span class="pre">=</span> <span class="pre">'Number</span> <span class="pre">of</span> <span class="pre">features</span> <span class="pre">in</span> <span class="pre">predict</span> <span class="pre">or</span> <span class="pre">decision_function</span> <span class="pre">is</span> <span class="pre">different</span> <span class="pre">from</span> <span class="pre">the</span> <span class="pre">number</span> <span class="pre">of</span> <span class="pre">features</span> <span class="pre">in</span> <span class="pre">fit'</span></em><a class="headerlink" href="#frbb.FastRealBoostBins.SKLEARN_ERR_MESSAGE_DISCREPANCY_IN_NO_OF_FEATURES" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="frbb.FastRealBoostBins.SKLEARN_ERR_MESSAGE_UNKNOWN_LABEL_TYPE">
+<span class="sig-name descname"><span class="pre">SKLEARN_ERR_MESSAGE_UNKNOWN_LABEL_TYPE</span></span><em class="property"> <span class="pre">=</span> <span class="pre">'Unknown</span> <span class="pre">label</span> <span class="pre">type'</span></em><a class="headerlink" href="#frbb.FastRealBoostBins.SKLEARN_ERR_MESSAGE_UNKNOWN_LABEL_TYPE" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="frbb.FastRealBoostBins.T_DEFAULT">
+<span class="sig-name descname"><span class="pre">T_DEFAULT</span></span><em class="property"> <span class="pre">=</span> <span class="pre">256</span></em><a class="headerlink" href="#frbb.FastRealBoostBins.T_DEFAULT" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="frbb.FastRealBoostBins.VERBOSE_DEFAULT">
+<span class="sig-name descname"><span class="pre">VERBOSE_DEFAULT</span></span><em class="property"> <span class="pre">=</span> <span class="pre">False</span></em><a class="headerlink" href="#frbb.FastRealBoostBins.VERBOSE_DEFAULT" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="frbb.FastRealBoostBins.decision_function">
+<span class="sig-name descname"><span class="pre">decision_function</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">X</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/frbb.html#FastRealBoostBins.decision_function"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#frbb.FastRealBoostBins.decision_function" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="frbb.FastRealBoostBins.decrease_T">
+<span class="sig-name descname"><span class="pre">decrease_T</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">T</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/frbb.html#FastRealBoostBins.decrease_T"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#frbb.FastRealBoostBins.decrease_T" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="frbb.FastRealBoostBins.fit">
+<span class="sig-name descname"><span class="pre">fit</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">X</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">y</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/frbb.html#FastRealBoostBins.fit"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#frbb.FastRealBoostBins.fit" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="frbb.FastRealBoostBins.json_dump">
+<span class="sig-name descname"><span class="pre">json_dump</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">fname</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/frbb.html#FastRealBoostBins.json_dump"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#frbb.FastRealBoostBins.json_dump" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="frbb.FastRealBoostBins.json_load">
+<em class="property"><span class="pre">static</span> </em><span class="sig-name descname"><span class="pre">json_load</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">fname</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">verbose</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/frbb.html#FastRealBoostBins.json_load"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#frbb.FastRealBoostBins.json_load" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="frbb.FastRealBoostBins.predict">
+<span class="sig-name descname"><span class="pre">predict</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">X</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/frbb.html#FastRealBoostBins.predict"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#frbb.FastRealBoostBins.predict" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="datagenerator.html" class="btn btn-neutral float-left" title="datagenerator module" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="haar.html" class="btn btn-neutral float-right" title="haar module" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2023, Przemysław Klęsk.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>
