@@ -24,7 +24,7 @@ To test the predict stage performance we compare `FastRealBoostBins` against sta
 using large data sets and focusing on response times. In an additional experiment, we make our
 classifiers operate as object detectors under heavy computational load (over 60k queries per a video frame using ensembles of size 2048).
 
-## Simple example of usage
+## Example usage
 With `frbb.py` file (containing `FastRealBoostBins` class) included to some project, one can write e.g.:
 ```python
 from frbb import FastRealBoostBins
