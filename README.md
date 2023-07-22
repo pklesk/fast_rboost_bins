@@ -3,11 +3,9 @@
 <table>
 <tr>
     <td><img src="/extras/fig_experiment_real_1903270360_20230625_fddb-patches_time_predict_test.png"/></td>
-    <td><br/><img src="/extras/video_quadro_screenshot.jpg"/></td>
+    <td><br/><a href="https://github.com/pklesk/fast_rboost_bins/assets/23095311/5e390cfc-84e8-4281-82d3-91a0b72c9c36"><img src="/extras/video_quadro_screenshot.jpg"/></a></td>
 </tr>
 </table>
-
-[![Now in Android: 55]<img src="/extras/video_quadro_screenshot.jpg)](videos/video_quadro.mp4)
 
 https://github.com/pklesk/fast_rboost_bins/assets/23095311/5e390cfc-84e8-4281-82d3-91a0b72c9c36
 
