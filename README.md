@@ -7,8 +7,6 @@
 </tr>
 </table>
 
-https://github.com/pklesk/fast_rboost_bins/assets/23095311/5e390cfc-84e8-4281-82d3-91a0b72c9c36
-
 Takin advantage of [Numba](https://numba.pydata.org/) (a high-performance just-in-time Python compiler) 
 we provide a fast operating implementation of a boosting algorithm
 in which bins with logit transform values play the role of “weak learners”.
