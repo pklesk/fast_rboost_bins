@@ -66,7 +66,7 @@ if __name__ == "__main__":
     np.random.seed(0) # setting some randomization seed
     for m in [1000, 10000]:
         print(f"DATA SHAPE (TRAIN AND TEST): {m} x {n}")
-        # generating fake random train data
+        # generating fake random data
         X_train = np.random.rand(m, n)
         y_train = np.random.randint(2, size=m)
         X_test = np.random.rand(m, n)
