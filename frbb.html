@@ -85,13 +85,13 @@
              
   <section id="module-frbb">
 <span id="frbb-module"></span><h1>frbb module<a class="headerlink" href="#module-frbb" title="Permalink to this headline"></a></h1>
-<p>This module contains the core machine learning functionalities of the project, embodied by the class FastRealBoostBins (compliant with scikit-learn).
+<p>This module contains the core machine learning functionalities of the project, embodied by the class <cite>FastRealBoostBins</cite> (compliant with scikit-learn).
 The module includes:</p>
 <ul class="simple">
-<li><p><cite>FastRealBoostBins</cite>: Class representing ensemble classifier for fast predictions implemented using numba.jit and numba.cuda,</p></li>
-<li><p><cite>_lock</cite>, <cite>_unlock</cite>: utility functions (placed outside the class, related to mutex mechanisms in case of the fit performed using ‘numba_cuda’ mode).</p></li>
+<li><p><cite>FastRealBoostBins</cite>: class representing ensemble classifier for fast predictions implemented using numba.jit and numba.cuda,</p></li>
+<li><p><cite>_lock</cite>, <cite>_unlock</cite>: utility functions (placed outside the class, related to mutex mechanisms in case of fit performed using ‘numba_cuda’ mode).</p></li>
 </ul>
-<p>In <cite>FastRealBoostBins</cite> class, attributes estimated by the <cite>fit</cite> are named with trailing underscores (<cite>features_selected_</cite>, <cite>logits_</cite>, etc.)
+<p>In FastRealBoostBins class, attributes estimated by the fit function are named with trailing underscores (e.g. <a href="#id1"><span class="problematic" id="id2">features_selected_</span></a>, <a href="#id3"><span class="problematic" id="id4">logits_</span></a>, etc.)
 as indicated by scikit-learn guidelines. Private functions are named with single leading underscores and some of them are additionally described by 
 <cite>&#64;jit</cite> or <cite>&#64;cuda.jit</cite> decorators from <cite>numba</cite> module (intended to be compiled by Numba).</p>
 <section id="example-usage">
@@ -152,23 +152,23 @@ Bins with logit transform values play the role of ‘weak learners’.</p>
 </dl>
 </dd>
 <dt>Attributes:</dt><dd><dl class="simple">
-<dt><a href="#id1"><span class="problematic" id="id2">features_selected_</span></a> (ndarray[np.int32]):</dt><dd><p>indexes of selected features, array of shape (T,).</p>
+<dt><a href="#id5"><span class="problematic" id="id6">features_selected_</span></a> (ndarray[np.int32]):</dt><dd><p>indexes of selected features, array of shape (T,).</p>
 </dd>
-<dt><a href="#id3"><span class="problematic" id="id4">dtype_</span></a> (np.dtype): </dt><dd><p>type of input data array, one of {np.int8, np.uint8, …, np.int64, np.uint64} or {np.float32, np.float64} - numeric types are only allowed.</p>
+<dt><a href="#id7"><span class="problematic" id="id8">dtype_</span></a> (np.dtype): </dt><dd><p>type of input data array, one of {np.int8, np.uint8, …, np.int64, np.uint64} or {np.float32, np.float64} - numeric types are only allowed.</p>
 </dd>
-<dt><a href="#id5"><span class="problematic" id="id6">mins_selected_</span></a> (ndarray): </dt><dd><p>left ends of ranges for selected features (type matching <a href="#id7"><span class="problematic" id="id8">dtype_</span></a>), array of shape (T,).</p>
+<dt><a href="#id9"><span class="problematic" id="id10">mins_selected_</span></a> (ndarray): </dt><dd><p>left ends of ranges for selected features (type matching <a href="#id11"><span class="problematic" id="id12">dtype_</span></a>), array of shape (T,).</p>
 </dd>
-<dt><a href="#id9"><span class="problematic" id="id10">maxes_selected_</span></a> (ndarray):</dt><dd><p>right ends of ranges for selected features (type matching <a href="#id11"><span class="problematic" id="id12">dtype_</span></a>), array of shape (T,).</p>
+<dt><a href="#id13"><span class="problematic" id="id14">maxes_selected_</span></a> (ndarray):</dt><dd><p>right ends of ranges for selected features (type matching <a href="#id15"><span class="problematic" id="id16">dtype_</span></a>), array of shape (T,).</p>
 </dd>
-<dt><a href="#id13"><span class="problematic" id="id14">logits_</span></a> (ndarray[np.float32]): </dt><dd><p>binned logit values for selected features, array of shape (T, B).</p>
+<dt><a href="#id17"><span class="problematic" id="id18">logits_</span></a> (ndarray[np.float32]): </dt><dd><p>binned logit values for selected features, array of shape (T, B).</p>
 </dd>
-<dt><a href="#id15"><span class="problematic" id="id16">decision_function_numba_cuda_job_name_</span></a> (str): </dt><dd><p>name, implied by <a href="#id17"><span class="problematic" id="id18">dtype_</span></a>, of decision function to be called in case of ‘numba_cuda’ mode (e.g. _decision_function_numba_cuda_job_int16).</p>
+<dt><a href="#id19"><span class="problematic" id="id20">decision_function_numba_cuda_job_name_</span></a> (str): </dt><dd><p>name, implied by <a href="#id21"><span class="problematic" id="id22">dtype_</span></a>, of decision function to be called in case of ‘numba_cuda’ mode (e.g. _decision_function_numba_cuda_job_int16).</p>
 </dd>
-<dt><a href="#id19"><span class="problematic" id="id20">decision_threshold_</span></a> (float): </dt><dd><p>threshold value for predict calls, defaults to 0.0.</p>
+<dt><a href="#id23"><span class="problematic" id="id24">decision_threshold_</span></a> (float): </dt><dd><p>threshold value for predict calls, defaults to 0.0.</p>
 </dd>
-<dt><a href="#id21"><span class="problematic" id="id22">classes_</span></a> (ndarray): </dt><dd><p>original class labels (scikit-learn requirement).</p>
+<dt><a href="#id25"><span class="problematic" id="id26">classes_</span></a> (ndarray): </dt><dd><p>original class labels (scikit-learn requirement).</p>
 </dd>
-<dt><a href="#id23"><span class="problematic" id="id24">n_features_in_</span></a> (int): </dt><dd><p>number of features registered at fit stage and expected for subsequent predict calls (scikit-learn requirement).</p>
+<dt><a href="#id27"><span class="problematic" id="id28">n_features_in_</span></a> (int): </dt><dd><p>number of features registered at fit stage and expected for subsequent predict calls (scikit-learn requirement).</p>
 </dd>
 </dl>
 </dd>
@@ -305,28 +305,42 @@ Bins with logit transform values play the role of ‘weak learners’.</p>
 <dl class="py method">
 <dt class="sig sig-object py" id="frbb.FastRealBoostBins._validate_param">
 <span class="sig-name descname"><span class="pre">_validate_param</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">value</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ptype</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">leq</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">low</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">geq</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">high</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">default</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/frbb.html#FastRealBoostBins._validate_param"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#frbb.FastRealBoostBins._validate_param" title="Permalink to this definition"></a></dt>
-<dd></dd></dl>
+<dd><p>Validates a parameter - is it of correct type and within given range (either end of the range can be open or closed).</p>
+</dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="frbb.FastRealBoostBins._set_cuda_constants">
 <span class="sig-name descname"><span class="pre">_set_cuda_constants</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/frbb.html#FastRealBoostBins._set_cuda_constants"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#frbb.FastRealBoostBins._set_cuda_constants" title="Permalink to this definition"></a></dt>
-<dd></dd></dl>
+<dd><p>Investigates (via numba module) if CUDA-based computations are available and, if so, sets suitable constants.</p>
+</dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="frbb.FastRealBoostBins._set_modes">
 <span class="sig-name descname"><span class="pre">_set_modes</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">fit_mode</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'numba_cuda'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">decision_function_mode</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'numba_cuda'</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/frbb.html#FastRealBoostBins._set_modes"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#frbb.FastRealBoostBins._set_modes" title="Permalink to this definition"></a></dt>
-<dd></dd></dl>
+<dd><p>Sets modes for fit and decision_function functions.</p>
+</dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="frbb.FastRealBoostBins._logit">
 <span class="sig-name descname"><span class="pre">_logit</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">W_p</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">W_n</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/frbb.html#FastRealBoostBins._logit"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#frbb.FastRealBoostBins._logit" title="Permalink to this definition"></a></dt>
-<dd><p>Computes the logit transform value given sums of current boosting weights (for positive and negative examples) with proper clipping and handling of zeros in either numerator or denominator.</p>
+<dd><p>Computes a logit transform value based on sums of current boosting weights (for positive and negative examples) with proper clipping and handling of zeros in either numerator or denominator.</p>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="frbb.FastRealBoostBins.fit">
 <span class="sig-name descname"><span class="pre">fit</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">X</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">y</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/frbb.html#FastRealBoostBins.fit"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#frbb.FastRealBoostBins.fit" title="Permalink to this definition"></a></dt>
-<dd></dd></dl>
+<dd><p>Performs the fit operation according to a general scheme of RealBoost algorithm (data reweighting, real-valued responses)
+and using an approach where bins with logit transform values play the role of ‘weak learners’. 
+Each weak learner is based on one selected feature - the minimizer of exponential criterion (for current boosting round).
+Computations are carried out according to the chosen or default mode - possible choices: {<cite>numpy</cite>, <cite>numba_jit</cite>, <cite>numba_cuda</cite>}.</p>
+<dl class="simple">
+<dt>Args:</dt><dd><p>X (ndarray): two-dimensional data array of numeric type with examples written as rows and features as columns.
+y (ndarray): one-dimensional array containing class labels associated with data examples in X.</p>
+</dd>
+<dt>Returns:</dt><dd><p>self (FastRealBoostBins): reference to self (in compliance with scikit-learn guidelines).</p>
+</dd>
+</dl>
+</dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="frbb.FastRealBoostBins._fit_init">
