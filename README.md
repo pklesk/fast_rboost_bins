@@ -62,7 +62,7 @@ if __name__ == "__main__":
         FastRealBoostBins(T=T, fit_mode="numba_jit", decision_function_mode="numba_jit"),
         FastRealBoostBins(T=T, fit_mode="numba_cuda", decision_function_mode="numba_cuda")
         ]
-    n = 100
+    n = 1000
     np.random.seed(0) # setting some randomization seed
     for m in [1000, 10000]:
         print(f"DATA SHAPE (TRAIN AND TEST): {m} x {n}")
@@ -91,26 +91,26 @@ if __name__ == "__main__":
 ```
 And produces the following output (actual observed times are machine dependent but their proportions should be roughly preserved):
 ```bash
-DATA SHAPE (TRAIN AND TEST): 1000 x 100
+DATA SHAPE (TRAIN AND TEST): 1000 x 1000
   CLF: AdaBoostClassifier(n_estimators=1024)...
-    ACCs -> TRAIN 1.0, TEST: 0.508
-    TIMES [s] -> FIT: 7.459436893463135, PREDICT (TRAIN): 0.20761609077453613, PREDICT (TEST): 0.20791172981262207
+    ACCs -> TRAIN 1.0, TEST: 0.491
+    TIMES [s] -> FIT: 68.27675604820251, PREDICT (TRAIN): 0.9272050857543945, PREDICT (TEST): 0.9245297908782959
   CLF: FastRealBoostBins(T=1024, B=8, outliers_ratio=0.05, logit_max: 2.0, fit_mode='numba_jit', decision_function_mode='numba_jit')...
-    ACCs -> TRAIN 1.0, TEST: 0.509
-    TIMES [s] -> FIT: 0.9497988224029541, PREDICT (TRAIN): 0.006816864013671875, PREDICT (TEST): 0.006695985794067383
+    ACCs -> TRAIN 1.0, TEST: 0.521
+    TIMES [s] -> FIT: 9.538139343261719, PREDICT (TRAIN): 0.008235454559326172, PREDICT (TEST): 0.007825374603271484
   CLF: FastRealBoostBins(T=1024, B=8, outliers_ratio=0.05, logit_max: 2.0, fit_mode='numba_cuda', decision_function_mode='numba_cuda')...
-    ACCs -> TRAIN 1.0, TEST: 0.509
-    TIMES [s] -> FIT: 5.370485544204712, PREDICT (TRAIN): 0.0031015872955322266, PREDICT (TEST): 0.003043651580810547
-DATA SHAPE (TRAIN AND TEST): 10000 x 100
+    ACCs -> TRAIN 1.0, TEST: 0.521
+    TIMES [s] -> FIT: 6.34455132484436, PREDICT (TRAIN): 0.0038661956787109375, PREDICT (TEST): 0.0037419795989990234
+DATA SHAPE (TRAIN AND TEST): 10000 x 1000
   CLF: AdaBoostClassifier(n_estimators=1024)...
-    ACCs -> TRAIN 0.7399, TEST: 0.5032
-    TIMES [s] -> FIT: 82.01154780387878, PREDICT (TRAIN): 1.2551181316375732, PREDICT (TEST): 1.2564003467559814
+    ACCs -> TRAIN 0.8686, TEST: 0.4957
+    TIMES [s] -> FIT: 852.4775321483612, PREDICT (TRAIN): 12.728276491165161, PREDICT (TEST): 12.74528455734253
   CLF: FastRealBoostBins(T=1024, B=8, outliers_ratio=0.05, logit_max: 2.0, fit_mode='numba_jit', decision_function_mode='numba_jit')...
-    ACCs -> TRAIN 0.6013, TEST: 0.5032
-    TIMES [s] -> FIT: 10.251049757003784, PREDICT (TRAIN): 0.06288409233093262, PREDICT (TEST): 0.06366491317749023
+    ACCs -> TRAIN 0.8535, TEST: 0.5054
+    TIMES [s] -> FIT: 112.78886556625366, PREDICT (TRAIN): 0.11319923400878906, PREDICT (TEST): 0.1127011775970459
   CLF: FastRealBoostBins(T=1024, B=8, outliers_ratio=0.05, logit_max: 2.0, fit_mode='numba_cuda', decision_function_mode='numba_cuda')...
-    ACCs -> TRAIN 0.6, TEST: 0.5043
-    TIMES [s] -> FIT: 6.399523973464966, PREDICT (TRAIN): 0.031052589416503906, PREDICT (TEST): 0.02884387969970703
+    ACCs -> TRAIN 0.8553, TEST: 0.5122
+    TIMES [s] -> FIT: 16.35269331932068, PREDICT (TRAIN): 0.0788724422454834, PREDICT (TEST): 0.07758545875549316
 ```
 
 ## Constructor parameters
