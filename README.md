@@ -71,7 +71,7 @@ if __name__ == "__main__":
         y_train = np.random.randint(2, size=m)
         X_test = np.random.rand(m, n)
         y_test = np.random.randint(2, size=m)
-        # checking classifiers    
+        # iterating over classifiers    
         for clf in clfs:
             print(f"  CLF: {clf}...")
             t1_fit = time.time()      
