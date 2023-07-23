@@ -1,9 +1,14 @@
-"""This module contains the core machine learning functionalities of the project, embodied by the class FastRealBoostBins (compliant with scikit-learn).
+"""
+This module contains the core machine learning functionalities of the project, embodied by the class FastRealBoostBins (compliant with scikit-learn).
 The module includes:
 
 - `FastRealBoostBins`: Class representing ensemble classifier for fast predictions implemented using numba.jit and numba.cuda,
 
 - `_lock`, `_unlock`: utility functions (placed outside the class, related to mutex mechanisms in case of the fit performed using 'numba_cuda' mode).
+
+In `FastRealBoostBins` class, attributes estimated by the `fit` are named with trailing underscores (`features_selected_`, `logits_`, etc.)
+as indicated by scikit-learn guidelines. Private functions are named with single leading underscores and some of them are additionally described by 
+`@jit` or `@cuda.jit` decorators from `numba` module (intended to be compiled by Numba).  
 
 Example Usage
 -------------
@@ -58,7 +63,7 @@ from sklearn.utils import check_array, check_X_y
 from sklearn.utils.validation import column_or_1d, check_is_fitted
 from sklearn.utils.multiclass import check_classification_targets
         
-__version__ = "1.0.0"
+__version__ = "0.9.0"
 __author__ = "Przemysław Klęsk"
 __email__ = "pklesk@zut.edu.pl"   
         
@@ -67,13 +72,15 @@ np.set_printoptions(linewidth=512)
 
 # mutex-related cuda utility functions 
 @cuda.jit(device=True)
-def _lock(mutex):        
+def _lock(mutex):
+    """Device-side function that locks the wanted critical section (mutex mechanism). Locking means setting the value of variable or array cell (passed by reference) from 0 to 1."""     
     while cuda.atomic.compare_and_swap(mutex, 0, 1) != 0:
         pass
     cuda.threadfence()    
     
 @cuda.jit(device=True)
 def _unlock(mutex):
+    """Device-side function that unlocks the wanted critical section (mutex mechanism). Unlocking means setting the value of variable or array cell (passed by reference) from 1 to 0."""
     cuda.threadfence()
     cuda.atomic.exch(mutex, 0, 0)
 
@@ -103,17 +110,24 @@ class FastRealBoostBins(BaseEstimator, ClassifierMixin):
             detailed verbosity (only for 'numba_cuda' fit), defaults to False.        
         
     Attributes:
-        features_selected_ (ndarray[np int32]): 
-            indexes of selected features, array of shape (T,). 
-        dtype_ (np dtype): 
-            type of input data array, one of: np int8, np uint8, etc up to, np int64, np uint64 or np float32, np float64} - numeric types are only allowed.       
+        features_selected_ (ndarray[np.int32]):
+            indexes of selected features, array of shape (T,).
+        dtype_ (np.dtype): 
+            type of input data array, one of {np.int8, np.uint8, ..., np.int64, np.uint64} or {np.float32, np.float64} - numeric types are only allowed.       
         mins_selected_ (ndarray): 
-            left ends of ranges for selected features (type matching dtype_).
-        maxes_selected_ (ndarray): 
-            right ends of ranges for selected features (type matching dtype_).
+            left ends of ranges for selected features (type matching dtype_), array of shape (T,).
+        maxes_selected_ (ndarray):
+            right ends of ranges for selected features (type matching dtype_), array of shape (T,).
+        logits_ (ndarray[np.float32]): 
+            binned logit values for selected features, array of shape (T, B).            
         decision_function_numba_cuda_job_name_ (str): 
             name, implied by dtype_, of decision function to be called in case of 'numba_cuda' mode (e.g. _decision_function_numba_cuda_job_int16).
-                                                    
+        decision_threshold_ (float): 
+            threshold value for predict calls, defaults to 0.0.
+        classes_ (ndarray): 
+            original class labels (scikit-learn requirement).
+        n_features_in_ (int): 
+            number of features registered at fit stage and expected for subsequent predict calls (scikit-learn requirement).            
     """
     
         # Methods:
@@ -148,9 +162,22 @@ class FastRealBoostBins(BaseEstimator, ClassifierMixin):
         Constructor of FastRealBoostBins instances.
          
         Args:
-            T (int): number of boosting rounds (=number of weak estimators), defaults to  256.            
-            B (int): number of bins, defaults to 8.            
-            outliers_ratio(float): fraction of outliers to skip (on each end) when establishing features’ variability ranges, defaults to: 0.05.            
+            T (int): 
+                number of boosting rounds (=number of weak estimators), defaults to 256.            
+            B (int): 
+                number of bins, defaults to 8.            
+            outliers_ratio(float): 
+                fraction of outliers to skip (on each end) when establishing features’ variability ranges, defaults to 0.05.
+            logit_max (np.float32):
+                maximum absolute value of logit transform, outcomes clipped to interval [−logit_max, logit_max], defaults to np.float32(2.0).
+            fit_mode (str):
+                choice of fit method from {'numpy', 'numba_jit', ’numba_cuda'}, defaults to 'numba_cuda'.
+            decision_function_mode (str):
+                choice of decision method from {'numpy', 'numba_jit', ’numba_cuda'} (called e.g. within predict), defaults to 'numba_cuda'.
+            verbose (bool):
+                verbosity flag, if True then fit progress and auxiliary information are printed to console, defaults to False.
+            debug_verbose (bool):
+                detailed verbosity (only for 'numba_cuda' fit), defaults to False.            
         """
 
         super().__init__()
@@ -164,15 +191,18 @@ class FastRealBoostBins(BaseEstimator, ClassifierMixin):
         self.debug_verbose = debug_verbose        
 
     def _get_tags(self=None):
+        """Returns dictionary with particular properties of this estimator (compliant with scikit-learn guidelines)."""
         tags = super()._get_tags()
         tags["binary_only"] = True
         tags["non_deterministic"] = True # in case of cuda computations  
         return tags
     
     def __str__(self):
+        """Returns str(self)."""
         return f"{self.__class__.__name__}(T={self.T}, B={self.B}, outliers_ratio={self.outliers_ratio}, logit_max: {self.logit_max}, fit_mode='{self.fit_mode}', decision_function_mode='{self.decision_function_mode}')"
             
     def __repr__(self):
+        """Returns repr(self)."""
         repr_str = f"{self.__class__.__name__}(T={self.T}, B={self.B}, outliers_ratio={self.outliers_ratio}, logit_max: {self.logit_max}, fit_mode='{self.fit_mode}', decision_function_mode='{self.decision_function_mode}',\n"
         repr_str += f"  verbose={self.verbose}, debug_verbose={self.debug_verbose}"
         if hasattr(self, "classes_"):
@@ -185,7 +215,7 @@ class FastRealBoostBins(BaseEstimator, ClassifierMixin):
         repr_str += ")"
         return repr_str
 
-    def _validate_param(self, name, value, ptype, leq, low, geq, high, default):
+    def _validate_param(self, name, value, ptype, leq, low, geq, high, default):        
         invalid = value <= low if leq else value < low
         if not invalid:
             invalid = value >= high if geq else value > high

@@ -68,12 +68,17 @@
            <div itemprop="articleBody">
              
   <h1>Source code for frbb</h1><div class="highlight"><pre>
-<span></span><span class="sd">&quot;&quot;&quot;This module contains the core machine learning functionalities of the project, embodied by the class FastRealBoostBins (compliant with scikit-learn).</span>
+<span></span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">This module contains the core machine learning functionalities of the project, embodied by the class FastRealBoostBins (compliant with scikit-learn).</span>
 <span class="sd">The module includes:</span>
 
 <span class="sd">- `FastRealBoostBins`: Class representing ensemble classifier for fast predictions implemented using numba.jit and numba.cuda,</span>
 
 <span class="sd">- `_lock`, `_unlock`: utility functions (placed outside the class, related to mutex mechanisms in case of the fit performed using &#39;numba_cuda&#39; mode).</span>
+
+<span class="sd">In `FastRealBoostBins` class, attributes estimated by the `fit` are named with trailing underscores (`features_selected_`, `logits_`, etc.)</span>
+<span class="sd">as indicated by scikit-learn guidelines. Private functions are named with single leading underscores and some of them are additionally described by </span>
+<span class="sd">`@jit` or `@cuda.jit` decorators from `numba` module (intended to be compiled by Numba).  </span>
 
 <span class="sd">Example Usage</span>
 <span class="sd">-------------</span>
@@ -137,13 +142,15 @@
 
 <span class="c1"># mutex-related cuda utility functions </span>
 <span class="nd">@cuda</span><span class="o">.</span><span class="n">jit</span><span class="p">(</span><span class="n">device</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-<span class="k">def</span> <span class="nf">_lock</span><span class="p">(</span><span class="n">mutex</span><span class="p">):</span>        
+<span class="k">def</span> <span class="nf">_lock</span><span class="p">(</span><span class="n">mutex</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Device-side function that locks the wanted critical section (mutex mechanism). Locking means setting the value of variable or array cell (passed by reference) from 0 to 1.&quot;&quot;&quot;</span>     
     <span class="k">while</span> <span class="n">cuda</span><span class="o">.</span><span class="n">atomic</span><span class="o">.</span><span class="n">compare_and_swap</span><span class="p">(</span><span class="n">mutex</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
         <span class="k">pass</span>
     <span class="n">cuda</span><span class="o">.</span><span class="n">threadfence</span><span class="p">()</span>    
     
 <span class="nd">@cuda</span><span class="o">.</span><span class="n">jit</span><span class="p">(</span><span class="n">device</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 <span class="k">def</span> <span class="nf">_unlock</span><span class="p">(</span><span class="n">mutex</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Device-side function that unlocks the wanted critical section (mutex mechanism). Unlocking means setting the value of variable or array cell (passed by reference) from 1 to 0.&quot;&quot;&quot;</span>
     <span class="n">cuda</span><span class="o">.</span><span class="n">threadfence</span><span class="p">()</span>
     <span class="n">cuda</span><span class="o">.</span><span class="n">atomic</span><span class="o">.</span><span class="n">exch</span><span class="p">(</span><span class="n">mutex</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
 
@@ -156,19 +163,41 @@
 <span class="sd">    </span>
 <span class="sd">    Parameters:</span>
 <span class="sd">        T (int): </span>
-<span class="sd">            number of boosting rounds (=number of weak estimators), defaults to  256.            </span>
+<span class="sd">            number of boosting rounds (=number of weak estimators), defaults to 256.            </span>
 <span class="sd">        B (int): </span>
 <span class="sd">            number of bins, defaults to 8.            </span>
 <span class="sd">        outliers_ratio(float): </span>
-<span class="sd">            fraction of outliers to skip (on each end) when establishing features’ variability ranges, defaults to: 0.05.    </span>
+<span class="sd">            fraction of outliers to skip (on each end) when establishing features’ variability ranges, defaults to 0.05.</span>
+<span class="sd">        logit_max (np.float32):</span>
+<span class="sd">            maximum absolute value of logit transform, outcomes clipped to interval [−logit_max, logit_max], defaults to np.float32(2.0).</span>
+<span class="sd">        fit_mode (str):</span>
+<span class="sd">            choice of fit method from {&#39;numpy&#39;, &#39;numba_jit&#39;, ’numba_cuda&#39;}, defaults to &#39;numba_cuda&#39;.</span>
+<span class="sd">        decision_function_mode (str):</span>
+<span class="sd">            choice of decision method from {&#39;numpy&#39;, &#39;numba_jit&#39;, ’numba_cuda&#39;} (called e.g. within predict), defaults to &#39;numba_cuda&#39;.</span>
+<span class="sd">        verbose (bool):</span>
+<span class="sd">            verbosity flag, if True then fit progress and auxiliary information are printed to console, defaults to False.</span>
+<span class="sd">        debug_verbose (bool):</span>
+<span class="sd">            detailed verbosity (only for &#39;numba_cuda&#39; fit), defaults to False.        </span>
 <span class="sd">        </span>
 <span class="sd">    Attributes:</span>
-<span class="sd">        features_selected_ (ndarray[np int32]): </span>
-<span class="sd">            Indexes of selected features, array of shape (T,). </span>
-<span class="sd">        dtype_ (np dtype): </span>
-<span class="sd">            Type of input data array, one of: np int8, np uint8, etc up to, np int64, np uint64 or np float32, np float64} - numeric types are only allowed.       </span>
+<span class="sd">        features_selected_ (ndarray[np.int32]):</span>
+<span class="sd">            indexes of selected features, array of shape (T,).</span>
+<span class="sd">        dtype_ (np.dtype): </span>
+<span class="sd">            type of input data array, one of {np.int8, np.uint8, ..., np.int64, np.uint64} or {np.float32, np.float64} - numeric types are only allowed.       </span>
 <span class="sd">        mins_selected_ (ndarray): </span>
-<span class="sd">            Left ends of ranges for selected features (type matching dtype_).                         </span>
+<span class="sd">            left ends of ranges for selected features (type matching dtype_), array of shape (T,).</span>
+<span class="sd">        maxes_selected_ (ndarray):</span>
+<span class="sd">            right ends of ranges for selected features (type matching dtype_), array of shape (T,).</span>
+<span class="sd">        logits_ (ndarray[np.float32]): </span>
+<span class="sd">            binned logit values for selected features, array of shape (T, B).            </span>
+<span class="sd">        decision_function_numba_cuda_job_name_ (str): </span>
+<span class="sd">            name, implied by dtype_, of decision function to be called in case of &#39;numba_cuda&#39; mode (e.g. _decision_function_numba_cuda_job_int16).</span>
+<span class="sd">        decision_threshold_ (float): </span>
+<span class="sd">            threshold value for predict calls, defaults to 0.0.</span>
+<span class="sd">        classes_ (ndarray): </span>
+<span class="sd">            original class labels (scikit-learn requirement).</span>
+<span class="sd">        n_features_in_ (int): </span>
+<span class="sd">            number of features registered at fit stage and expected for subsequent predict calls (scikit-learn requirement).            </span>
 <span class="sd">    &quot;&quot;&quot;</span>
     
         <span class="c1"># Methods:</span>
@@ -203,9 +232,22 @@
 <span class="sd">        Constructor of FastRealBoostBins instances.</span>
 <span class="sd">         </span>
 <span class="sd">        Args:</span>
-<span class="sd">            T (int): number of boosting rounds (=number of weak estimators), defaults to  256.            </span>
-<span class="sd">            B (int): number of bins, defaults to 8.            </span>
-<span class="sd">            outliers_ratio(float): fraction of outliers to skip (on each end) when establishing features’ variability ranges, defaults to: 0.05.            </span>
+<span class="sd">            T (int): </span>
+<span class="sd">                number of boosting rounds (=number of weak estimators), defaults to 256.            </span>
+<span class="sd">            B (int): </span>
+<span class="sd">                number of bins, defaults to 8.            </span>
+<span class="sd">            outliers_ratio(float): </span>
+<span class="sd">                fraction of outliers to skip (on each end) when establishing features’ variability ranges, defaults to 0.05.</span>
+<span class="sd">            logit_max (np.float32):</span>
+<span class="sd">                maximum absolute value of logit transform, outcomes clipped to interval [−logit_max, logit_max], defaults to np.float32(2.0).</span>
+<span class="sd">            fit_mode (str):</span>
+<span class="sd">                choice of fit method from {&#39;numpy&#39;, &#39;numba_jit&#39;, ’numba_cuda&#39;}, defaults to &#39;numba_cuda&#39;.</span>
+<span class="sd">            decision_function_mode (str):</span>
+<span class="sd">                choice of decision method from {&#39;numpy&#39;, &#39;numba_jit&#39;, ’numba_cuda&#39;} (called e.g. within predict), defaults to &#39;numba_cuda&#39;.</span>
+<span class="sd">            verbose (bool):</span>
+<span class="sd">                verbosity flag, if True then fit progress and auxiliary information are printed to console, defaults to False.</span>
+<span class="sd">            debug_verbose (bool):</span>
+<span class="sd">                detailed verbosity (only for &#39;numba_cuda&#39; fit), defaults to False.            </span>
 <span class="sd">        &quot;&quot;&quot;</span>
 
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
@@ -219,15 +261,18 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">debug_verbose</span> <span class="o">=</span> <span class="n">debug_verbose</span>        </div>
 
 <div class="viewcode-block" id="FastRealBoostBins._get_tags"><a class="viewcode-back" href="../frbb.html#frbb.FastRealBoostBins._get_tags">[docs]</a>    <span class="k">def</span> <span class="nf">_get_tags</span><span class="p">(</span><span class="bp">self</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Returns dictionary with particular properties of this estimator (compliant with scikit-learn guidelines).&quot;&quot;&quot;</span>
         <span class="n">tags</span> <span class="o">=</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">_get_tags</span><span class="p">()</span>
         <span class="n">tags</span><span class="p">[</span><span class="s2">&quot;binary_only&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
         <span class="n">tags</span><span class="p">[</span><span class="s2">&quot;non_deterministic&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span> <span class="c1"># in case of cuda computations  </span>
         <span class="k">return</span> <span class="n">tags</span></div>
     
 <div class="viewcode-block" id="FastRealBoostBins.__str__"><a class="viewcode-back" href="../frbb.html#frbb.FastRealBoostBins.__str__">[docs]</a>    <span class="k">def</span> <span class="fm">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Returns str(self).&quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2">(T=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">T</span><span class="si">}</span><span class="s2">, B=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">B</span><span class="si">}</span><span class="s2">, outliers_ratio=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">outliers_ratio</span><span class="si">}</span><span class="s2">, logit_max: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">logit_max</span><span class="si">}</span><span class="s2">, fit_mode=&#39;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">fit_mode</span><span class="si">}</span><span class="s2">&#39;, decision_function_mode=&#39;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">decision_function_mode</span><span class="si">}</span><span class="s2">&#39;)&quot;</span></div>
             
 <div class="viewcode-block" id="FastRealBoostBins.__repr__"><a class="viewcode-back" href="../frbb.html#frbb.FastRealBoostBins.__repr__">[docs]</a>    <span class="k">def</span> <span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Returns repr(self).&quot;&quot;&quot;</span>
         <span class="n">repr_str</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2">(T=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">T</span><span class="si">}</span><span class="s2">, B=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">B</span><span class="si">}</span><span class="s2">, outliers_ratio=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">outliers_ratio</span><span class="si">}</span><span class="s2">, logit_max: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">logit_max</span><span class="si">}</span><span class="s2">, fit_mode=&#39;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">fit_mode</span><span class="si">}</span><span class="s2">&#39;, decision_function_mode=&#39;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">decision_function_mode</span><span class="si">}</span><span class="s2">&#39;,</span><span class="se">\n</span><span class="s2">&quot;</span>
         <span class="n">repr_str</span> <span class="o">+=</span> <span class="sa">f</span><span class="s2">&quot;  verbose=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">verbose</span><span class="si">}</span><span class="s2">, debug_verbose=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">debug_verbose</span><span class="si">}</span><span class="s2">&quot;</span>
         <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s2">&quot;classes_&quot;</span><span class="p">):</span>
@@ -259,13 +304,13 @@
     
 <div class="viewcode-block" id="FastRealBoostBins._set_modes"><a class="viewcode-back" href="../frbb.html#frbb.FastRealBoostBins._set_modes">[docs]</a>    <span class="k">def</span> <span class="nf">_set_modes</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">fit_mode</span><span class="o">=</span><span class="s2">&quot;numba_cuda&quot;</span><span class="p">,</span> <span class="n">decision_function_mode</span><span class="o">=</span><span class="s2">&quot;numba_cuda&quot;</span><span class="p">):</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">fit_mode</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">FIT_MODES</span><span class="p">:</span>
-            <span class="n">invalid_mode</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">fit_mode</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">fit_mode</span> <span class="o">=</span> <span class="n">FIT_MODE_DEFAULT</span> 
-            <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;[invalid fit mode: &#39;</span><span class="si">{</span><span class="n">invalid_mode</span><span class="si">}</span><span class="s2">&#39; changed to &#39;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">fit_mode</span><span class="si">}</span><span class="s2">&#39;; possible modes: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">FIT_MODES</span><span class="si">}</span><span class="s2">]&quot;</span><span class="p">)</span>        
+            <span class="n">invalid_mode</span> <span class="o">=</span> <span class="n">fit_mode</span>
+            <span class="n">fit_mode</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">FIT_MODE_DEFAULT</span>
+            <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;[invalid fit mode: &#39;</span><span class="si">{</span><span class="n">invalid_mode</span><span class="si">}</span><span class="s2">&#39; changed to &#39;</span><span class="si">{</span><span class="n">fit_mode</span><span class="si">}</span><span class="s2">&#39;; possible modes: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">FIT_MODES</span><span class="si">}</span><span class="s2">]&quot;</span><span class="p">)</span>        
         <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">decision_function_mode</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">DECISION_FUNCTION_MODES</span><span class="p">:</span>
-            <span class="n">invalid_mode</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">decision_function_mode</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">decision_function_mode</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">DECISION_FUNCTION_MODE_DEFAULT</span> 
-            <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;[invalid decision function mode: &#39;</span><span class="si">{</span><span class="n">invalid_mode</span><span class="si">}</span><span class="s2">&#39; changed to &#39;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">decision_function_mode</span><span class="si">}</span><span class="s2">&#39;; possible modes: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">DECISION_FUNCTION_MODES</span><span class="si">}</span><span class="s2">]&quot;</span><span class="p">)</span>
+            <span class="n">invalid_mode</span> <span class="o">=</span> <span class="n">decision_function_mode</span>
+            <span class="n">decision_function_mode</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">DECISION_FUNCTION_MODE_DEFAULT</span> 
+            <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;[invalid decision function mode: &#39;</span><span class="si">{</span><span class="n">invalid_mode</span><span class="si">}</span><span class="s2">&#39; changed to &#39;</span><span class="si">{</span><span class="n">decision_function_mode</span><span class="si">}</span><span class="s2">&#39;; possible modes: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">DECISION_FUNCTION_MODES</span><span class="si">}</span><span class="s2">]&quot;</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">fit_mode</span> <span class="o">=</span> <span class="n">fit_mode</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">decision_function_mode</span> <span class="o">=</span> <span class="n">decision_function_mode</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">fit_mode</span> <span class="o">==</span> <span class="s2">&quot;numba_cuda&quot;</span> <span class="ow">and</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_cuda_available</span><span class="p">:</span>
