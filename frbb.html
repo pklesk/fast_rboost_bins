@@ -91,6 +91,9 @@ The module includes:</p>
 <li><p><cite>FastRealBoostBins</cite>: Class representing ensemble classifier for fast predictions implemented using numba.jit and numba.cuda,</p></li>
 <li><p><cite>_lock</cite>, <cite>_unlock</cite>: utility functions (placed outside the class, related to mutex mechanisms in case of the fit performed using ‘numba_cuda’ mode).</p></li>
 </ul>
+<p>In <cite>FastRealBoostBins</cite> class, attributes estimated by the <cite>fit</cite> are named with trailing underscores (<cite>features_selected_</cite>, <cite>logits_</cite>, etc.)
+as indicated by scikit-learn guidelines. Private functions are named with single leading underscores and some of them are additionally described by 
+<cite>&#64;jit</cite> or <cite>&#64;cuda.jit</cite> decorators from <cite>numba</cite> module (intended to be compiled by Numba).</p>
 <section id="example-usage">
 <h2>Example Usage<a class="headerlink" href="#example-usage" title="Permalink to this headline"></a></h2>
 <p>With frbb.py file (containing FastRealBoostBins class) included to some project, one can write e.g.:</p>
@@ -130,20 +133,42 @@ The module includes:</p>
 Bins with logit transform values play the role of ‘weak learners’.</p>
 <dl class="simple">
 <dt>Parameters:</dt><dd><dl class="simple">
-<dt>T (int): </dt><dd><p>number of boosting rounds (=number of weak estimators), defaults to  256.</p>
+<dt>T (int): </dt><dd><p>number of boosting rounds (=number of weak estimators), defaults to 256.</p>
 </dd>
 <dt>B (int): </dt><dd><p>number of bins, defaults to 8.</p>
 </dd>
-<dt>outliers_ratio(float): </dt><dd><p>fraction of outliers to skip (on each end) when establishing features’ variability ranges, defaults to: 0.05.</p>
+<dt>outliers_ratio(float): </dt><dd><p>fraction of outliers to skip (on each end) when establishing features’ variability ranges, defaults to 0.05.</p>
+</dd>
+<dt>logit_max (np.float32):</dt><dd><p>maximum absolute value of logit transform, outcomes clipped to interval [−logit_max, logit_max], defaults to np.float32(2.0).</p>
+</dd>
+<dt>fit_mode (str):</dt><dd><p>choice of fit method from {‘numpy’, ‘numba_jit’, ’numba_cuda’}, defaults to ‘numba_cuda’.</p>
+</dd>
+<dt>decision_function_mode (str):</dt><dd><p>choice of decision method from {‘numpy’, ‘numba_jit’, ’numba_cuda’} (called e.g. within predict), defaults to ‘numba_cuda’.</p>
+</dd>
+<dt>verbose (bool):</dt><dd><p>verbosity flag, if True then fit progress and auxiliary information are printed to console, defaults to False.</p>
+</dd>
+<dt>debug_verbose (bool):</dt><dd><p>detailed verbosity (only for ‘numba_cuda’ fit), defaults to False.</p>
 </dd>
 </dl>
 </dd>
 <dt>Attributes:</dt><dd><dl class="simple">
-<dt><a href="#id1"><span class="problematic" id="id2">features_selected_</span></a> (ndarray[np int32]): </dt><dd><p>Indexes of selected features, array of shape (T,).</p>
+<dt><a href="#id1"><span class="problematic" id="id2">features_selected_</span></a> (ndarray[np.int32]):</dt><dd><p>indexes of selected features, array of shape (T,).</p>
 </dd>
-<dt><a href="#id3"><span class="problematic" id="id4">dtype_</span></a> (np dtype): </dt><dd><p>Type of input data array, one of: np int8, np uint8, etc up to, np int64, np uint64 or np float32, np float64} - numeric types are only allowed.</p>
+<dt><a href="#id3"><span class="problematic" id="id4">dtype_</span></a> (np.dtype): </dt><dd><p>type of input data array, one of {np.int8, np.uint8, …, np.int64, np.uint64} or {np.float32, np.float64} - numeric types are only allowed.</p>
 </dd>
-<dt><a href="#id5"><span class="problematic" id="id6">mins_selected_</span></a> (ndarray): </dt><dd><p>Left ends of ranges for selected features (type matching <a href="#id7"><span class="problematic" id="id8">dtype_</span></a>).</p>
+<dt><a href="#id5"><span class="problematic" id="id6">mins_selected_</span></a> (ndarray): </dt><dd><p>left ends of ranges for selected features (type matching <a href="#id7"><span class="problematic" id="id8">dtype_</span></a>), array of shape (T,).</p>
+</dd>
+<dt><a href="#id9"><span class="problematic" id="id10">maxes_selected_</span></a> (ndarray):</dt><dd><p>right ends of ranges for selected features (type matching <a href="#id11"><span class="problematic" id="id12">dtype_</span></a>), array of shape (T,).</p>
+</dd>
+<dt><a href="#id13"><span class="problematic" id="id14">logits_</span></a> (ndarray[np.float32]): </dt><dd><p>binned logit values for selected features, array of shape (T, B).</p>
+</dd>
+<dt><a href="#id15"><span class="problematic" id="id16">decision_function_numba_cuda_job_name_</span></a> (str): </dt><dd><p>name, implied by <a href="#id17"><span class="problematic" id="id18">dtype_</span></a>, of decision function to be called in case of ‘numba_cuda’ mode (e.g. _decision_function_numba_cuda_job_int16).</p>
+</dd>
+<dt><a href="#id19"><span class="problematic" id="id20">decision_threshold_</span></a> (float): </dt><dd><p>threshold value for predict calls, defaults to 0.0.</p>
+</dd>
+<dt><a href="#id21"><span class="problematic" id="id22">classes_</span></a> (ndarray): </dt><dd><p>original class labels (scikit-learn requirement).</p>
+</dd>
+<dt><a href="#id23"><span class="problematic" id="id24">n_features_in_</span></a> (int): </dt><dd><p>number of features registered at fit stage and expected for subsequent predict calls (scikit-learn requirement).</p>
 </dd>
 </dl>
 </dd>
@@ -233,9 +258,24 @@ Bins with logit transform values play the role of ‘weak learners’.</p>
 <span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">T</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">256</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">B</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">8</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">outliers_ratio</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.05</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">logit_max</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">2.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fit_mode</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'numba_cuda'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">decision_function_mode</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'numba_cuda'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">verbose</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">debug_verbose</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/frbb.html#FastRealBoostBins.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#frbb.FastRealBoostBins.__init__" title="Permalink to this definition"></a></dt>
 <dd><p>Constructor of FastRealBoostBins instances.</p>
 <dl class="simple">
-<dt>Args:</dt><dd><p>T (int): number of boosting rounds (=number of weak estimators), defaults to  256.            
-B (int): number of bins, defaults to 8.            
-outliers_ratio(float): fraction of outliers to skip (on each end) when establishing features’ variability ranges, defaults to: 0.05.</p>
+<dt>Args:</dt><dd><dl class="simple">
+<dt>T (int): </dt><dd><p>number of boosting rounds (=number of weak estimators), defaults to 256.</p>
+</dd>
+<dt>B (int): </dt><dd><p>number of bins, defaults to 8.</p>
+</dd>
+<dt>outliers_ratio(float): </dt><dd><p>fraction of outliers to skip (on each end) when establishing features’ variability ranges, defaults to 0.05.</p>
+</dd>
+<dt>logit_max (np.float32):</dt><dd><p>maximum absolute value of logit transform, outcomes clipped to interval [−logit_max, logit_max], defaults to np.float32(2.0).</p>
+</dd>
+<dt>fit_mode (str):</dt><dd><p>choice of fit method from {‘numpy’, ‘numba_jit’, ’numba_cuda’}, defaults to ‘numba_cuda’.</p>
+</dd>
+<dt>decision_function_mode (str):</dt><dd><p>choice of decision method from {‘numpy’, ‘numba_jit’, ’numba_cuda’} (called e.g. within predict), defaults to ‘numba_cuda’.</p>
+</dd>
+<dt>verbose (bool):</dt><dd><p>verbosity flag, if True then fit progress and auxiliary information are printed to console, defaults to False.</p>
+</dd>
+<dt>debug_verbose (bool):</dt><dd><p>detailed verbosity (only for ‘numba_cuda’ fit), defaults to False.</p>
+</dd>
+</dl>
 </dd>
 </dl>
 </dd></dl>
@@ -243,18 +283,19 @@ outliers_ratio(float): fraction of outliers to skip (on each end) when establish
 <dl class="py method">
 <dt class="sig sig-object py" id="frbb.FastRealBoostBins._get_tags">
 <span class="sig-name descname"><span class="pre">_get_tags</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/frbb.html#FastRealBoostBins._get_tags"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#frbb.FastRealBoostBins._get_tags" title="Permalink to this definition"></a></dt>
-<dd></dd></dl>
+<dd><p>Returns dictionary with particular properties of this estimator (compliant with scikit-learn guidelines).</p>
+</dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="frbb.FastRealBoostBins.__str__">
 <span class="sig-name descname"><span class="pre">__str__</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/frbb.html#FastRealBoostBins.__str__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#frbb.FastRealBoostBins.__str__" title="Permalink to this definition"></a></dt>
-<dd><p>Return str(self).</p>
+<dd><p>Returns str(self).</p>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="frbb.FastRealBoostBins.__repr__">
 <span class="sig-name descname"><span class="pre">__repr__</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/frbb.html#FastRealBoostBins.__repr__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#frbb.FastRealBoostBins.__repr__" title="Permalink to this definition"></a></dt>
-<dd><p>Return repr(self).</p>
+<dd><p>Returns repr(self).</p>
 </dd></dl>
 
 <dl class="py method">
