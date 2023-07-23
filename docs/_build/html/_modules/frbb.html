@@ -69,14 +69,14 @@
              
   <h1>Source code for frbb</h1><div class="highlight"><pre>
 <span></span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">This module contains the core machine learning functionalities of the project, embodied by the class FastRealBoostBins (compliant with scikit-learn).</span>
+<span class="sd">This module contains the core machine learning functionalities of the project, embodied by the class `FastRealBoostBins` (compliant with scikit-learn).</span>
 <span class="sd">The module includes:</span>
 
-<span class="sd">- `FastRealBoostBins`: Class representing ensemble classifier for fast predictions implemented using numba.jit and numba.cuda,</span>
+<span class="sd">- `FastRealBoostBins`: class representing ensemble classifier for fast predictions implemented using numba.jit and numba.cuda,</span>
 
-<span class="sd">- `_lock`, `_unlock`: utility functions (placed outside the class, related to mutex mechanisms in case of the fit performed using &#39;numba_cuda&#39; mode).</span>
+<span class="sd">- `_lock`, `_unlock`: utility functions (placed outside the class, related to mutex mechanisms in case of fit performed using &#39;numba_cuda&#39; mode).</span>
 
-<span class="sd">In `FastRealBoostBins` class, attributes estimated by the `fit` are named with trailing underscores (`features_selected_`, `logits_`, etc.)</span>
+<span class="sd">In FastRealBoostBins class, attributes estimated by the fit function are named with trailing underscores (e.g. features_selected_, logits_, etc.)</span>
 <span class="sd">as indicated by scikit-learn guidelines. Private functions are named with single leading underscores and some of them are additionally described by </span>
 <span class="sd">`@jit` or `@cuda.jit` decorators from `numba` module (intended to be compiled by Numba).  </span>
 
@@ -289,7 +289,8 @@
         <span class="n">repr_str</span> <span class="o">+=</span> <span class="s2">&quot;)&quot;</span>
         <span class="k">return</span> <span class="n">repr_str</span></div>
 
-<div class="viewcode-block" id="FastRealBoostBins._validate_param"><a class="viewcode-back" href="../frbb.html#frbb.FastRealBoostBins._validate_param">[docs]</a>    <span class="k">def</span> <span class="nf">_validate_param</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">value</span><span class="p">,</span> <span class="n">ptype</span><span class="p">,</span> <span class="n">leq</span><span class="p">,</span> <span class="n">low</span><span class="p">,</span> <span class="n">geq</span><span class="p">,</span> <span class="n">high</span><span class="p">,</span> <span class="n">default</span><span class="p">):</span>        
+<div class="viewcode-block" id="FastRealBoostBins._validate_param"><a class="viewcode-back" href="../frbb.html#frbb.FastRealBoostBins._validate_param">[docs]</a>    <span class="k">def</span> <span class="nf">_validate_param</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">value</span><span class="p">,</span> <span class="n">ptype</span><span class="p">,</span> <span class="n">leq</span><span class="p">,</span> <span class="n">low</span><span class="p">,</span> <span class="n">geq</span><span class="p">,</span> <span class="n">high</span><span class="p">,</span> <span class="n">default</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Validates a parameter - is it of correct type and within given range (either end of the range can be open or closed).&quot;&quot;&quot;</span>     
         <span class="n">invalid</span> <span class="o">=</span> <span class="n">value</span> <span class="o">&lt;=</span> <span class="n">low</span> <span class="k">if</span> <span class="n">leq</span> <span class="k">else</span> <span class="n">value</span> <span class="o">&lt;</span> <span class="n">low</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="n">invalid</span><span class="p">:</span>
             <span class="n">invalid</span> <span class="o">=</span> <span class="n">value</span> <span class="o">&gt;=</span> <span class="n">high</span> <span class="k">if</span> <span class="n">geq</span> <span class="k">else</span> <span class="n">value</span> <span class="o">&gt;</span> <span class="n">high</span>
@@ -301,12 +302,14 @@
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">SKLEARN_ERR_MESSAGE_UNKNOWN_LABEL_TYPE</span><span class="p">)</span></div>
     
 <div class="viewcode-block" id="FastRealBoostBins._set_cuda_constants"><a class="viewcode-back" href="../frbb.html#frbb.FastRealBoostBins._set_cuda_constants">[docs]</a>    <span class="k">def</span> <span class="nf">_set_cuda_constants</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Investigates (via numba module) if CUDA-based computations are available and, if so, sets suitable constants.&quot;&quot;&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_cuda_available</span> <span class="o">=</span> <span class="n">cuda</span><span class="o">.</span><span class="n">is_available</span><span class="p">()</span> 
         <span class="bp">self</span><span class="o">.</span><span class="n">_cuda_tpb_default</span> <span class="o">=</span> <span class="n">cuda</span><span class="o">.</span><span class="n">get_current_device</span><span class="p">()</span><span class="o">.</span><span class="n">MAX_THREADS_PER_BLOCK</span> <span class="o">//</span> <span class="mi">2</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_cuda_available</span> <span class="k">else</span> <span class="kc">None</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_cuda_tpb_bin_add_weights</span> <span class="o">=</span> <span class="mi">128</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_cuda_available</span> <span class="k">else</span> <span class="kc">None</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_cuda_n_streams</span> <span class="o">=</span> <span class="n">cuda</span><span class="o">.</span><span class="n">get_current_device</span><span class="p">()</span><span class="o">.</span><span class="n">ASYNC_ENGINE_COUNT</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_cuda_available</span> <span class="k">else</span> <span class="kc">None</span></div>
     
 <div class="viewcode-block" id="FastRealBoostBins._set_modes"><a class="viewcode-back" href="../frbb.html#frbb.FastRealBoostBins._set_modes">[docs]</a>    <span class="k">def</span> <span class="nf">_set_modes</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">fit_mode</span><span class="o">=</span><span class="s2">&quot;numba_cuda&quot;</span><span class="p">,</span> <span class="n">decision_function_mode</span><span class="o">=</span><span class="s2">&quot;numba_cuda&quot;</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Sets modes for fit and decision_function functions.&quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">fit_mode</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">FIT_MODES</span><span class="p">:</span>
             <span class="n">invalid_mode</span> <span class="o">=</span> <span class="n">fit_mode</span>
             <span class="n">fit_mode</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">FIT_MODE_DEFAULT</span>
@@ -327,7 +330,7 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">_decision_function_method</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s2">&quot;_decision_function_&quot;</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">decision_function_mode</span><span class="p">)</span>                 </div>
                                                            
 <div class="viewcode-block" id="FastRealBoostBins._logit"><a class="viewcode-back" href="../frbb.html#frbb.FastRealBoostBins._logit">[docs]</a>    <span class="k">def</span> <span class="nf">_logit</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">W_p</span><span class="p">,</span> <span class="n">W_n</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Computes the logit transform value given sums of current boosting weights (for positive and negative examples) with proper clipping and handling of zeros in either numerator or denominator.&quot;&quot;&quot;</span>        
+        <span class="sd">&quot;&quot;&quot;Computes a logit transform value based on sums of current boosting weights (for positive and negative examples) with proper clipping and handling of zeros in either numerator or denominator.&quot;&quot;&quot;</span>        
         <span class="k">if</span> <span class="n">W_p</span> <span class="o">==</span> <span class="n">W_n</span><span class="p">:</span>
             <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">(</span><span class="mf">0.0</span><span class="p">)</span>
         <span class="k">elif</span> <span class="n">W_p</span> <span class="o">==</span> <span class="mf">0.0</span><span class="p">:</span>
@@ -337,6 +340,19 @@
         <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">clip</span><span class="p">(</span><span class="mf">0.5</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">W_p</span> <span class="o">/</span> <span class="n">W_n</span><span class="p">),</span> <span class="o">-</span><span class="bp">self</span><span class="o">.</span><span class="n">logit_max</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">logit_max</span><span class="p">)</span></div>
                     
 <div class="viewcode-block" id="FastRealBoostBins.fit"><a class="viewcode-back" href="../frbb.html#frbb.FastRealBoostBins.fit">[docs]</a>    <span class="k">def</span> <span class="nf">fit</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">X</span><span class="p">,</span> <span class="n">y</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Performs the fit operation according to a general scheme of RealBoost algorithm (data reweighting, real-valued responses)</span>
+<span class="sd">        and using an approach where bins with logit transform values play the role of &#39;weak learners&#39;. </span>
+<span class="sd">        Each weak learner is based on one selected feature - the minimizer of exponential criterion (for current boosting round).</span>
+<span class="sd">        Computations are carried out according to the chosen or default mode - possible choices: {`numpy`, `numba_jit`, `numba_cuda`}.   </span>
+<span class="sd">        </span>
+<span class="sd">        Args:</span>
+<span class="sd">            X (ndarray): two-dimensional data array of numeric type with examples written as rows and features as columns.</span>
+<span class="sd">            y (ndarray): one-dimensional array containing class labels associated with data examples in X.</span>
+<span class="sd">            </span>
+<span class="sd">        Returns:</span>
+<span class="sd">            self (FastRealBoostBins): reference to self (in compliance with scikit-learn guidelines).</span>
+<span class="sd">        &quot;&quot;&quot;</span>
         <span class="c1"># sklearn checks</span>
         <span class="n">y</span> <span class="o">=</span> <span class="n">column_or_1d</span><span class="p">(</span><span class="n">y</span><span class="p">)</span>
         <span class="n">X</span><span class="p">,</span> <span class="n">y</span> <span class="o">=</span> <span class="n">check_X_y</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">y</span><span class="p">)</span>                    
