@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>utils &mdash; fast_rboost_bins 1.0.0 documentation</title>
+      <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
+        <script src="../_static/jquery.js"></script>
+        <script src="../_static/underscore.js"></script>
+        <script src="../_static/doctools.js"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../index.html" class="icon icon-home">
+            fast_rboost_bins
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../modules.html">src</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">fast_rboost_bins</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="index.html">Module code</a></li>
+      <li class="breadcrumb-item active">utils</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for utils</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;This is a fake documentation for utils.py file.&quot;&quot;&quot;</span>
+
+<span class="kn">import</span> <span class="nn">cpuinfo</span>
+<span class="kn">import</span> <span class="nn">platform</span>
+<span class="kn">import</span> <span class="nn">psutil</span>
+<span class="kn">from</span> <span class="nn">numba</span> <span class="kn">import</span> <span class="n">cuda</span>
+ 
+<span class="c1">#__author__ = &quot;Przemysław Klęsk&quot;</span>
+<span class="c1">#__email__ = &quot;pklesk@zut.edu.pl&quot;</span>
+
+
+<div class="viewcode-block" id="cpu_and_system_props"><a class="viewcode-back" href="../utils.html#utils.cpu_and_system_props">[docs]</a><span class="k">def</span> <span class="nf">cpu_and_system_props</span><span class="p">():</span>
+    <span class="sd">&quot;&quot;&quot;Returns a dictionary with info on CPU and OS.&quot;&quot;&quot;</span>
+    <span class="n">props</span> <span class="o">=</span> <span class="p">{}</span>    
+    <span class="n">info</span> <span class="o">=</span> <span class="n">cpuinfo</span><span class="o">.</span><span class="n">get_cpu_info</span><span class="p">()</span>
+    <span class="n">un</span> <span class="o">=</span> <span class="n">platform</span><span class="o">.</span><span class="n">uname</span><span class="p">()</span>
+    <span class="n">props</span><span class="p">[</span><span class="s2">&quot;cpu_name&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">info</span><span class="p">[</span><span class="s2">&quot;brand_raw&quot;</span><span class="p">]</span>
+    <span class="n">props</span><span class="p">[</span><span class="s2">&quot;ram_size&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">psutil</span><span class="o">.</span><span class="n">virtual_memory</span><span class="p">()</span><span class="o">.</span><span class="n">total</span> <span class="o">/</span> <span class="mi">1024</span><span class="o">**</span><span class="mi">3</span><span class="si">:</span><span class="s2">.1f</span><span class="si">}</span><span class="s2"> GB&quot;</span>
+    <span class="n">props</span><span class="p">[</span><span class="s2">&quot;os_name&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">un</span><span class="o">.</span><span class="n">system</span><span class="si">}</span><span class="s2"> </span><span class="si">{</span><span class="n">un</span><span class="o">.</span><span class="n">release</span><span class="si">}</span><span class="s2">&quot;</span>
+    <span class="n">props</span><span class="p">[</span><span class="s2">&quot;os_version&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">un</span><span class="o">.</span><span class="n">version</span><span class="si">}</span><span class="s2">&quot;</span>
+    <span class="n">props</span><span class="p">[</span><span class="s2">&quot;os_machine&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">un</span><span class="o">.</span><span class="n">machine</span><span class="si">}</span><span class="s2">&quot;</span>    
+    <span class="k">return</span> <span class="n">props</span>    </div>
+
+<div class="viewcode-block" id="gpu_props"><a class="viewcode-back" href="../utils.html#utils.gpu_props">[docs]</a><span class="k">def</span> <span class="nf">gpu_props</span><span class="p">():</span>
+    <span class="n">gpu</span> <span class="o">=</span> <span class="n">cuda</span><span class="o">.</span><span class="n">get_current_device</span><span class="p">()</span>
+    <span class="n">props</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="n">props</span><span class="p">[</span><span class="s2">&quot;name&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">gpu</span><span class="o">.</span><span class="n">name</span><span class="o">.</span><span class="n">decode</span><span class="p">(</span><span class="s2">&quot;ASCII&quot;</span><span class="p">)</span>
+    <span class="n">props</span><span class="p">[</span><span class="s2">&quot;max_threads_per_block&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">gpu</span><span class="o">.</span><span class="n">MAX_THREADS_PER_BLOCK</span>
+    <span class="n">props</span><span class="p">[</span><span class="s2">&quot;max_block_dim_x&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">gpu</span><span class="o">.</span><span class="n">MAX_BLOCK_DIM_X</span>
+    <span class="n">props</span><span class="p">[</span><span class="s2">&quot;max_block_dim_y&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">gpu</span><span class="o">.</span><span class="n">MAX_BLOCK_DIM_Y</span>
+    <span class="n">props</span><span class="p">[</span><span class="s2">&quot;max_block_dim_z&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">gpu</span><span class="o">.</span><span class="n">MAX_BLOCK_DIM_Z</span>
+    <span class="n">props</span><span class="p">[</span><span class="s2">&quot;max_grid_dim_x&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">gpu</span><span class="o">.</span><span class="n">MAX_GRID_DIM_X</span>
+    <span class="n">props</span><span class="p">[</span><span class="s2">&quot;max_grid_dim_y&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">gpu</span><span class="o">.</span><span class="n">MAX_GRID_DIM_Y</span>
+    <span class="n">props</span><span class="p">[</span><span class="s2">&quot;max_grid_dim_z&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">gpu</span><span class="o">.</span><span class="n">MAX_GRID_DIM_Z</span>    
+    <span class="n">props</span><span class="p">[</span><span class="s2">&quot;max_shared_memory_per_block&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">gpu</span><span class="o">.</span><span class="n">MAX_SHARED_MEMORY_PER_BLOCK</span>
+    <span class="n">props</span><span class="p">[</span><span class="s2">&quot;async_engine_count&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">gpu</span><span class="o">.</span><span class="n">ASYNC_ENGINE_COUNT</span>
+    <span class="n">props</span><span class="p">[</span><span class="s2">&quot;can_map_host_memory&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">gpu</span><span class="o">.</span><span class="n">CAN_MAP_HOST_MEMORY</span>
+    <span class="n">props</span><span class="p">[</span><span class="s2">&quot;multiprocessor_count&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">gpu</span><span class="o">.</span><span class="n">MULTIPROCESSOR_COUNT</span>
+    <span class="n">props</span><span class="p">[</span><span class="s2">&quot;warp_size&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">gpu</span><span class="o">.</span><span class="n">WARP_SIZE</span>
+    <span class="n">props</span><span class="p">[</span><span class="s2">&quot;unified_addressing&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">gpu</span><span class="o">.</span><span class="n">UNIFIED_ADDRESSING</span>
+    <span class="n">props</span><span class="p">[</span><span class="s2">&quot;pci_bus_id&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">gpu</span><span class="o">.</span><span class="n">PCI_BUS_ID</span>
+    <span class="n">props</span><span class="p">[</span><span class="s2">&quot;pci_device_id&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">gpu</span><span class="o">.</span><span class="n">PCI_DEVICE_ID</span>
+    <span class="n">props</span><span class="p">[</span><span class="s2">&quot;compute_capability&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">gpu</span><span class="o">.</span><span class="n">compute_capability</span>            
+    <span class="n">CC_CORES_PER_SM_DICT</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="p">(</span><span class="mi">2</span><span class="p">,</span><span class="mi">0</span><span class="p">)</span> <span class="p">:</span> <span class="mi">32</span><span class="p">,</span>
+        <span class="p">(</span><span class="mi">2</span><span class="p">,</span><span class="mi">1</span><span class="p">)</span> <span class="p">:</span> <span class="mi">48</span><span class="p">,</span>
+        <span class="p">(</span><span class="mi">3</span><span class="p">,</span><span class="mi">0</span><span class="p">)</span> <span class="p">:</span> <span class="mi">256</span><span class="p">,</span>
+        <span class="p">(</span><span class="mi">3</span><span class="p">,</span><span class="mi">5</span><span class="p">)</span> <span class="p">:</span> <span class="mi">256</span><span class="p">,</span>
+        <span class="p">(</span><span class="mi">3</span><span class="p">,</span><span class="mi">7</span><span class="p">)</span> <span class="p">:</span> <span class="mi">256</span><span class="p">,</span>
+        <span class="p">(</span><span class="mi">5</span><span class="p">,</span><span class="mi">0</span><span class="p">)</span> <span class="p">:</span> <span class="mi">128</span><span class="p">,</span>
+        <span class="p">(</span><span class="mi">5</span><span class="p">,</span><span class="mi">2</span><span class="p">)</span> <span class="p">:</span> <span class="mi">128</span><span class="p">,</span>
+        <span class="p">(</span><span class="mi">6</span><span class="p">,</span><span class="mi">0</span><span class="p">)</span> <span class="p">:</span> <span class="mi">64</span><span class="p">,</span>
+        <span class="p">(</span><span class="mi">6</span><span class="p">,</span><span class="mi">1</span><span class="p">)</span> <span class="p">:</span> <span class="mi">128</span><span class="p">,</span>
+        <span class="p">(</span><span class="mi">7</span><span class="p">,</span><span class="mi">0</span><span class="p">)</span> <span class="p">:</span> <span class="mi">64</span><span class="p">,</span>
+        <span class="p">(</span><span class="mi">7</span><span class="p">,</span><span class="mi">5</span><span class="p">)</span> <span class="p">:</span> <span class="mi">64</span><span class="p">,</span>
+        <span class="p">(</span><span class="mi">8</span><span class="p">,</span><span class="mi">0</span><span class="p">)</span> <span class="p">:</span> <span class="mi">64</span><span class="p">,</span>
+        <span class="p">(</span><span class="mi">8</span><span class="p">,</span><span class="mi">6</span><span class="p">)</span> <span class="p">:</span> <span class="mi">128</span>
+        <span class="p">}</span>
+    <span class="n">props</span><span class="p">[</span><span class="s2">&quot;cores_per_SM&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">CC_CORES_PER_SM_DICT</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">gpu</span><span class="o">.</span><span class="n">compute_capability</span><span class="p">)</span>
+    <span class="n">props</span><span class="p">[</span><span class="s2">&quot;cores_total&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">props</span><span class="p">[</span><span class="s2">&quot;cores_per_SM&quot;</span><span class="p">]</span> <span class="o">*</span> <span class="n">gpu</span><span class="o">.</span><span class="n">MULTIPROCESSOR_COUNT</span>
+    <span class="k">return</span> <span class="n">props</span> </div>
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2023, Przemysław Klęsk.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>
