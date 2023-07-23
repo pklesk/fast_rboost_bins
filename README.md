@@ -47,6 +47,72 @@ TRAIN ACC: 1.0
 TEST ACC: 0.958041958041958
 ```
 
+## Time performance example
+The code below compares `FastRealBoostBins` (two instances with different modes) against `sklearn.ensemble.AdaBoostClassifier` on two random data sets, using ensembles of size 1024.
+```python
+from frbb import FastRealBoostBins
+from sklearn.ensemble import AdaBoostClassifier
+import numpy as np
+import time
+
+if __name__ == "__main__":  
+    T = 1024
+    clfs = [
+        AdaBoostClassifier(n_estimators=T),
+        FastRealBoostBins(T=T, fit_mode="numba_jit", decision_function_mode="numba_jit"),
+        FastRealBoostBins(T=T, fit_mode="numba_cuda", decision_function_mode="numba_cuda")
+        ]
+    n = 100
+    np.random.seed(0) # setting some randomization seed
+    for m in [1000, 10000]:
+        print(f"DATA SHAPE (TRAIN AND TEST): {m} x {n}")
+        # generating fake random train data
+        X_train = np.random.rand(m, n)
+        y_train = np.random.randint(2, size=m)
+        X_test = np.random.rand(m, n)
+        y_test = np.random.randint(2, size=m)
+        # checking classifiers    
+        for clf in clfs:
+            print(f"  CLF: {clf}...")
+            t1_fit = time.time()      
+            clf.fit(X_train, y_train)
+            t2_fit = time.time()
+            t1_predict_train = time.time()
+            acc_train = clf.score(X_train, y_train)
+            t2_predict_train = time.time()
+            t1_predict_train = time.time()
+            acc_train = clf.score(X_train, y_train)
+            t2_predict_train = time.time()            
+            t1_predict_test = time.time()
+            acc_test = clf.score(X_train, y_train)
+            t2_predict_test = time.time()                        
+            print(f"    ACCs -> TRAIN {clf.score(X_train, y_train)}, TEST: {clf.score(X_test, y_test)}")            
+            print(f"    TIMES [s] -> FIT: {t2_fit - t1_fit}, PREDICT (TRAIN): {t2_predict_train - t1_predict_train}, PREDICT (TEST): {t2_predict_test - t1_predict_test}")            
+```
+And produces the following output (actual observed times are machine dependent but their proportions should be roughly preserved):
+```bash
+DATA SHAPE (TRAIN AND TEST): 1000 x 100
+  CLF: AdaBoostClassifier(n_estimators=1024)...
+    ACCs -> TRAIN 1.0, TEST: 0.508
+    TIMES [s] -> FIT: 7.459436893463135, PREDICT (TRAIN): 0.20761609077453613, PREDICT (TEST): 0.20791172981262207
+  CLF: FastRealBoostBins(T=1024, B=8, outliers_ratio=0.05, logit_max: 2.0, fit_mode='numba_jit', decision_function_mode='numba_jit')...
+    ACCs -> TRAIN 1.0, TEST: 0.509
+    TIMES [s] -> FIT: 0.9497988224029541, PREDICT (TRAIN): 0.006816864013671875, PREDICT (TEST): 0.006695985794067383
+  CLF: FastRealBoostBins(T=1024, B=8, outliers_ratio=0.05, logit_max: 2.0, fit_mode='numba_cuda', decision_function_mode='numba_cuda')...
+    ACCs -> TRAIN 1.0, TEST: 0.509
+    TIMES [s] -> FIT: 5.370485544204712, PREDICT (TRAIN): 0.0031015872955322266, PREDICT (TEST): 0.003043651580810547
+DATA SHAPE (TRAIN AND TEST): 10000 x 100
+  CLF: AdaBoostClassifier(n_estimators=1024)...
+    ACCs -> TRAIN 0.7399, TEST: 0.5032
+    TIMES [s] -> FIT: 82.01154780387878, PREDICT (TRAIN): 1.2551181316375732, PREDICT (TEST): 1.2564003467559814
+  CLF: FastRealBoostBins(T=1024, B=8, outliers_ratio=0.05, logit_max: 2.0, fit_mode='numba_jit', decision_function_mode='numba_jit')...
+    ACCs -> TRAIN 0.6013, TEST: 0.5032
+    TIMES [s] -> FIT: 10.251049757003784, PREDICT (TRAIN): 0.06288409233093262, PREDICT (TEST): 0.06366491317749023
+  CLF: FastRealBoostBins(T=1024, B=8, outliers_ratio=0.05, logit_max: 2.0, fit_mode='numba_cuda', decision_function_mode='numba_cuda')...
+    ACCs -> TRAIN 0.6, TEST: 0.5043
+    TIMES [s] -> FIT: 6.399523973464966, PREDICT (TRAIN): 0.031052589416503906, PREDICT (TEST): 0.02884387969970703
+```
+
 ## Constructor parameters
 TODO
 
