@@ -32,6 +32,12 @@ release = '1.0.0'
 # ones.
 extensions = ['sphinx.ext.todo', 'sphinx.ext.viewcode', 'sphinx.ext.autodoc', 'sphinx.ext.autosectionlabel']
               
+autodoc_default_options = {
+    'members': True,
+    'member-order': 'bysource',
+    'private-members': True,
+    'special-members': True    
+}
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']

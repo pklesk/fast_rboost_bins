@@ -1,12 +1,12 @@
 """This module contains the core machine learning functionalities of the project, embodied by the class FastRealBoostBins (compliant with scikit-learn).
-Main classes and functions include:
+The module includes:
 
 - `FastRealBoostBins`: Class representing ensemble classifier for fast predictions implemented using numba.jit and numba.cuda,
 
 - `_lock`, `_unlock`: utility functions (placed outside the class, related to mutex mechanisms in case of the fit performed using 'numba_cuda' mode).
 
 Example Usage
-------------
+-------------
 With frbb.py file (containing FastRealBoostBins class) included to some project, one can write e.g.:
 
 .. code-block:: python
@@ -33,14 +33,13 @@ Running the script above produces the following output:
 
 Dependencies
 ------------
-- numpy, math: Required for mathematical computations.
+- numpy, math: required for mathematical computations.
 
-- numba: Required for just-in-time compilation of crucial computational functions and CUDA kernels (decorated by numba.jit and numba.cuda) 
+- numba: required for just-in-time compilation of crucial computational functions and CUDA kernels (decorated by numba.jit and numba.cuda) 
 
-- sklearn: Required for inheritence and other sklearn API purposes.
+- sklearn: required for inheritence and other sklearn API purposes.
 
-- json: Required for load / dump methods pertaining to json files 
-
+- json: required for load / dump methods pertaining to json files 
 """
 
 import numpy as np
@@ -81,15 +80,30 @@ def _unlock(mutex):
 
 # the class
 class FastRealBoostBins(BaseEstimator, ClassifierMixin):
-    """An ensemble classifier for fast predictions implemented using numba.jit and numba.cuda. 
-    Bins with logit transform values play the role of 'weak learners'.
-       
-    Attributes:
-        features_selected_ (ndarray[np.int32]): indexes of selected features, array of shape (T,)
-        dtype_ (np.dtype): type of input data array, one of: {np.int8, np.uint8, ..., np.int64, np.uint64}
-            or {np.float32, np.float64} - numeric types are only allowed
-        mins_selected_ (ndarray): left ends of ranges for selected features (type matching dtype_)        
     """
+    An ensemble classifier for fast predictions implemented using numba.jit and numba.cuda. 
+    Bins with logit transform values play the role of 'weak learners'.
+    
+    Parameters:
+        T (int): 
+            number of boosting rounds (=number of weak estimators), defaults to  256.            
+        B (int): 
+            number of bins, defaults to 8.            
+        outliers_ratio(float): 
+            fraction of outliers to skip (on each end) when establishing features’ variability ranges, defaults to: 0.05.    
+        
+    Attributes:
+        features_selected_ (ndarray[np int32]): 
+            Indexes of selected features, array of shape (T,). 
+        dtype_ (np dtype): 
+            Type of input data array, one of: np int8, np uint8, etc up to, np int64, np uint64 or np float32, np float64} - numeric types are only allowed.       
+        mins_selected_ (ndarray): 
+            Left ends of ranges for selected features (type matching dtype_).                         
+    """
+    
+        # Methods:
+        # fit(X: ndarray, y: ndarray): Fit classifier to given data X with associated class labels y.
+        # predict(X: ndarray): Return predictions of classfier for given data X.
 
     # constants
     T_DEFAULT = 256
@@ -115,12 +129,13 @@ class FastRealBoostBins(BaseEstimator, ClassifierMixin):
     def __init__(self, T=T_DEFAULT, B=B_DEFAULT, outliers_ratio=OUTLIERS_RATIO_DEFAULT, logit_max=LOGIT_MAX_DEFAULT, 
                  fit_mode=FIT_MODE_DEFAULT, decision_function_mode=DECISION_FUNCTION_MODE_DEFAULT, 
                  verbose=VERBOSE_DEFAULT, debug_verbose=DEBUG_VERBOSE_DEFAULT):
-        """Constructor of FastRealBoostBins instances.
+        """
+        Constructor of FastRealBoostBins instances.
          
         Args:
-            T (int): number of boosting rounds (=number of weak estimators), defaults to  256 
-            B (int): number of bins, defaults to 8
-            
+            T (int): number of boosting rounds (=number of weak estimators), defaults to  256.            
+            B (int): number of bins, defaults to 8.            
+            outliers_ratio(float): fraction of outliers to skip (on each end) when establishing features’ variability ranges, defaults to: 0.05.            
         """
 
         super().__init__()
@@ -174,13 +189,13 @@ class FastRealBoostBins(BaseEstimator, ClassifierMixin):
     
     def _set_modes(self, fit_mode="numba_cuda", decision_function_mode="numba_cuda"):
         if not self.fit_mode in self.FIT_MODES:
-            invalid_mode = self.fit_mode
-            self.fit_mode = FIT_MODE_DEFAULT 
-            print(f"[invalid fit mode: '{invalid_mode}' changed to '{self.fit_mode}'; possible modes: {self.FIT_MODES}]")        
+            invalid_mode = fit_mode
+            fit_mode = self.FIT_MODE_DEFAULT
+            print(f"[invalid fit mode: '{invalid_mode}' changed to '{fit_mode}'; possible modes: {self.FIT_MODES}]")        
         if not self.decision_function_mode in self.DECISION_FUNCTION_MODES:
-            invalid_mode = self.decision_function_mode
-            self.decision_function_mode = self.DECISION_FUNCTION_MODE_DEFAULT 
-            print(f"[invalid decision function mode: '{invalid_mode}' changed to '{self.decision_function_mode}'; possible modes: {self.DECISION_FUNCTION_MODES}]")
+            invalid_mode = decision_function_mode
+            decision_function_mode = self.DECISION_FUNCTION_MODE_DEFAULT 
+            print(f"[invalid decision function mode: '{invalid_mode}' changed to '{decision_function_mode}'; possible modes: {self.DECISION_FUNCTION_MODES}]")
         self.fit_mode = fit_mode
         self.decision_function_mode = decision_function_mode
         if self.fit_mode == "numba_cuda" and not self._cuda_available:
@@ -193,6 +208,7 @@ class FastRealBoostBins(BaseEstimator, ClassifierMixin):
         self._decision_function_method = getattr(self, "_decision_function_" + self.decision_function_mode)                 
                                                            
     def _logit(self, W_p, W_n):
+        """Computes the logit transform value given sums of current boosting weights (for positive and negative examples) with proper clipping and handling of zeros in either numerator or denominator."""        
         if W_p == W_n:
             return np.float32(0.0)
         elif W_p == 0.0:
@@ -1163,6 +1179,7 @@ class FastRealBoostBins(BaseEstimator, ClassifierMixin):
             
     @staticmethod
     def json_load(fname, verbose=True):
+        """Creates and returns an instance of FastRealBoostBins from json file given its file path."""
         if verbose:
             print(f"JSON LOAD... [from file: {fname}]")
         t1 = time.time()
