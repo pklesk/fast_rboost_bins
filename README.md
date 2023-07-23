@@ -47,7 +47,7 @@ TRAIN ACC: 1.0
 TEST ACC: 0.958041958041958
 ```
 
-## Time performance example
+## Simple time performance example
 The code below compares `FastRealBoostBins` (two instances with different modes) against `sklearn.ensemble.AdaBoostClassifier` on two random data sets, using ensembles of size 1024.
 ```python
 from frbb import FastRealBoostBins
