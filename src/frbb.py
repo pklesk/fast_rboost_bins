@@ -1,12 +1,12 @@
 """
-This module contains the core machine learning functionalities of the project, embodied by the class FastRealBoostBins (compliant with scikit-learn).
+This module contains the core machine learning functionalities of the project, embodied by the class `FastRealBoostBins` (compliant with scikit-learn).
 The module includes:
 
-- `FastRealBoostBins`: Class representing ensemble classifier for fast predictions implemented using numba.jit and numba.cuda,
+- `FastRealBoostBins`: class representing ensemble classifier for fast predictions implemented using numba.jit and numba.cuda,
 
-- `_lock`, `_unlock`: utility functions (placed outside the class, related to mutex mechanisms in case of the fit performed using 'numba_cuda' mode).
+- `_lock`, `_unlock`: utility functions (placed outside the class, related to mutex mechanisms in case of fit performed using 'numba_cuda' mode).
 
-In `FastRealBoostBins` class, attributes estimated by the `fit` are named with trailing underscores (`features_selected_`, `logits_`, etc.)
+In FastRealBoostBins class, attributes estimated by the fit function are named with trailing underscores (e.g. features_selected_, logits_, etc.)
 as indicated by scikit-learn guidelines. Private functions are named with single leading underscores and some of them are additionally described by 
 `@jit` or `@cuda.jit` decorators from `numba` module (intended to be compiled by Numba).  
 
@@ -219,7 +219,8 @@ class FastRealBoostBins(BaseEstimator, ClassifierMixin):
         repr_str += ")"
         return repr_str
 
-    def _validate_param(self, name, value, ptype, leq, low, geq, high, default):        
+    def _validate_param(self, name, value, ptype, leq, low, geq, high, default):
+        """Validates a parameter - is it of correct type and within given range (either end of the range can be open or closed)."""     
         invalid = value <= low if leq else value < low
         if not invalid:
             invalid = value >= high if geq else value > high
@@ -231,12 +232,14 @@ class FastRealBoostBins(BaseEstimator, ClassifierMixin):
             raise ValueError(self.SKLEARN_ERR_MESSAGE_UNKNOWN_LABEL_TYPE)
     
     def _set_cuda_constants(self):
+        """Investigates (via numba module) if CUDA-based computations are available and, if so, sets suitable constants."""
         self._cuda_available = cuda.is_available() 
         self._cuda_tpb_default = cuda.get_current_device().MAX_THREADS_PER_BLOCK // 2 if self._cuda_available else None
         self._cuda_tpb_bin_add_weights = 128 if self._cuda_available else None
         self._cuda_n_streams = cuda.get_current_device().ASYNC_ENGINE_COUNT if self._cuda_available else None
     
     def _set_modes(self, fit_mode="numba_cuda", decision_function_mode="numba_cuda"):
+        """Sets modes for fit and decision_function functions."""
         if not self.fit_mode in self.FIT_MODES:
             invalid_mode = fit_mode
             fit_mode = self.FIT_MODE_DEFAULT
@@ -257,7 +260,7 @@ class FastRealBoostBins(BaseEstimator, ClassifierMixin):
         self._decision_function_method = getattr(self, "_decision_function_" + self.decision_function_mode)                 
                                                            
     def _logit(self, W_p, W_n):
-        """Computes the logit transform value given sums of current boosting weights (for positive and negative examples) with proper clipping and handling of zeros in either numerator or denominator."""        
+        """Computes a logit transform value based on sums of current boosting weights (for positive and negative examples) with proper clipping and handling of zeros in either numerator or denominator."""        
         if W_p == W_n:
             return np.float32(0.0)
         elif W_p == 0.0:
@@ -267,6 +270,19 @@ class FastRealBoostBins(BaseEstimator, ClassifierMixin):
         return np.clip(0.5 * np.log(W_p / W_n), -self.logit_max, self.logit_max)
                     
     def fit(self, X, y):
+        """
+        Performs the fit operation according to a general scheme of RealBoost algorithm (data reweighting, real-valued responses)
+        and using an approach where bins with logit transform values play the role of 'weak learners'. 
+        Each weak learner is based on one selected feature - the minimizer of exponential criterion (for current boosting round).
+        Computations are carried out according to the chosen or default mode - possible choices: {`numpy`, `numba_jit`, `numba_cuda`}.   
+        
+        Args:
+            X (ndarray): two-dimensional data array of numeric type with examples written as rows and features as columns.
+            y (ndarray): one-dimensional array containing class labels associated with data examples in X.
+            
+        Returns:
+            self (FastRealBoostBins): reference to self (in compliance with scikit-learn guidelines).
+        """
         # sklearn checks
         y = column_or_1d(y)
         X, y = check_X_y(X, y)                    
