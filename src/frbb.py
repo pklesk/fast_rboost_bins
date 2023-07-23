@@ -179,7 +179,6 @@ class FastRealBoostBins(BaseEstimator, ClassifierMixin):
             debug_verbose (bool):
                 detailed verbosity (only for 'numba_cuda' fit), defaults to False.            
         """
-
         super().__init__()
         self.T = T
         self.B = B    
@@ -198,7 +197,12 @@ class FastRealBoostBins(BaseEstimator, ClassifierMixin):
         return tags
     
     def __str__(self):
-        """Returns str(self)."""
+        """
+        Returns string representation of FastRealBoostBins instance.
+        
+        Returns:
+            str: string representation of FastRealBoostBins instance.
+        """
         return f"{self.__class__.__name__}(T={self.T}, B={self.B}, outliers_ratio={self.outliers_ratio}, logit_max: {self.logit_max}, fit_mode='{self.fit_mode}', decision_function_mode='{self.decision_function_mode}')"
             
     def __repr__(self):
