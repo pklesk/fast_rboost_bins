@@ -86,19 +86,34 @@ class FastRealBoostBins(BaseEstimator, ClassifierMixin):
     
     Parameters:
         T (int): 
-            number of boosting rounds (=number of weak estimators), defaults to  256.            
+            number of boosting rounds (=number of weak estimators), defaults to 256.            
         B (int): 
             number of bins, defaults to 8.            
         outliers_ratio(float): 
-            fraction of outliers to skip (on each end) when establishing features’ variability ranges, defaults to: 0.05.    
+            fraction of outliers to skip (on each end) when establishing features’ variability ranges, defaults to 0.05.
+        logit_max (np.float32):
+            maximum absolute value of logit transform, outcomes clipped to interval [−logit_max, logit_max], defaults to np.float32(2.0).
+        fit_mode (str):
+            choice of fit method from {'numpy', 'numba_jit', ’numba_cuda'}, defaults to 'numba_cuda'.
+        decision_function_mode (str):
+            choice of decision method from {'numpy', 'numba_jit', ’numba_cuda'} (called e.g. within predict), defaults to 'numba_cuda'.
+        verbose (bool):
+            verbosity flag, if True then fit progress and auxiliary information are printed to console, defaults to False.
+        debug_verbose (bool):
+            detailed verbosity (only for 'numba_cuda' fit), defaults to False.        
         
     Attributes:
         features_selected_ (ndarray[np int32]): 
-            Indexes of selected features, array of shape (T,). 
+            indexes of selected features, array of shape (T,). 
         dtype_ (np dtype): 
-            Type of input data array, one of: np int8, np uint8, etc up to, np int64, np uint64 or np float32, np float64} - numeric types are only allowed.       
+            type of input data array, one of: np int8, np uint8, etc up to, np int64, np uint64 or np float32, np float64} - numeric types are only allowed.       
         mins_selected_ (ndarray): 
-            Left ends of ranges for selected features (type matching dtype_).                         
+            left ends of ranges for selected features (type matching dtype_).
+        maxes_selected_ (ndarray): 
+            right ends of ranges for selected features (type matching dtype_).
+        decision_function_numba_cuda_job_name_ (str): 
+            name, implied by dtype_, of decision function to be called in case of 'numba_cuda' mode (e.g. _decision_function_numba_cuda_job_int16).
+                                                    
     """
     
         # Methods:

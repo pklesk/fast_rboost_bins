@@ -12,7 +12,7 @@ if __name__ == "__main__":
         ]
     n = 1000
     np.random.seed(0) # setting some randomization seed
-    for m in [100, 1000]:
+    for m in [1000, 10000]:
         print(f"DATA SHAPE (TRAIN AND TEST): {m} x {n}")
         # generating fake random train data
         X_train = np.random.rand(m, n)
@@ -21,16 +21,13 @@ if __name__ == "__main__":
         y_test = np.random.randint(2, size=m)
         # checking classifiers    
         for clf in clfs:
-            print(f"  CLF: {clf} ...")
+            print(f"  CLF: {clf}...")
             t1_fit = time.time()      
             clf.fit(X_train, y_train)
             t2_fit = time.time()
             t1_predict_train = time.time()
             acc_train = clf.score(X_train, y_train)
-            t2_predict_train = time.time()
-            t1_predict_train = time.time()
-            acc_train = clf.score(X_train, y_train)
-            t2_predict_train = time.time()            
+            t2_predict_train = time.time()   
             t1_predict_test = time.time()
             acc_test = clf.score(X_train, y_train)
             t2_predict_test = time.time()                        
