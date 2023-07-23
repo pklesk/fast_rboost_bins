@@ -86,7 +86,7 @@
   <section id="module-frbb">
 <span id="frbb-module"></span><h1>frbb module<a class="headerlink" href="#module-frbb" title="Permalink to this headline"></a></h1>
 <p>This module contains the core machine learning functionalities of the project, embodied by the class FastRealBoostBins (compliant with scikit-learn).
-Main classes and functions include:</p>
+The module includes:</p>
 <ul class="simple">
 <li><p><cite>FastRealBoostBins</cite>: Class representing ensemble classifier for fast predictions implemented using numba.jit and numba.cuda,</p></li>
 <li><p><cite>_lock</cite>, <cite>_unlock</cite>: utility functions (placed outside the class, related to mutex mechanisms in case of the fit performed using ‘numba_cuda’ mode).</p></li>
@@ -117,10 +117,10 @@ Main classes and functions include:</p>
 <section id="dependencies">
 <h2>Dependencies<a class="headerlink" href="#dependencies" title="Permalink to this headline"></a></h2>
 <ul class="simple">
-<li><p>numpy, math: Required for mathematical computations.</p></li>
-<li><p>numba: Required for just-in-time compilation of crucial computational functions and CUDA kernels (decorated by numba.jit and numba.cuda)</p></li>
-<li><p>sklearn: Required for inheritence and other sklearn API purposes.</p></li>
-<li><p>json: Required for load / dump methods pertaining to json files</p></li>
+<li><p>numpy, math: required for mathematical computations.</p></li>
+<li><p>numba: required for just-in-time compilation of crucial computational functions and CUDA kernels (decorated by numba.jit and numba.cuda)</p></li>
+<li><p>sklearn: required for inheritence and other sklearn API purposes.</p></li>
+<li><p>json: required for load / dump methods pertaining to json files</p></li>
 </ul>
 <dl class="py class">
 <dt class="sig sig-object py" id="frbb.FastRealBoostBins">
@@ -128,63 +128,34 @@ Main classes and functions include:</p>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">sklearn.base.BaseEstimator</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">sklearn.base.ClassifierMixin</span></code></p>
 <p>An ensemble classifier for fast predictions implemented using numba.jit and numba.cuda. 
 Bins with logit transform values play the role of ‘weak learners’.</p>
-<dl>
-<dt>Attributes:</dt><dd><p><a href="#id1"><span class="problematic" id="id2">features_selected_</span></a> (ndarray[np.int32]): indexes of selected features, array of shape (T,)
-<a href="#id3"><span class="problematic" id="id4">dtype_</span></a> (np.dtype): type of input data array, one of: {np.int8, np.uint8, …, np.int64, np.uint64}</p>
-<blockquote>
-<div><p>or {np.float32, np.float64} - numeric types are only allowed</p>
-</div></blockquote>
-<p><a href="#id5"><span class="problematic" id="id6">mins_selected_</span></a> (ndarray): left ends of ranges for selected features (type matching <a href="#id7"><span class="problematic" id="id8">dtype_</span></a>)</p>
+<dl class="simple">
+<dt>Parameters:</dt><dd><dl class="simple">
+<dt>T (int): </dt><dd><p>number of boosting rounds (=number of weak estimators), defaults to  256.</p>
+</dd>
+<dt>B (int): </dt><dd><p>number of bins, defaults to 8.</p>
+</dd>
+<dt>outliers_ratio(float): </dt><dd><p>fraction of outliers to skip (on each end) when establishing features’ variability ranges, defaults to: 0.05.</p>
+</dd>
+</dl>
+</dd>
+<dt>Attributes:</dt><dd><dl class="simple">
+<dt><a href="#id1"><span class="problematic" id="id2">features_selected_</span></a> (ndarray[np int32]): </dt><dd><p>Indexes of selected features, array of shape (T,).</p>
+</dd>
+<dt><a href="#id3"><span class="problematic" id="id4">dtype_</span></a> (np dtype): </dt><dd><p>Type of input data array, one of: np int8, np uint8, etc up to, np int64, np uint64 or np float32, np float64} - numeric types are only allowed.</p>
+</dd>
+<dt><a href="#id5"><span class="problematic" id="id6">mins_selected_</span></a> (ndarray): </dt><dd><p>Left ends of ranges for selected features (type matching <a href="#id7"><span class="problematic" id="id8">dtype_</span></a>).</p>
+</dd>
+</dl>
 </dd>
 </dl>
 <dl class="py attribute">
+<dt class="sig sig-object py" id="frbb.FastRealBoostBins.T_DEFAULT">
+<span class="sig-name descname"><span class="pre">T_DEFAULT</span></span><em class="property"> <span class="pre">=</span> <span class="pre">256</span></em><a class="headerlink" href="#frbb.FastRealBoostBins.T_DEFAULT" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
 <dt class="sig sig-object py" id="frbb.FastRealBoostBins.B_DEFAULT">
 <span class="sig-name descname"><span class="pre">B_DEFAULT</span></span><em class="property"> <span class="pre">=</span> <span class="pre">8</span></em><a class="headerlink" href="#frbb.FastRealBoostBins.B_DEFAULT" title="Permalink to this definition"></a></dt>
-<dd></dd></dl>
-
-<dl class="py attribute">
-<dt class="sig sig-object py" id="frbb.FastRealBoostBins.B_MAX">
-<span class="sig-name descname"><span class="pre">B_MAX</span></span><em class="property"> <span class="pre">=</span> <span class="pre">32</span></em><a class="headerlink" href="#frbb.FastRealBoostBins.B_MAX" title="Permalink to this definition"></a></dt>
-<dd></dd></dl>
-
-<dl class="py attribute">
-<dt class="sig sig-object py" id="frbb.FastRealBoostBins.CUDA_MAX_MEMORY_PER_CALL">
-<span class="sig-name descname"><span class="pre">CUDA_MAX_MEMORY_PER_CALL</span></span><em class="property"> <span class="pre">=</span> <span class="pre">8388608</span></em><a class="headerlink" href="#frbb.FastRealBoostBins.CUDA_MAX_MEMORY_PER_CALL" title="Permalink to this definition"></a></dt>
-<dd></dd></dl>
-
-<dl class="py attribute">
-<dt class="sig sig-object py" id="frbb.FastRealBoostBins.DEBUG_VERBOSE_DEFAULT">
-<span class="sig-name descname"><span class="pre">DEBUG_VERBOSE_DEFAULT</span></span><em class="property"> <span class="pre">=</span> <span class="pre">False</span></em><a class="headerlink" href="#frbb.FastRealBoostBins.DEBUG_VERBOSE_DEFAULT" title="Permalink to this definition"></a></dt>
-<dd></dd></dl>
-
-<dl class="py attribute">
-<dt class="sig sig-object py" id="frbb.FastRealBoostBins.DECISION_FUNCTION_MODES">
-<span class="sig-name descname"><span class="pre">DECISION_FUNCTION_MODES</span></span><em class="property"> <span class="pre">=</span> <span class="pre">['numpy',</span> <span class="pre">'numba_jit',</span> <span class="pre">'numba_cuda']</span></em><a class="headerlink" href="#frbb.FastRealBoostBins.DECISION_FUNCTION_MODES" title="Permalink to this definition"></a></dt>
-<dd></dd></dl>
-
-<dl class="py attribute">
-<dt class="sig sig-object py" id="frbb.FastRealBoostBins.DECISION_FUNCTION_MODE_DEFAULT">
-<span class="sig-name descname"><span class="pre">DECISION_FUNCTION_MODE_DEFAULT</span></span><em class="property"> <span class="pre">=</span> <span class="pre">'numba_cuda'</span></em><a class="headerlink" href="#frbb.FastRealBoostBins.DECISION_FUNCTION_MODE_DEFAULT" title="Permalink to this definition"></a></dt>
-<dd></dd></dl>
-
-<dl class="py attribute">
-<dt class="sig sig-object py" id="frbb.FastRealBoostBins.FIT_MODES">
-<span class="sig-name descname"><span class="pre">FIT_MODES</span></span><em class="property"> <span class="pre">=</span> <span class="pre">['numpy',</span> <span class="pre">'numba_jit',</span> <span class="pre">'numba_cuda']</span></em><a class="headerlink" href="#frbb.FastRealBoostBins.FIT_MODES" title="Permalink to this definition"></a></dt>
-<dd></dd></dl>
-
-<dl class="py attribute">
-<dt class="sig sig-object py" id="frbb.FastRealBoostBins.FIT_MODE_DEFAULT">
-<span class="sig-name descname"><span class="pre">FIT_MODE_DEFAULT</span></span><em class="property"> <span class="pre">=</span> <span class="pre">'numba_cuda'</span></em><a class="headerlink" href="#frbb.FastRealBoostBins.FIT_MODE_DEFAULT" title="Permalink to this definition"></a></dt>
-<dd></dd></dl>
-
-<dl class="py attribute">
-<dt class="sig sig-object py" id="frbb.FastRealBoostBins.LOGIT_MAX_DEFAULT">
-<span class="sig-name descname"><span class="pre">LOGIT_MAX_DEFAULT</span></span><em class="property"> <span class="pre">=</span> <span class="pre">2.0</span></em><a class="headerlink" href="#frbb.FastRealBoostBins.LOGIT_MAX_DEFAULT" title="Permalink to this definition"></a></dt>
-<dd></dd></dl>
-
-<dl class="py attribute">
-<dt class="sig sig-object py" id="frbb.FastRealBoostBins.LOGIT_MAX_MAX">
-<span class="sig-name descname"><span class="pre">LOGIT_MAX_MAX</span></span><em class="property"> <span class="pre">=</span> <span class="pre">8.0</span></em><a class="headerlink" href="#frbb.FastRealBoostBins.LOGIT_MAX_MAX" title="Permalink to this definition"></a></dt>
 <dd></dd></dl>
 
 <dl class="py attribute">
@@ -193,13 +164,58 @@ Bins with logit transform values play the role of ‘weak learners’.</p>
 <dd></dd></dl>
 
 <dl class="py attribute">
+<dt class="sig sig-object py" id="frbb.FastRealBoostBins.LOGIT_MAX_DEFAULT">
+<span class="sig-name descname"><span class="pre">LOGIT_MAX_DEFAULT</span></span><em class="property"> <span class="pre">=</span> <span class="pre">2.0</span></em><a class="headerlink" href="#frbb.FastRealBoostBins.LOGIT_MAX_DEFAULT" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="frbb.FastRealBoostBins.FIT_MODE_DEFAULT">
+<span class="sig-name descname"><span class="pre">FIT_MODE_DEFAULT</span></span><em class="property"> <span class="pre">=</span> <span class="pre">'numba_cuda'</span></em><a class="headerlink" href="#frbb.FastRealBoostBins.FIT_MODE_DEFAULT" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="frbb.FastRealBoostBins.DECISION_FUNCTION_MODE_DEFAULT">
+<span class="sig-name descname"><span class="pre">DECISION_FUNCTION_MODE_DEFAULT</span></span><em class="property"> <span class="pre">=</span> <span class="pre">'numba_cuda'</span></em><a class="headerlink" href="#frbb.FastRealBoostBins.DECISION_FUNCTION_MODE_DEFAULT" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="frbb.FastRealBoostBins.VERBOSE_DEFAULT">
+<span class="sig-name descname"><span class="pre">VERBOSE_DEFAULT</span></span><em class="property"> <span class="pre">=</span> <span class="pre">False</span></em><a class="headerlink" href="#frbb.FastRealBoostBins.VERBOSE_DEFAULT" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="frbb.FastRealBoostBins.DEBUG_VERBOSE_DEFAULT">
+<span class="sig-name descname"><span class="pre">DEBUG_VERBOSE_DEFAULT</span></span><em class="property"> <span class="pre">=</span> <span class="pre">False</span></em><a class="headerlink" href="#frbb.FastRealBoostBins.DEBUG_VERBOSE_DEFAULT" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="frbb.FastRealBoostBins.B_MAX">
+<span class="sig-name descname"><span class="pre">B_MAX</span></span><em class="property"> <span class="pre">=</span> <span class="pre">32</span></em><a class="headerlink" href="#frbb.FastRealBoostBins.B_MAX" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
 <dt class="sig sig-object py" id="frbb.FastRealBoostBins.OUTLIERS_RATIO_MAX">
 <span class="sig-name descname"><span class="pre">OUTLIERS_RATIO_MAX</span></span><em class="property"> <span class="pre">=</span> <span class="pre">0.25</span></em><a class="headerlink" href="#frbb.FastRealBoostBins.OUTLIERS_RATIO_MAX" title="Permalink to this definition"></a></dt>
 <dd></dd></dl>
 
 <dl class="py attribute">
-<dt class="sig sig-object py" id="frbb.FastRealBoostBins.SKLEARN_ERR_MESSAGE_DISCREPANCY_IN_NO_OF_FEATURES">
-<span class="sig-name descname"><span class="pre">SKLEARN_ERR_MESSAGE_DISCREPANCY_IN_NO_OF_FEATURES</span></span><em class="property"> <span class="pre">=</span> <span class="pre">'Number</span> <span class="pre">of</span> <span class="pre">features</span> <span class="pre">in</span> <span class="pre">predict</span> <span class="pre">or</span> <span class="pre">decision_function</span> <span class="pre">is</span> <span class="pre">different</span> <span class="pre">from</span> <span class="pre">the</span> <span class="pre">number</span> <span class="pre">of</span> <span class="pre">features</span> <span class="pre">in</span> <span class="pre">fit'</span></em><a class="headerlink" href="#frbb.FastRealBoostBins.SKLEARN_ERR_MESSAGE_DISCREPANCY_IN_NO_OF_FEATURES" title="Permalink to this definition"></a></dt>
+<dt class="sig sig-object py" id="frbb.FastRealBoostBins.LOGIT_MAX_MAX">
+<span class="sig-name descname"><span class="pre">LOGIT_MAX_MAX</span></span><em class="property"> <span class="pre">=</span> <span class="pre">8.0</span></em><a class="headerlink" href="#frbb.FastRealBoostBins.LOGIT_MAX_MAX" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="frbb.FastRealBoostBins.FIT_MODES">
+<span class="sig-name descname"><span class="pre">FIT_MODES</span></span><em class="property"> <span class="pre">=</span> <span class="pre">['numpy',</span> <span class="pre">'numba_jit',</span> <span class="pre">'numba_cuda']</span></em><a class="headerlink" href="#frbb.FastRealBoostBins.FIT_MODES" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="frbb.FastRealBoostBins.DECISION_FUNCTION_MODES">
+<span class="sig-name descname"><span class="pre">DECISION_FUNCTION_MODES</span></span><em class="property"> <span class="pre">=</span> <span class="pre">['numpy',</span> <span class="pre">'numba_jit',</span> <span class="pre">'numba_cuda']</span></em><a class="headerlink" href="#frbb.FastRealBoostBins.DECISION_FUNCTION_MODES" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="frbb.FastRealBoostBins.CUDA_MAX_MEMORY_PER_CALL">
+<span class="sig-name descname"><span class="pre">CUDA_MAX_MEMORY_PER_CALL</span></span><em class="property"> <span class="pre">=</span> <span class="pre">8388608</span></em><a class="headerlink" href="#frbb.FastRealBoostBins.CUDA_MAX_MEMORY_PER_CALL" title="Permalink to this definition"></a></dt>
 <dd></dd></dl>
 
 <dl class="py attribute">
@@ -208,18 +224,128 @@ Bins with logit transform values play the role of ‘weak learners’.</p>
 <dd></dd></dl>
 
 <dl class="py attribute">
-<dt class="sig sig-object py" id="frbb.FastRealBoostBins.T_DEFAULT">
-<span class="sig-name descname"><span class="pre">T_DEFAULT</span></span><em class="property"> <span class="pre">=</span> <span class="pre">256</span></em><a class="headerlink" href="#frbb.FastRealBoostBins.T_DEFAULT" title="Permalink to this definition"></a></dt>
-<dd></dd></dl>
-
-<dl class="py attribute">
-<dt class="sig sig-object py" id="frbb.FastRealBoostBins.VERBOSE_DEFAULT">
-<span class="sig-name descname"><span class="pre">VERBOSE_DEFAULT</span></span><em class="property"> <span class="pre">=</span> <span class="pre">False</span></em><a class="headerlink" href="#frbb.FastRealBoostBins.VERBOSE_DEFAULT" title="Permalink to this definition"></a></dt>
+<dt class="sig sig-object py" id="frbb.FastRealBoostBins.SKLEARN_ERR_MESSAGE_DISCREPANCY_IN_NO_OF_FEATURES">
+<span class="sig-name descname"><span class="pre">SKLEARN_ERR_MESSAGE_DISCREPANCY_IN_NO_OF_FEATURES</span></span><em class="property"> <span class="pre">=</span> <span class="pre">'Number</span> <span class="pre">of</span> <span class="pre">features</span> <span class="pre">in</span> <span class="pre">predict</span> <span class="pre">or</span> <span class="pre">decision_function</span> <span class="pre">is</span> <span class="pre">different</span> <span class="pre">from</span> <span class="pre">the</span> <span class="pre">number</span> <span class="pre">of</span> <span class="pre">features</span> <span class="pre">in</span> <span class="pre">fit'</span></em><a class="headerlink" href="#frbb.FastRealBoostBins.SKLEARN_ERR_MESSAGE_DISCREPANCY_IN_NO_OF_FEATURES" title="Permalink to this definition"></a></dt>
 <dd></dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="frbb.FastRealBoostBins.decision_function">
-<span class="sig-name descname"><span class="pre">decision_function</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">X</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/frbb.html#FastRealBoostBins.decision_function"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#frbb.FastRealBoostBins.decision_function" title="Permalink to this definition"></a></dt>
+<dt class="sig sig-object py" id="frbb.FastRealBoostBins.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">T</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">256</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">B</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">8</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">outliers_ratio</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.05</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">logit_max</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">2.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fit_mode</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'numba_cuda'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">decision_function_mode</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'numba_cuda'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">verbose</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">debug_verbose</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/frbb.html#FastRealBoostBins.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#frbb.FastRealBoostBins.__init__" title="Permalink to this definition"></a></dt>
+<dd><p>Constructor of FastRealBoostBins instances.</p>
+<dl class="simple">
+<dt>Args:</dt><dd><p>T (int): number of boosting rounds (=number of weak estimators), defaults to  256.            
+B (int): number of bins, defaults to 8.            
+outliers_ratio(float): fraction of outliers to skip (on each end) when establishing features’ variability ranges, defaults to: 0.05.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="frbb.FastRealBoostBins._get_tags">
+<span class="sig-name descname"><span class="pre">_get_tags</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/frbb.html#FastRealBoostBins._get_tags"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#frbb.FastRealBoostBins._get_tags" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="frbb.FastRealBoostBins.__str__">
+<span class="sig-name descname"><span class="pre">__str__</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/frbb.html#FastRealBoostBins.__str__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#frbb.FastRealBoostBins.__str__" title="Permalink to this definition"></a></dt>
+<dd><p>Return str(self).</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="frbb.FastRealBoostBins.__repr__">
+<span class="sig-name descname"><span class="pre">__repr__</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/frbb.html#FastRealBoostBins.__repr__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#frbb.FastRealBoostBins.__repr__" title="Permalink to this definition"></a></dt>
+<dd><p>Return repr(self).</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="frbb.FastRealBoostBins._validate_param">
+<span class="sig-name descname"><span class="pre">_validate_param</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">value</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ptype</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">leq</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">low</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">geq</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">high</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">default</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/frbb.html#FastRealBoostBins._validate_param"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#frbb.FastRealBoostBins._validate_param" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="frbb.FastRealBoostBins._set_cuda_constants">
+<span class="sig-name descname"><span class="pre">_set_cuda_constants</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/frbb.html#FastRealBoostBins._set_cuda_constants"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#frbb.FastRealBoostBins._set_cuda_constants" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="frbb.FastRealBoostBins._set_modes">
+<span class="sig-name descname"><span class="pre">_set_modes</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">fit_mode</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'numba_cuda'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">decision_function_mode</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'numba_cuda'</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/frbb.html#FastRealBoostBins._set_modes"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#frbb.FastRealBoostBins._set_modes" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="frbb.FastRealBoostBins._logit">
+<span class="sig-name descname"><span class="pre">_logit</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">W_p</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">W_n</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/frbb.html#FastRealBoostBins._logit"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#frbb.FastRealBoostBins._logit" title="Permalink to this definition"></a></dt>
+<dd><p>Computes the logit transform value given sums of current boosting weights (for positive and negative examples) with proper clipping and handling of zeros in either numerator or denominator.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="frbb.FastRealBoostBins.fit">
+<span class="sig-name descname"><span class="pre">fit</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">X</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">y</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/frbb.html#FastRealBoostBins.fit"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#frbb.FastRealBoostBins.fit" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="frbb.FastRealBoostBins._fit_init">
+<span class="sig-name descname"><span class="pre">_fit_init</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">X</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">y</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/frbb.html#FastRealBoostBins._fit_init"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#frbb.FastRealBoostBins._fit_init" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="frbb.FastRealBoostBins._bin_data">
+<span class="sig-name descname"><span class="pre">_bin_data</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">X</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mins</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">maxes</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/frbb.html#FastRealBoostBins._bin_data"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#frbb.FastRealBoostBins._bin_data" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="frbb.FastRealBoostBins._find_ranges">
+<span class="sig-name descname"><span class="pre">_find_ranges</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">X</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/frbb.html#FastRealBoostBins._find_ranges"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#frbb.FastRealBoostBins._find_ranges" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="frbb.FastRealBoostBins._fit_numpy">
+<span class="sig-name descname"><span class="pre">_fit_numpy</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">X</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">y</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/frbb.html#FastRealBoostBins._fit_numpy"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#frbb.FastRealBoostBins._fit_numpy" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="frbb.FastRealBoostBins._fit_numba_jit">
+<span class="sig-name descname"><span class="pre">_fit_numba_jit</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">X</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">y</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/frbb.html#FastRealBoostBins._fit_numba_jit"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#frbb.FastRealBoostBins._fit_numba_jit" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="frbb.FastRealBoostBins._fit_numba_jit_job">
+<em class="property"><span class="pre">static</span> </em><span class="sig-name descname"><span class="pre">_fit_numba_jit_job</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">X_binned</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">yy</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">w</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">B</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">logit_max</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/frbb.html#FastRealBoostBins._fit_numba_jit_job"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#frbb.FastRealBoostBins._fit_numba_jit_job" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="frbb.FastRealBoostBins._prepare_cuda_call_ranges">
+<em class="property"><span class="pre">static</span> </em><span class="sig-name descname"><span class="pre">_prepare_cuda_call_ranges</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">m</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_calls_min</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">power_two_sizes</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/frbb.html#FastRealBoostBins._prepare_cuda_call_ranges"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#frbb.FastRealBoostBins._prepare_cuda_call_ranges" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="frbb.FastRealBoostBins._fit_numba_cuda">
+<span class="sig-name descname"><span class="pre">_fit_numba_cuda</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">X</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">y</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/frbb.html#FastRealBoostBins._fit_numba_cuda"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#frbb.FastRealBoostBins._fit_numba_cuda" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="frbb.FastRealBoostBins._bin_add_weights_numba_cuda">
+<span class="sig-name descname"><span class="pre">_bin_add_weights_numba_cuda</span></span><em class="property"> <span class="pre">=</span> <span class="pre">&lt;numba.cuda.compiler.Dispatcher</span> <span class="pre">object&gt;</span></em><a class="headerlink" href="#frbb.FastRealBoostBins._bin_add_weights_numba_cuda" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="frbb.FastRealBoostBins._logits_numba_cuda">
+<span class="sig-name descname"><span class="pre">_logits_numba_cuda</span></span><em class="property"> <span class="pre">=</span> <span class="pre">&lt;numba.cuda.compiler.Dispatcher</span> <span class="pre">object&gt;</span></em><a class="headerlink" href="#frbb.FastRealBoostBins._logits_numba_cuda" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="frbb.FastRealBoostBins._errs_exp_numba_cuda">
+<span class="sig-name descname"><span class="pre">_errs_exp_numba_cuda</span></span><em class="property"> <span class="pre">=</span> <span class="pre">&lt;numba.cuda.compiler.Dispatcher</span> <span class="pre">object&gt;</span></em><a class="headerlink" href="#frbb.FastRealBoostBins._errs_exp_numba_cuda" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="frbb.FastRealBoostBins._argmin_errs_exp_numba_cuda">
+<span class="sig-name descname"><span class="pre">_argmin_errs_exp_numba_cuda</span></span><em class="property"> <span class="pre">=</span> <span class="pre">&lt;numba.cuda.compiler.Dispatcher</span> <span class="pre">object&gt;</span></em><a class="headerlink" href="#frbb.FastRealBoostBins._argmin_errs_exp_numba_cuda" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="frbb.FastRealBoostBins._reweight_numba_cuda">
+<span class="sig-name descname"><span class="pre">_reweight_numba_cuda</span></span><em class="property"> <span class="pre">=</span> <span class="pre">&lt;numba.cuda.compiler.Dispatcher</span> <span class="pre">object&gt;</span></em><a class="headerlink" href="#frbb.FastRealBoostBins._reweight_numba_cuda" title="Permalink to this definition"></a></dt>
 <dd></dd></dl>
 
 <dl class="py method">
@@ -228,8 +354,83 @@ Bins with logit transform values play the role of ‘weak learners’.</p>
 <dd></dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="frbb.FastRealBoostBins.fit">
-<span class="sig-name descname"><span class="pre">fit</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">X</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">y</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/frbb.html#FastRealBoostBins.fit"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#frbb.FastRealBoostBins.fit" title="Permalink to this definition"></a></dt>
+<dt class="sig sig-object py" id="frbb.FastRealBoostBins.decision_function">
+<span class="sig-name descname"><span class="pre">decision_function</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">X</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/frbb.html#FastRealBoostBins.decision_function"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#frbb.FastRealBoostBins.decision_function" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="frbb.FastRealBoostBins._decision_function_numpy">
+<span class="sig-name descname"><span class="pre">_decision_function_numpy</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">X</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/frbb.html#FastRealBoostBins._decision_function_numpy"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#frbb.FastRealBoostBins._decision_function_numpy" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="frbb.FastRealBoostBins._decision_function_numba_jit">
+<span class="sig-name descname"><span class="pre">_decision_function_numba_jit</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">X</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/frbb.html#FastRealBoostBins._decision_function_numba_jit"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#frbb.FastRealBoostBins._decision_function_numba_jit" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="frbb.FastRealBoostBins._decision_function_numba_jit_job">
+<em class="property"><span class="pre">static</span> </em><span class="sig-name descname"><span class="pre">_decision_function_numba_jit_job</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">X_binned</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">logits</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/frbb.html#FastRealBoostBins._decision_function_numba_jit_job"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#frbb.FastRealBoostBins._decision_function_numba_jit_job" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="frbb.FastRealBoostBins._decision_function_numba_cuda">
+<span class="sig-name descname"><span class="pre">_decision_function_numba_cuda</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">X</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/frbb.html#FastRealBoostBins._decision_function_numba_cuda"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#frbb.FastRealBoostBins._decision_function_numba_cuda" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="frbb.FastRealBoostBins._decision_function_numba_cuda_job_int8">
+<span class="sig-name descname"><span class="pre">_decision_function_numba_cuda_job_int8</span></span><em class="property"> <span class="pre">=</span> <span class="pre">&lt;numba.cuda.compiler.Dispatcher</span> <span class="pre">object&gt;</span></em><a class="headerlink" href="#frbb.FastRealBoostBins._decision_function_numba_cuda_job_int8" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="frbb.FastRealBoostBins._decision_function_numba_cuda_job_uint8">
+<span class="sig-name descname"><span class="pre">_decision_function_numba_cuda_job_uint8</span></span><em class="property"> <span class="pre">=</span> <span class="pre">&lt;numba.cuda.compiler.Dispatcher</span> <span class="pre">object&gt;</span></em><a class="headerlink" href="#frbb.FastRealBoostBins._decision_function_numba_cuda_job_uint8" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="frbb.FastRealBoostBins._decision_function_numba_cuda_job_int16">
+<span class="sig-name descname"><span class="pre">_decision_function_numba_cuda_job_int16</span></span><em class="property"> <span class="pre">=</span> <span class="pre">&lt;numba.cuda.compiler.Dispatcher</span> <span class="pre">object&gt;</span></em><a class="headerlink" href="#frbb.FastRealBoostBins._decision_function_numba_cuda_job_int16" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="frbb.FastRealBoostBins._decision_function_numba_cuda_job_uint16">
+<span class="sig-name descname"><span class="pre">_decision_function_numba_cuda_job_uint16</span></span><em class="property"> <span class="pre">=</span> <span class="pre">&lt;numba.cuda.compiler.Dispatcher</span> <span class="pre">object&gt;</span></em><a class="headerlink" href="#frbb.FastRealBoostBins._decision_function_numba_cuda_job_uint16" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="frbb.FastRealBoostBins._decision_function_numba_cuda_job_int32">
+<span class="sig-name descname"><span class="pre">_decision_function_numba_cuda_job_int32</span></span><em class="property"> <span class="pre">=</span> <span class="pre">&lt;numba.cuda.compiler.Dispatcher</span> <span class="pre">object&gt;</span></em><a class="headerlink" href="#frbb.FastRealBoostBins._decision_function_numba_cuda_job_int32" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="frbb.FastRealBoostBins._decision_function_numba_cuda_job_uint32">
+<span class="sig-name descname"><span class="pre">_decision_function_numba_cuda_job_uint32</span></span><em class="property"> <span class="pre">=</span> <span class="pre">&lt;numba.cuda.compiler.Dispatcher</span> <span class="pre">object&gt;</span></em><a class="headerlink" href="#frbb.FastRealBoostBins._decision_function_numba_cuda_job_uint32" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="frbb.FastRealBoostBins._decision_function_numba_cuda_job_int64">
+<span class="sig-name descname"><span class="pre">_decision_function_numba_cuda_job_int64</span></span><em class="property"> <span class="pre">=</span> <span class="pre">&lt;numba.cuda.compiler.Dispatcher</span> <span class="pre">object&gt;</span></em><a class="headerlink" href="#frbb.FastRealBoostBins._decision_function_numba_cuda_job_int64" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="frbb.FastRealBoostBins._decision_function_numba_cuda_job_uint64">
+<span class="sig-name descname"><span class="pre">_decision_function_numba_cuda_job_uint64</span></span><em class="property"> <span class="pre">=</span> <span class="pre">&lt;numba.cuda.compiler.Dispatcher</span> <span class="pre">object&gt;</span></em><a class="headerlink" href="#frbb.FastRealBoostBins._decision_function_numba_cuda_job_uint64" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="frbb.FastRealBoostBins._decision_function_numba_cuda_job_float32">
+<span class="sig-name descname"><span class="pre">_decision_function_numba_cuda_job_float32</span></span><em class="property"> <span class="pre">=</span> <span class="pre">&lt;numba.cuda.compiler.Dispatcher</span> <span class="pre">object&gt;</span></em><a class="headerlink" href="#frbb.FastRealBoostBins._decision_function_numba_cuda_job_float32" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="frbb.FastRealBoostBins._decision_function_numba_cuda_job_float64">
+<span class="sig-name descname"><span class="pre">_decision_function_numba_cuda_job_float64</span></span><em class="property"> <span class="pre">=</span> <span class="pre">&lt;numba.cuda.compiler.Dispatcher</span> <span class="pre">object&gt;</span></em><a class="headerlink" href="#frbb.FastRealBoostBins._decision_function_numba_cuda_job_float64" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="frbb.FastRealBoostBins.predict">
+<span class="sig-name descname"><span class="pre">predict</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">X</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/frbb.html#FastRealBoostBins.predict"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#frbb.FastRealBoostBins.predict" title="Permalink to this definition"></a></dt>
 <dd></dd></dl>
 
 <dl class="py method">
@@ -240,11 +441,12 @@ Bins with logit transform values play the role of ‘weak learners’.</p>
 <dl class="py method">
 <dt class="sig sig-object py" id="frbb.FastRealBoostBins.json_load">
 <em class="property"><span class="pre">static</span> </em><span class="sig-name descname"><span class="pre">json_load</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">fname</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">verbose</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/frbb.html#FastRealBoostBins.json_load"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#frbb.FastRealBoostBins.json_load" title="Permalink to this definition"></a></dt>
-<dd></dd></dl>
+<dd><p>Creates and returns an instance of FastRealBoostBins from json file given its file path.</p>
+</dd></dl>
 
-<dl class="py method">
-<dt class="sig sig-object py" id="frbb.FastRealBoostBins.predict">
-<span class="sig-name descname"><span class="pre">predict</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">X</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/frbb.html#FastRealBoostBins.predict"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#frbb.FastRealBoostBins.predict" title="Permalink to this definition"></a></dt>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="frbb.FastRealBoostBins.__module__">
+<span class="sig-name descname"><span class="pre">__module__</span></span><em class="property"> <span class="pre">=</span> <span class="pre">'frbb'</span></em><a class="headerlink" href="#frbb.FastRealBoostBins.__module__" title="Permalink to this definition"></a></dt>
 <dd></dd></dl>
 
 </dd></dl>
