@@ -109,6 +109,11 @@ DATA SHAPE (TRAIN AND TEST): 10000 x 1000
     TIMES [s] -> FIT: 16.11052441596985, PREDICT (TRAIN): 0.07710742950439453, PREDICT (TEST): 0.07628917694091797
 ```
 
+## Documentation
+Complete developer documentation for the project is accessible at: [https://pklesk.github.io/fast_rboost_bins](https://pklesk.github.io/fast_rboost_bins).
+
+Documentation of the `FastRealBoostBins` class is at: [https://pklesk.github.io/fast_rboost_bins/frbb.html](https://pklesk.github.io/fast_rboost_bins/frbb.html).
+
 ## Constructor parameters
 TODO
 
