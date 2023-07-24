@@ -58,7 +58,7 @@ DETECTION_POSTPROCESS = "avg" # choices: {None, "avg", "nms"}
 
 # settings for detection with multiple classifiers (special option)
 MC_CLFS_NAMES = ["clf_frbb_face_n_18225_S_5_P_5_NPI_300_SEED_0_T_1024_B_8.bin", "clf_frbb_hand_n_18225_S_5_P_5_NPI_30_SEED_0_T_1024_B_8.bin"]
-MC_DECISION_THRESHOLDS = [4.2, 6.45]
+MC_DECISION_THRESHOLDS = [None, None]
 
 # folders
 FOLDER_DATA = "../data/"
@@ -975,7 +975,7 @@ if __name__ == "__main__":
     colorama.init()     
     print(colorama.Fore.LIGHTYELLOW_EX + "\"FAST-REAL-BOOST-BINS\": AN ENSEMBLE CLASSIFIER FOR FAST PREDICTIONS IMPLEMENTED IN PYTHON VIA NUMBA.JIT AND NUMBA.CUDA. [main_detector]", flush=True)
     print(colorama.Fore.YELLOW + "[for help use -h or --help switch]" + colorama.Style.RESET_ALL)
-    #parse_args()
+    parse_args()
     print("MAIN-DETECTOR STARTING...")  
     print(f"CPU AND SYSTEM PROPS: {cpu_and_system_props()}")
     print(f"GPU PROPS: {gpu_props()}")    
