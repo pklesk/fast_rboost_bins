@@ -58,7 +58,7 @@ DETECTION_POSTPROCESS = "avg" # choices: {None, "avg", "nms"}
 
 # settings for detection with multiple classifiers (special option)
 MC_CLFS_NAMES = ["clf_frbb_face_n_18225_S_5_P_5_NPI_300_SEED_0_T_1024_B_8.bin", "clf_frbb_hand_n_18225_S_5_P_5_NPI_30_SEED_0_T_1024_B_8.bin"]
-MC_DECISION_THRESHOLDS = [4.0, 6.25]
+MC_DECISION_THRESHOLDS = [4.2, 6.45]
 
 # folders
 FOLDER_DATA = "../data/"
