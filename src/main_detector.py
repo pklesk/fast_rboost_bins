@@ -41,16 +41,16 @@ DEMO_DETECT_IN_VIDEO_PARALLEL_JOBS = 8
 DEMO_DETECT_IN_VIDEO_VERBOSE_LOOP = False
 DEMO_DETECT_IN_VIDEO_VERBOSE_DETECT = False
 DEMO_DETECT_IN_VIDEO_FRAMES = None # if not None but integer then detection is stopped after seeing given number of frames
-DEMO_DETECT_IN_VIDEO_MULTIPLE_CLFS = False
+DEMO_DETECT_IN_VIDEO_MULTIPLE_CLFS = True
 
 # cv2 camera settings
-CV2_VIDEO_CAPTURE_CAMERA_INDEX = 0
+CV2_VIDEO_CAPTURE_CAMERA_INDEX = 2
 CV2_VIDEO_CAPTURE_IS_IT_MSWINDOWS = False
 
 # detection procedure settings
-DETECTION_SCALES = 9 # 9 (lighter), 12 (heavier)
-DETECTION_WINDOW_HEIGHT_MIN = 96 # 96 (lighter), 64 (heavier) 
-DETECTION_WINDOW_WIDTH_MIN = 96 # 96 (lighter), 64 (heavier)
+DETECTION_SCALES = 12 # 9 (lighter), 12 (heavier)
+DETECTION_WINDOW_HEIGHT_MIN = 64 # 96 (lighter), 64 (heavier) 
+DETECTION_WINDOW_WIDTH_MIN = 64 # 96 (lighter), 64 (heavier)
 DETECTION_WINDOW_GROWTH = 1.2
 DETECTION_WINDOW_JUMP = 0.05
 DETECTION_DECISION_THRESHOLD = None # can be set to None (then classfier's internal threshold is used)
@@ -58,7 +58,7 @@ DETECTION_POSTPROCESS = "avg" # choices: {None, "avg", "nms"}
 
 # settings for detection with multiple classifiers (special option)
 MC_CLFS_NAMES = ["clf_frbb_face_n_18225_S_5_P_5_NPI_300_SEED_0_T_1024_B_8.bin", "clf_frbb_hand_n_18225_S_5_P_5_NPI_30_SEED_0_T_1024_B_8.bin"]
-MC_DECISION_THRESHOLDS = [None, None]
+MC_DECISION_THRESHOLDS = [4.0, 6.25]
 
 # folders
 FOLDER_DATA = "../data/"
@@ -975,7 +975,7 @@ if __name__ == "__main__":
     colorama.init()     
     print(colorama.Fore.LIGHTYELLOW_EX + "\"FAST-REAL-BOOST-BINS\": AN ENSEMBLE CLASSIFIER FOR FAST PREDICTIONS IMPLEMENTED IN PYTHON VIA NUMBA.JIT AND NUMBA.CUDA. [main_detector]", flush=True)
     print(colorama.Fore.YELLOW + "[for help use -h or --help switch]" + colorama.Style.RESET_ALL)
-    parse_args()
+    #parse_args()
     print("MAIN-DETECTOR STARTING...")  
     print(f"CPU AND SYSTEM PROPS: {cpu_and_system_props()}")
     print(f"GPU PROPS: {gpu_props()}")    
