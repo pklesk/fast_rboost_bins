@@ -260,18 +260,14 @@ GPUs: 1. GeForce RTX 3090 (contemporary, high-performance), 2. Quadro M4000M (ol
         <td align="center">environment 2 with NVIDIA Quadro M4000M</td>
     </tr>
     <tr>
-        <td><<a href="https://github.com/pklesk/fast_rboost_bins/assets/23095311/5e390cfc-84e8-4281-82d3-91a0b72c9c36"><img src="/extras/video_quadro_screenshot.jpg"/></a></td>
-        <td><a href="https://github.com/pklesk/fast_rboost_bins/assets/23095311/5e390cfc-84e8-4281-82d3-91a0b72c9c36"><img src="/extras/video_quadro_screenshot.jpg"/></a></td>
+        <td><br/><a href="https://github.com/pklesk/fast_rboost_bins/assets/23095311/bdb85c2c-58b3-43ce-ab23-818cefd71b6a"><img src="/extras/video_geforce_rtx_3090_screenshot.jpg"/></td>
+        <td><br/><a href="https://github.com/pklesk/fast_rboost_bins/assets/23095311/5e390cfc-84e8-4281-82d3-91a0b72c9c36"><img src="/extras/video_quadro_screenshot.jpg"/></td>           
     </tr>
 </table>
 
 Details of environment 1 in a former section. Details of environment 2 given below. <br/>
 Hardware environment (2): Intel(R) Xeon(R) CPU E3-1505M v5 @ 2.80GHz, 63.9 GB RAM, Quadro M4000M GPU. <br/>
 Software environment (2): Windows 10, Python 3.9.7 [MSC v.1916 64 bit (AMD64)], numpy 1.20.0, numba 0.54.1, sklearn 1.0.2, cv2 4.5.5-dev, nvcc 11.6.
-
-https://github.com/pklesk/fast_rboost_bins/assets/23095311/bdb85c2c-58b3-43ce-ab23-818cefd71b6a
-
-https://github.com/pklesk/fast_rboost_bins/assets/23095311/5e390cfc-84e8-4281-82d3-91a0b72c9c36
 
 ### Script for object detection: `main_detector` 
 By executing `python main_detector.py -h` (or `--help`) one obtains help on script arguments:
