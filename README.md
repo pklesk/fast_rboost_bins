@@ -242,8 +242,8 @@ once and placed in device-side arrays prior to an actual video sequence. Below w
 
 <table>    
     <tr>
-        <td><center>environment 1 with NVIDIA GeForce RTX 3090</center></td>
-        <td><center>environment 2 with NVIDIA Quadro M4000M</center></td>
+        <td align="center">environment 1 with NVIDIA GeForce RTX 3090</td>
+        <td align="center">environment 2 with NVIDIA Quadro M4000M</td>
     </tr>
     <tr>
         <td><<a href="https://github.com/pklesk/fast_rboost_bins/assets/23095311/5e390cfc-84e8-4281-82d3-91a0b72c9c36"><img src="/extras/video_quadro_screenshot.jpg"/></a></td>
