@@ -11,9 +11,6 @@
 Taking advantage of [Numba](https://numba.pydata.org/) (a high-performance just-in-time Python compiler) 
 we provide a fast operating implementation of a boosting algorithm in which *bins* with *logit* transform values play the role of "weak learners".
 
-https://github.com/pklesk/fast_rboost_bins/assets/23095311/bdb85c2c-58b3-43ce-ab23-818cefd71b6a
-
-
 The software comes as a Python class compliant with [scikit-learn](https://scikit-learn.org) library.
 It allows to choose between CPU and GPU computations for each of the two stages: fit and predict (decision function). 
 The efficiency of implementation has been confirmed on large data sets where the total of array entries (sample
@@ -272,6 +269,9 @@ Details of environment 1 in a former section. Details of environment 2 given bel
 Hardware environment (2): Intel(R) Xeon(R) CPU E3-1505M v5 @ 2.80GHz, 63.9 GB RAM, Quadro M4000M GPU. <br/>
 Software environment (2): Windows 10, Python 3.9.7 [MSC v.1916 64 bit (AMD64)], numpy 1.20.0, numba 0.54.1, sklearn 1.0.2, cv2 4.5.5-dev, nvcc 11.6.
 
+https://github.com/pklesk/fast_rboost_bins/assets/23095311/bdb85c2c-58b3-43ce-ab23-818cefd71b6a
+
+https://github.com/pklesk/fast_rboost_bins/assets/23095311/5e390cfc-84e8-4281-82d3-91a0b72c9c36
 
 ### Script for object detection: `main_detector` 
 By executing `python main_detector.py -h` (or `--help`) one obtains help on script arguments:
