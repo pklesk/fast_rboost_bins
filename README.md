@@ -8,8 +8,7 @@
 </table>
 
 Taking advantage of [Numba](https://numba.pydata.org/) (a high-performance just-in-time Python compiler) 
-we provide a fast operating implementation of a boosting algorithm
-in which bins with logit transform values play the role of "weak learners".
+we provide a fast operating implementation of a boosting algorithm in which *bins* with *logit* transform values play the role of "weak learners".
 
 The software comes as a Python class compliant with [scikit-learn](https://scikit-learn.org) library.
 It allows to choose between CPU and GPU computations for each of the two stages: fit and predict (decision function). 
@@ -17,7 +16,7 @@ The efficiency of implementation has been confirmed on large data sets where the
 size $\times$ features count) was of order 10<sup>10</sup> at fit stage and 10<sup>8</sup> at predict stage.
 In case of GPU-based fit, the main boosting loop is designed as five CUDA kernels responsible for: 
 weights binning, computing logits, computing exponential errors, finding the error minimizer, and examples reweighting. 
-The GPU-based predict is computed by a single CUDA kernel. We apply suitable reduction patterns and mutexes 
+The GPU-based predict is computed by a single CUDA kernel. We apply suitable *reduction* patterns and *mutexes*
 to carry out summations and 'argmin' operations. 
 
 To test the predict stage performance we compare `FastRealBoostBins` against state-of-the-art classifiers from `sklearn.ensemble` 
@@ -243,8 +242,8 @@ once and placed in device-side arrays prior to an actual video sequence. Below w
 
 <table>    
     <tr>
-        <td>environment 1 with NVIDIA GeForce RTX 3090</td>
-        <td>environment 2 with NVIDIA Quadro M4000M</td>
+        <td><center>environment 1 with NVIDIA GeForce RTX 3090</center></td>
+        <td><center>environment 2 with NVIDIA Quadro M4000M</center></td>
     </tr>
     <tr>
         <td><<a href="https://github.com/pklesk/fast_rboost_bins/assets/23095311/5e390cfc-84e8-4281-82d3-91a0b72c9c36"><img src="/extras/video_quadro_screenshot.jpg"/></a></td>
@@ -252,8 +251,7 @@ once and placed in device-side arrays prior to an actual video sequence. Below w
     </tr>
 </table>
 
-Details of environment 1 in former section. Details of environment 2 given below.
-
+Details of environment 1 in a former section. Details of environment 2 given below. <br/>
 Hardware environment (2): Intel(R) Xeon(R) CPU E3-1505M v5 @ 2.80GHz, 63.9 GB RAM, Quadro M4000M GPU. 
 Software environment (2): Windows 10, Python 3.9.7 [MSC v.1916 64 bit (AMD64)], numpy 1.20.0, numba 0.54.1, sklearn 1.0.2, cv2 4.5.5-dev, nvcc 11.6.
 
