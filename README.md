@@ -3,13 +3,16 @@
 <table>
    <tr>
         <td><img src="/extras/fig_experiment_real_1903270360_20230625_fddb-patches_time_predict_test.png"/></td>
-        <td><br/><a href="https://github.com/pklesk/fast_rboost_bins/assets/23095311/5e390cfc-84e8-4281-82d3-91a0b72c9c36"><img src="/extras/video_geforce_rtx_3090_screenshot.jpg"/></td>
+        <td><br/><a href="https://github.com/pklesk/fast_rboost_bins/assets/23095311/bdb85c2c-58b3-43ce-ab23-818cefd71b6a"><img src="/extras/video_geforce_rtx_3090_screenshot.jpg"/></td>
         <td><br/><a href="https://github.com/pklesk/fast_rboost_bins/assets/23095311/5e390cfc-84e8-4281-82d3-91a0b72c9c36"><img src="/extras/video_quadro_screenshot.jpg"/></td>
     </tr>
 </table>
 
 Taking advantage of [Numba](https://numba.pydata.org/) (a high-performance just-in-time Python compiler) 
 we provide a fast operating implementation of a boosting algorithm in which *bins* with *logit* transform values play the role of "weak learners".
+
+https://github.com/pklesk/fast_rboost_bins/assets/23095311/bdb85c2c-58b3-43ce-ab23-818cefd71b6a
+
 
 The software comes as a Python class compliant with [scikit-learn](https://scikit-learn.org) library.
 It allows to choose between CPU and GPU computations for each of the two stages: fit and predict (decision function). 
