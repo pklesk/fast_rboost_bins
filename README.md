@@ -114,7 +114,16 @@ Complete developer documentation for the project is accessible at: [https://pkle
 Documentation of the `FastRealBoostBins` class is at: [https://pklesk.github.io/fast_rboost_bins/frbb.html](https://pklesk.github.io/fast_rboost_bins/frbb.html).
 
 ## Constructor parameters
-TODO
+| parameter                      | description                                                                                                                        |
+|:-------------------------------|:-----------------------------------------------------------------------------------------------------------------------------------|
+| `T (int)`                      | number of boosting rounds (=number of weak estimators), defaults to `256`                                                          |
+| `B (int)`                      | number of bins, defaults to `8`                                                                                                    |
+| `outliers_ratio (float)`       | fraction of outliers to skip (on each end) when establishing features’ variability ranges, defaults to `0.05`                      |
+| `logit_max (np.float32)`       | maximum absolute value of logit transform, outcomes clipped to interval [−`logit_max`, `logit_max`], defaults to `np.float32(2.0)` |
+| `fit_mode (str)`               | choice of fit method from {`'numpy'`, `'numba_jit'`, `'numba_cuda'`}, defaults to `'numba_cuda'`                                   |
+| `decision_function_mode (str)` | choice of decision method from {`'numpy'`, `'numba_jit'`, `numba_cuda`} (called e.g. within `predict`), defaults to `'numba_cuda'` |
+| `verbose (bool)`               | verbosity flag, if `True` then fit progress and auxiliary information are printed to console, defaults to `False`                  |
+| `debug_verbose (bool)`         | detailed verbosity (only for `'numba_cuda'` fit), defaults to `False`                                                              |
 
 ## Estimated attributes
 TODO
