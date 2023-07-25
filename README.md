@@ -1,9 +1,10 @@
 [under developement]
 # FastRealBoostBins: An ensemble classifier for fast predictions implemented in Python using numba.jit and numba.cuda
 <table>
-    <tr>
+   <tr>
         <td><img src="/extras/fig_experiment_real_1903270360_20230625_fddb-patches_time_predict_test.png"/></td>
-        <td><br/><a href="https://github.com/pklesk/fast_rboost_bins/assets/23095311/5e390cfc-84e8-4281-82d3-91a0b72c9c36"><img src="/extras/video_quadro_screenshot.jpg"/></a></td>
+        <td><br/><a href="https://github.com/pklesk/fast_rboost_bins/assets/23095311/bdb85c2c-58b3-43ce-ab23-818cefd71b6a"><img src="/extras/video_geforce_rtx_3090_screenshot.jpg"/></td>
+        <td><br/><a href="https://github.com/pklesk/fast_rboost_bins/assets/23095311/5e390cfc-84e8-4281-82d3-91a0b72c9c36"><img src="/extras/video_quadro_screenshot.jpg"/></td>
     </tr>
 </table>
 
@@ -23,8 +24,13 @@ To test the predict stage performance we compare `FastRealBoostBins` against sta
 using large data sets and focusing on response times. In an additional experiment, we make our
 classifiers operate as object detectors under heavy computational load (over 60k queries per a video frame using ensembles of size 2048).
 
+## Installation
+```bash
+pip install frbb
+```
+
 ## Example usage
-With `frbb.py` file (containing `FastRealBoostBins` class) included to some project, one can write e.g.:
+With `frbb` module installed, one can write e.g.:
 ```python
 from frbb import FastRealBoostBins
 from sklearn.datasets import load_breast_cancer
@@ -110,30 +116,41 @@ DATA SHAPE (TRAIN AND TEST): 10000 x 1000
 ```
 
 ## Documentation
-Complete developer documentation for the project is accessible at: [https://pklesk.github.io/fast_rboost_bins](https://pklesk.github.io/fast_rboost_bins). <br/>
-Documentation of the `FastRealBoostBins` class is at: [https://pklesk.github.io/fast_rboost_bins/frbb.html](https://pklesk.github.io/fast_rboost_bins/frbb.html).
+Complete developer documentation of the project is accessible at: [https://pklesk.github.io/fast_rboost_bins](https://pklesk.github.io/fast_rboost_bins). <br/>
+Documentation for the `FastRealBoostBins` class is at: [https://pklesk.github.io/fast_rboost_bins/frbb.html](https://pklesk.github.io/fast_rboost_bins/frbb.html).
 
 ## Constructor parameters
-| parameter                      | description                                                                                                                        |
-|:-------------------------------|:-----------------------------------------------------------------------------------------------------------------------------------|
-| `T (int)`                      | number of boosting rounds (=number of weak estimators), defaults to `256`                                                          |
-| `B (int)`                      | number of bins, defaults to `8`                                                                                                    |
-| `outliers_ratio (float)`       | fraction of outliers to skip (on each end) when establishing features’ variability ranges, defaults to `0.05`                      |
-| `logit_max (np.float32)`       | maximum absolute value of logit transform, outcomes clipped to interval [−`logit_max`, `logit_max`], defaults to `np.float32(2.0)` |
-| `fit_mode (str)`               | choice of fit method from {`'numpy'`, `'numba_jit'`, `'numba_cuda'`}, defaults to `'numba_cuda'`                                   |
-| `decision_function_mode (str)` | choice of decision method from {`'numpy'`, `'numba_jit'`, `numba_cuda`} (called e.g. within `predict`), defaults to `'numba_cuda'` |
-| `verbose (bool)`               | verbosity flag, if `True` then fit progress and auxiliary information are printed to console, defaults to `False`                  |
-| `debug_verbose (bool)`         | detailed verbosity (only for `'numba_cuda'` fit), defaults to `False`                                                              |
+| parameter                      | description                                                                                                                                       |
+|:-------------------------------|:--------------------------------------------------------------------------------------------------------------------------------------------------|
+| `T (int)`                      | number of boosting rounds (equivalently, number of weak estimators), defaults to `256`                                                            |
+| `B (int)`                      | number of bins, defaults to `8`                                                                                                                   |
+| `outliers_ratio (float)`       | fraction of outliers to skip (on each end) when establishing features’ variability ranges, defaults to `0.05`                                     |
+| `logit_max (np.float32)`       | maximum absolute value of logit transform, outcomes clipped to interval [−`logit_max`, `logit_max`], defaults to `np.float32(2.0)`                |
+| `fit_mode (str)`               | choice of fit method from {`"numpy"`, `"numba_jit"`, `"numba_cuda"`}, defaults to `"numba_cuda"`                                                  |
+| `decision_function_mode (str)` | choice of decision function method from {`"numpy"`, `"numba_jit"`, `"numba_cuda"`} (called e.g. within `predict`), defaults to `"numba_cuda"`     |
+| `verbose (bool)`               | verbosity flag, if `True` then fit progress and auxiliary information are printed to console, defaults to `False`                                 |
+| `debug_verbose (bool)`         | detailed verbosity (only for `"numba_cuda"` fit), defaults to `False`                                                                             |
 
 ## Estimated attributes
-TODO
+| attribute                                      | description                                                                                                                                           |
+|:-----------------------------------------------|:------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `features_selected_ ndarray[np.int32]`         | indexes of selected features, array of shape `(T,)`                                                                                                   |
+| `dtype_ (np.dtype)`                            | type of input data array, one of {`np.int8`, `np.uint8`, …, `np.int64`,` np.uint64`} or {`np.float32`, `np.float64`} - numeric types are only allowed |                                               
+| `mins_selected_ (ndarray[dtype_])`             | left ends of ranges for selected features, array of shape `(T,)`                                                                                      |
+| `maxes_selected_ (ndarray[dtype_])`            | right ends of ranges for selected features, array of shape `(T,)`                                                                                     |
+| `logits_ (ndarray[np.float32])`                | binned logit values for selected features, array of shape `(T, B)`                                                                                    |
+| `decision_function_numba_cuda_job_name_ (str)` | name, implied by `dtype_`, of decision function to be called in case of `numba_cuda` mode (e.g.`_decision_function_numba_cuda_job_int16)`             |
+| `decision_threshold_ (float)`                  | threshold value used inside `predict` function, defaults to `0.0`                                                                                     |
+| `classes_ (ndarray)`                           | original class labels (scikit-learn requirement)                                                                                                      |
+| `n_features_in_ (int)`                         | number of features registered in ``fit`` call and expected for subsequent ``predict`` calls (scikit-learn requirement).                              |
+                   
 
 ## Selected experimental results
 
 ### Comparison against state-of-the-art classifier from `sklearn.ensemble`
 
-In tables below we write for shortness `FastRealBoostBins('numba_jit')` which, in fact, stands for `FastRealBoostBins(fit_mode='numba_jit', decision_function_mode='numba_jit')`,
-and `FastRealBoostBins('numba_cuda')` standing for `FastRealBoostBins(fit_mode='numba_cuda', decision_function_mode='numba_cuda')`.
+In tables below we write for shortness `FastRealBoostBins("numba_jit")` which, in fact, stands for `FastRealBoostBins(fit_mode="numba_jit", decision_function_mode="numba_jit")`,
+and `FastRealBoostBins("numba_cuda")` standing for `FastRealBoostBins(fit_mode="numba_cuda", decision_function_mode="numba_cuda")`.
 To have approximately equal conditions for comparison (e.g. same number of weak learners, each learner based on 1 feature) we forced the following settings on classifiers
 from `sklearn.ensemble`:
 ```python
@@ -152,8 +169,8 @@ Software environment: Linux 5.15.0-71-generic, Python 3.8.10, GCC 9.4.0, numpy 1
 | `AdaBoostClassifier`              |        1 421 |            $\times$ 1 |                   33.285 |                $\times$ 1 |       99.94 |            2.702 |                $\times$ 1 |      89.56 |
 | `GradientBoostingClassifier`      |        1 341 |            $\times$ 1 |                    0.191 |              $\times$ 174 |       94.04 |            0.013 |              $\times$ 208 |      90.18 |
 | `HistGradientBoostingClassifier`  |           14 |          $\times$ 102 |                    0.288 |              $\times$ 116 |       93.17 |            0.030 |               $\times$ 90 |      90.02 |
-| `FastRealBoostBins('numba_jit')`  |          395 |            $\times$ 4 |                    0.096 |              $\times$ 347 |       99.98 |            0.009 |              $\times$ 300 |      88.41 |
-| `FastRealBoostBins('numba_cuda')` |           43 |           $\times$ 33 |                    0.068 |              $\times$ 489 |       99.97 |            0.003 |              $\times$ 901 |      88.33 |
+| `FastRealBoostBins("numba_jit")`  |          395 |            $\times$ 4 |                    0.096 |              $\times$ 347 |       99.98 |            0.009 |              $\times$ 300 |      88.41 |
+| `FastRealBoostBins("numba_cuda")` |           43 |           $\times$ 33 |                    0.068 |              $\times$ 489 |       99.97 |            0.003 |              $\times$ 901 |      88.33 |
 
 |fit times along growing T|predict times (test) along growing T|
 |-|-|
@@ -166,8 +183,8 @@ Software environment: Linux 5.15.0-71-generic, Python 3.8.10, GCC 9.4.0, numpy 1
 | `AdaBoostClassifier`              |        1 754 |            $\times$ 1 |                   44.398 |                $\times$ 1 |      100.00 |            6.013 |                $\times$ 1 |      98.69 |
 | `GradientBoostingClassifier`      |        1 641 |            $\times$ 1 |                    0.665 |              $\times$  67 |       99.13 |            0.089 |               $\times$ 68 |      98.85 |
 | `HistGradientBoostingClassifier`  |            9 |          $\times$ 195 |                    0.457 |              $\times$  97 |       98.99 |            0.072 |               $\times$ 84 |      98.89 |
-| `FastRealBoostBins('numba_jit')`  |          510 |            $\times$ 3 |                    0.393 |              $\times$ 113 |      100.00 |            0.036 |              $\times$ 167 |      98.50 |
-| `FastRealBoostBins('numba_cuda')` |           53 |           $\times$ 33 |                    0.257 |              $\times$ 173 |      100.00 |            0.018 |              $\times$ 334 |      98.41 |
+| `FastRealBoostBins("numba_jit")`  |          510 |            $\times$ 3 |                    0.393 |              $\times$ 113 |      100.00 |            0.036 |              $\times$ 167 |      98.50 |
+| `FastRealBoostBins("numba_cuda")` |           53 |           $\times$ 33 |                    0.257 |              $\times$ 173 |      100.00 |            0.018 |              $\times$ 334 |      98.41 |
 
 |fit times along growing T|predict times (test) along growing T|
 |-|-|
@@ -178,7 +195,7 @@ Software environment: Linux 5.15.0-71-generic, Python 3.8.10, GCC 9.4.0, numpy 1
 |:----------------------------------|-------------:|----------------------:|-------------------------:|--------------------------:|------------:|-----------------:|--------------------------:|-----------:|
 |                                   |  **(train)** |           **(train)** |              **(train)** |               **(train)** | **(train)** |       **(test)** |                **(test)** | **(test)** |
 | `HistGradientBoostingClassifier`  |        2 662 |          $\times$ 3.3 |                   13.667 |              $\times$ 1.0 |       98.71 |            4.493 |              $\times$ 1.0 |      98.65 |
-| `FastRealBoostBins('numba_cuda')` |        8 908 |          $\times$ 1.0 |                    5.060 |              $\times$ 2.7 |      100.00 |            1.277 |              $\times$ 3.5 |      99.07 |
+| `FastRealBoostBins("numba_cuda")` |        8 908 |          $\times$ 1.0 |                    5.060 |              $\times$ 2.7 |      100.00 |            1.277 |              $\times$ 3.5 |      99.07 |
 
 |fit times along growing T|predict times (test) along growing T|
 |-|-|
@@ -259,15 +276,14 @@ GPUs: 1. GeForce RTX 3090 (contemporary, high-performance), 2. Quadro M4000M (ol
         <td align="center">environment 2 with NVIDIA Quadro M4000M</td>
     </tr>
     <tr>
-        <td><<a href="https://github.com/pklesk/fast_rboost_bins/assets/23095311/5e390cfc-84e8-4281-82d3-91a0b72c9c36"><img src="/extras/video_quadro_screenshot.jpg"/></a></td>
-        <td><a href="https://github.com/pklesk/fast_rboost_bins/assets/23095311/5e390cfc-84e8-4281-82d3-91a0b72c9c36"><img src="/extras/video_quadro_screenshot.jpg"/></a></td>
+        <td><br/><a href="https://github.com/pklesk/fast_rboost_bins/assets/23095311/bdb85c2c-58b3-43ce-ab23-818cefd71b6a"><img src="/extras/video_geforce_rtx_3090_screenshot.jpg"/></td>
+        <td><br/><a href="https://github.com/pklesk/fast_rboost_bins/assets/23095311/5e390cfc-84e8-4281-82d3-91a0b72c9c36"><img src="/extras/video_quadro_screenshot.jpg"/></td>           
     </tr>
 </table>
 
 Details of environment 1 in a former section. Details of environment 2 given below. <br/>
 Hardware environment (2): Intel(R) Xeon(R) CPU E3-1505M v5 @ 2.80GHz, 63.9 GB RAM, Quadro M4000M GPU. <br/>
 Software environment (2): Windows 10, Python 3.9.7 [MSC v.1916 64 bit (AMD64)], numpy 1.20.0, numba 0.54.1, sklearn 1.0.2, cv2 4.5.5-dev, nvcc 11.6.
-
 
 ### Script for object detection: `main_detector` 
 By executing `python main_detector.py -h` (or `--help`) one obtains help on script arguments:
@@ -283,9 +299,9 @@ optional arguments:
   -h, --help            show this help message and exit
   -k {face,hand}, --KIND {face,hand}
                         detector kind (default: face)
-  -s S, --S S           'scales' parameter of Haar-like features (default: 5)
-  -p P, --P P           'positions' parameter of Haar-like features (default: 5)
-  -npi NPI, --NPI NPI   'negatives per image' parameter, used in procedures generating data sets from images (default: 300 with -k set to face)
+  -s S, --S S           "scales" parameter of Haar-like features (default: 5)
+  -p P, --P P           "positions" parameter of Haar-like features (default: 5)
+  -npi NPI, --NPI NPI   "negatives per image" parameter, used in procedures generating data sets from images (default: 300 with -k set to face)
   -t T, --T T           number of boosting rounds, (default: 1024)
   -b B, --B B           numbet of bins, (default: 8)
   -seed SEED, --SEED SEED
@@ -307,7 +323,7 @@ optional arguments:
   -ddivc {gpu_cuda,cpu_simple,cpu_parallel}, --DEMO_DETECT_IN_VIDEO_COMPUTATIONS {gpu_cuda,cpu_simple,cpu_parallel}
                         type of computations for demo of detection in video (default: gpu_cuda)
   -ddivpj DEMO_DETECT_IN_VIDEO_PARALLEL_JOBS, --DEMO_DETECT_IN_VIDEO_PARALLEL_JOBS DEMO_DETECT_IN_VIDEO_PARALLEL_JOBS
-                        number of parallel jobs (only in case of 'cpu_parallel' set for -ddivc) (default: 8)
+                        number of parallel jobs (only in case of cpu_parallel set for -ddivc) (default: 8)
   -ddivvl, --DEMO_DETECT_IN_VIDEO_VERBOSE_LOOP
                         turn on verbosity for main loop of detection in video
   -ddivvd, --DEMO_DETECT_IN_VIDEO_VERBOSE_DETECT
@@ -317,15 +333,15 @@ optional arguments:
   -ddivmc, --DEMO_DETECT_IN_VIDEO_MULTIPLE_CLFS
                         turn on demo of detection in video with multiple classifiers (currently: face and hand detectors)
   -cv2vcci CV2_VIDEO_CAPTURE_CAMERA_INDEX, --CV2_VIDEO_CAPTURE_CAMERA_INDEX CV2_VIDEO_CAPTURE_CAMERA_INDEX
-                        video camera index (default: 0)
+                        video camera index (default: 2)
   -cv2iim, --CV2_VIDEO_CAPTURE_IS_IT_MSWINDOWS
                         specify if OS is MS Windows (for cv2 and directx purposes)
   -ds DETECTION_SCALES, --DETECTION_SCALES DETECTION_SCALES
-                        number of detection scales (default: 9)
+                        number of detection scales (default: 12)
   -dwhm DETECTION_WINDOW_HEIGHT_MIN, --DETECTION_WINDOW_HEIGHT_MIN DETECTION_WINDOW_HEIGHT_MIN
-                        minimum height of detection window (default: 96)
+                        minimum height of detection window (default: 64)
   -dwwm DETECTION_WINDOW_WIDTH_MIN, --DETECTION_WINDOW_WIDTH_MIN DETECTION_WINDOW_WIDTH_MIN
-                        minimum width of detection window (default: 96)
+                        minimum width of detection window (default: 64)
   -dwg DETECTION_WINDOW_GROWTH, --DETECTION_WINDOW_GROWTH DETECTION_WINDOW_GROWTH
                         growth factor of detection window (default: 1.2)
   -dwj DETECTION_WINDOW_JUMP, --DETECTION_WINDOW_JUMP DETECTION_WINDOW_JUMP
