@@ -69,20 +69,27 @@
              
   <h1>Source code for frbb</h1><div class="highlight"><pre>
 <span></span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">This module contains the core machine learning functionalities of the project, embodied by the class `FastRealBoostBins` (compliant with scikit-learn).</span>
+<span class="sd">This module contains the core machine learning functionalities of the project, embodied by the class `FastRealBoostBins` (compliant with `scikit-learn`).</span>
 <span class="sd">The module includes:</span>
 
-<span class="sd">- `FastRealBoostBins`: class representing ensemble classifier for fast predictions implemented using numba.jit and numba.cuda,</span>
+<span class="sd">- `FastRealBoostBins`: class representing an ensemble classifier for fast predictions implemented using `numba.jit` and `numba.cuda`,</span>
 
-<span class="sd">- `_lock`, `_unlock`: utility functions (placed outside the class, related to mutex mechanisms in case of fit performed using &#39;numba_cuda&#39; mode).</span>
+<span class="sd">- `_lock`, `_unlock`: utility functions (placed outside the class, related to mutex mechanisms in case of numba.cuda-based fit).</span>
 
-<span class="sd">In FastRealBoostBins class, attributes estimated by the fit function are named with trailing underscores (e.g. features_selected_, logits_, etc.)</span>
-<span class="sd">as indicated by scikit-learn guidelines. Private functions are named with single leading underscores and some of them are additionally described by </span>
-<span class="sd">`@jit` or `@cuda.jit` decorators from `numba` module (intended to be compiled by Numba).  </span>
+<span class="sd">In ``FastRealBoostBins`` class, attributes estimated by the ``fit`` function are named with trailing underscores (e.g. ``features_selected_``, ``logits_``, etc.)</span>
+<span class="sd">as indicated in the scikit-learn guidelines. Private functions are named with single leading underscores and some of them are additionally described by </span>
+<span class="sd">``@jit`` or ``@cuda.jit`` decorators coming from ``numba`` module (intended to be compiled by `Numba`).  </span>
+
+<span class="sd">Installation</span>
+<span class="sd">------------</span>
+
+<span class="sd">.. code-block:: console</span>
+<span class="sd">    </span>
+<span class="sd">    pip install frbb</span>
 
 <span class="sd">Example Usage</span>
 <span class="sd">-------------</span>
-<span class="sd">With frbb.py file (containing FastRealBoostBins class) included to some project, one can write e.g.:</span>
+<span class="sd">With ``frbb`` module installed, one can write e.g.:</span>
 
 <span class="sd">.. code-block:: python</span>
 
@@ -108,13 +115,13 @@
 
 <span class="sd">Dependencies</span>
 <span class="sd">------------</span>
-<span class="sd">- numpy, math: required for mathematical computations.</span>
+<span class="sd">- ``numpy``, ``math``: required for mathematical computations.</span>
 
-<span class="sd">- numba: required for just-in-time compilation of crucial computational functions and CUDA kernels (decorated by numba.jit and numba.cuda) </span>
+<span class="sd">- ``numba``: required for just-in-time compilation of crucial computational functions and CUDA kernels (decorated by ``@jit`` and ``@cuda.jit`` imported from ``numba``) </span>
 
-<span class="sd">- sklearn: required for inheritence and other sklearn API purposes.</span>
+<span class="sd">- ``sklearn``: required for inheritence and other sklearn API purposes.</span>
 
-<span class="sd">- json: required for load / dump methods pertaining to json files </span>
+<span class="sd">- ``json``: required for load / dump methods pertaining to json files </span>
 <span class="sd">&quot;&quot;&quot;</span>
 
 <span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
@@ -159,50 +166,46 @@
 <div class="viewcode-block" id="FastRealBoostBins"><a class="viewcode-back" href="../frbb.html#frbb.FastRealBoostBins">[docs]</a><span class="k">class</span> <span class="nc">FastRealBoostBins</span><span class="p">(</span><span class="n">BaseEstimator</span><span class="p">,</span> <span class="n">ClassifierMixin</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    An ensemble classifier for fast predictions implemented using numba.jit and numba.cuda. </span>
-<span class="sd">    Bins with logit transform values play the role of &#39;weak learners&#39;.</span>
+<span class="sd">    Bins with logit transform values play the role of \&quot;weak learners\&quot;.</span>
 <span class="sd">    </span>
 <span class="sd">    Parameters:</span>
 <span class="sd">        T (int): </span>
-<span class="sd">            number of boosting rounds (=number of weak estimators), defaults to 256.            </span>
+<span class="sd">            number of boosting rounds (equivalently, number of weak estimators), defaults to ``256``.            </span>
 <span class="sd">        B (int): </span>
-<span class="sd">            number of bins, defaults to 8.            </span>
-<span class="sd">        outliers_ratio(float): </span>
-<span class="sd">            fraction of outliers to skip (on each end) when establishing features’ variability ranges, defaults to 0.05.</span>
+<span class="sd">            number of bins, defaults to ``8``.            </span>
+<span class="sd">        outliers_ratio (float): </span>
+<span class="sd">            fraction of outliers to skip (on each end) when establishing features’ variability ranges, defaults to ``0.05``.</span>
 <span class="sd">        logit_max (np.float32):</span>
-<span class="sd">            maximum absolute value of logit transform, outcomes clipped to interval [−logit_max, logit_max], defaults to np.float32(2.0).</span>
+<span class="sd">            maximum absolute value of logit transform, outcomes clipped to interval [``-logit_max``, ``logit_max``], defaults to ``np.float32(2.0)``.</span>
 <span class="sd">        fit_mode (str):</span>
-<span class="sd">            choice of fit method from {&#39;numpy&#39;, &#39;numba_jit&#39;, ’numba_cuda&#39;}, defaults to &#39;numba_cuda&#39;.</span>
+<span class="sd">            choice of fit method from {``&quot;numpy&quot;``, ``&quot;numba_jit&quot;``, ``&quot;numba_cuda&quot;``}, defaults to ``&quot;numba_cuda&quot;``.</span>
 <span class="sd">        decision_function_mode (str):</span>
-<span class="sd">            choice of decision method from {&#39;numpy&#39;, &#39;numba_jit&#39;, ’numba_cuda&#39;} (called e.g. within predict), defaults to &#39;numba_cuda&#39;.</span>
+<span class="sd">            choice of decision function method from {``&quot;numpy&quot;``, ``&quot;numba_jit&quot;``, ``&quot;numba_cuda&quot;``} (called e.g. within ``predict``), defaults to ``&quot;numba_cuda&quot;``.</span>
 <span class="sd">        verbose (bool):</span>
-<span class="sd">            verbosity flag, if True then fit progress and auxiliary information are printed to console, defaults to False.</span>
+<span class="sd">            verbosity flag, if ``True`` then fit progress and auxiliary information are printed to console, defaults to ``False``.</span>
 <span class="sd">        debug_verbose (bool):</span>
-<span class="sd">            detailed verbosity (only for &#39;numba_cuda&#39; fit), defaults to False.        </span>
+<span class="sd">            detailed verbosity (only for ``&#39;numba_cuda&#39;`` fit), defaults to ``False``. </span>
 <span class="sd">        </span>
 <span class="sd">    Attributes:</span>
 <span class="sd">        features_selected_ (ndarray[np.int32]):</span>
-<span class="sd">            indexes of selected features, array of shape (T,).</span>
+<span class="sd">            indexes of selected features, array of shape ``(T,)``.</span>
 <span class="sd">        dtype_ (np.dtype): </span>
-<span class="sd">            type of input data array, one of {np.int8, np.uint8, ..., np.int64, np.uint64} or {np.float32, np.float64} - numeric types are only allowed.       </span>
-<span class="sd">        mins_selected_ (ndarray): </span>
-<span class="sd">            left ends of ranges for selected features (type matching dtype_), array of shape (T,).</span>
-<span class="sd">        maxes_selected_ (ndarray):</span>
-<span class="sd">            right ends of ranges for selected features (type matching dtype_), array of shape (T,).</span>
+<span class="sd">            type of input data array, one of {``np.int8``, ``np.uint8``, ..., ``np.int64``, ``np.uint64``} or {``np.float32``, ``np.float64``} - numeric types only allowed.       </span>
+<span class="sd">        mins_selected_ (ndarray[dtype_]): </span>
+<span class="sd">            left ends of ranges for selected features, array of shape ``(T,)``.</span>
+<span class="sd">        maxes_selected_ (ndarray[dtype_]):</span>
+<span class="sd">            right ends of ranges for selected features, array of shape ``(T,)``.</span>
 <span class="sd">        logits_ (ndarray[np.float32]): </span>
-<span class="sd">            binned logit values for selected features, array of shape (T, B).            </span>
+<span class="sd">            binned logit values for selected features, array of shape ``(T, B)``.            </span>
 <span class="sd">        decision_function_numba_cuda_job_name_ (str): </span>
-<span class="sd">            name, implied by dtype_, of decision function to be called in case of &#39;numba_cuda&#39; mode (e.g. _decision_function_numba_cuda_job_int16).</span>
+<span class="sd">            name, implied by ``dtype_``, of decision function to be called in case of ``&quot;numba_cuda&quot;`` mode (e.g. ``_decision_function_numba_cuda_job_int16``).</span>
 <span class="sd">        decision_threshold_ (float): </span>
-<span class="sd">            threshold value for predict calls, defaults to 0.0.</span>
+<span class="sd">            threshold value used inside ``predict`` function, defaults to ``0.0``.</span>
 <span class="sd">        classes_ (ndarray): </span>
 <span class="sd">            original class labels (scikit-learn requirement).</span>
 <span class="sd">        n_features_in_ (int): </span>
-<span class="sd">            number of features registered at fit stage and expected for subsequent predict calls (scikit-learn requirement).            </span>
+<span class="sd">            number of features registered in ``fit`` call and expected for subsequent ``predict`` calls (scikit-learn requirement).            </span>
 <span class="sd">    &quot;&quot;&quot;</span>
-    
-        <span class="c1"># Methods:</span>
-        <span class="c1"># fit(X: ndarray, y: ndarray): Fit classifier to given data X with associated class labels y.</span>
-        <span class="c1"># predict(X: ndarray): Return predictions of classfier for given data X.</span>
 
     <span class="c1"># constants</span>
     <span class="n">T_DEFAULT</span> <span class="o">=</span> <span class="mi">256</span>
@@ -229,25 +232,25 @@
                  <span class="n">fit_mode</span><span class="o">=</span><span class="n">FIT_MODE_DEFAULT</span><span class="p">,</span> <span class="n">decision_function_mode</span><span class="o">=</span><span class="n">DECISION_FUNCTION_MODE_DEFAULT</span><span class="p">,</span> 
                  <span class="n">verbose</span><span class="o">=</span><span class="n">VERBOSE_DEFAULT</span><span class="p">,</span> <span class="n">debug_verbose</span><span class="o">=</span><span class="n">DEBUG_VERBOSE_DEFAULT</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Constructor of FastRealBoostBins instances.</span>
+<span class="sd">        Constructor of ``FastRealBoostBins`` instances.</span>
 <span class="sd">         </span>
 <span class="sd">        Args:</span>
 <span class="sd">            T (int): </span>
-<span class="sd">                number of boosting rounds (=number of weak estimators), defaults to 256.            </span>
+<span class="sd">                number of boosting rounds (equivalently, number of weak estimators), defaults to ``256``.            </span>
 <span class="sd">            B (int): </span>
-<span class="sd">                number of bins, defaults to 8.            </span>
-<span class="sd">            outliers_ratio(float): </span>
-<span class="sd">                fraction of outliers to skip (on each end) when establishing features’ variability ranges, defaults to 0.05.</span>
+<span class="sd">                number of bins, defaults to ``8``.            </span>
+<span class="sd">            outliers_ratio (float): </span>
+<span class="sd">                fraction of outliers to skip (on each end) when establishing features’ variability ranges, defaults to ``0.05``.</span>
 <span class="sd">            logit_max (np.float32):</span>
-<span class="sd">                maximum absolute value of logit transform, outcomes clipped to interval [−logit_max, logit_max], defaults to np.float32(2.0).</span>
+<span class="sd">                maximum absolute value of logit transform, outcomes clipped to interval [``-logit_max``, ``logit_max``], defaults to ``np.float32(2.0)``.</span>
 <span class="sd">            fit_mode (str):</span>
-<span class="sd">                choice of fit method from {&#39;numpy&#39;, &#39;numba_jit&#39;, ’numba_cuda&#39;}, defaults to &#39;numba_cuda&#39;.</span>
+<span class="sd">                choice of fit method from {``&quot;numpy&quot;``, ``&quot;numba_jit&quot;``, ``&quot;numba_cuda&quot;``}, defaults to ``&quot;numba_cuda&quot;``.</span>
 <span class="sd">            decision_function_mode (str):</span>
-<span class="sd">                choice of decision method from {&#39;numpy&#39;, &#39;numba_jit&#39;, ’numba_cuda&#39;} (called e.g. within predict), defaults to &#39;numba_cuda&#39;.</span>
+<span class="sd">                choice of decision method from {``&quot;numpy&quot;``, ``&quot;numba_jit&quot;``, ``&quot;numba_cuda&quot;``} (called e.g. within ``predict``), defaults to ``&quot;numba_cuda&quot;``.</span>
 <span class="sd">            verbose (bool):</span>
-<span class="sd">                verbosity flag, if True then fit progress and auxiliary information are printed to console, defaults to False.</span>
+<span class="sd">                verbosity flag, if ``True`` then fit progress and auxiliary information are printed to console, defaults to ``False``.</span>
 <span class="sd">            debug_verbose (bool):</span>
-<span class="sd">                detailed verbosity (only for &#39;numba_cuda&#39; fit), defaults to False.            </span>
+<span class="sd">                detailed verbosity (only for ``&#39;numba_cuda&#39;`` fit), defaults to ``False``.            </span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">T</span> <span class="o">=</span> <span class="n">T</span>
@@ -268,15 +271,20 @@
     
 <div class="viewcode-block" id="FastRealBoostBins.__str__"><a class="viewcode-back" href="../frbb.html#frbb.FastRealBoostBins.__str__">[docs]</a>    <span class="k">def</span> <span class="fm">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Returns string representation of FastRealBoostBins instance.</span>
+<span class="sd">        Returns string representation of this classifier.</span>
 <span class="sd">        </span>
 <span class="sd">        Returns:</span>
-<span class="sd">            str: string representation of FastRealBoostBins instance.</span>
+<span class="sd">            str: string representation of this classifier.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2">(T=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">T</span><span class="si">}</span><span class="s2">, B=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">B</span><span class="si">}</span><span class="s2">, outliers_ratio=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">outliers_ratio</span><span class="si">}</span><span class="s2">, logit_max: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">logit_max</span><span class="si">}</span><span class="s2">, fit_mode=&#39;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">fit_mode</span><span class="si">}</span><span class="s2">&#39;, decision_function_mode=&#39;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">decision_function_mode</span><span class="si">}</span><span class="s2">&#39;)&quot;</span></div>
             
 <div class="viewcode-block" id="FastRealBoostBins.__repr__"><a class="viewcode-back" href="../frbb.html#frbb.FastRealBoostBins.__repr__">[docs]</a>    <span class="k">def</span> <span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Returns repr(self).&quot;&quot;&quot;</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Returns detailed string representation of this classifier.</span>
+<span class="sd">        </span>
+<span class="sd">        Returns:</span>
+<span class="sd">            str: detailed string representation of this classifier.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">repr_str</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2">(T=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">T</span><span class="si">}</span><span class="s2">, B=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">B</span><span class="si">}</span><span class="s2">, outliers_ratio=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">outliers_ratio</span><span class="si">}</span><span class="s2">, logit_max: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">logit_max</span><span class="si">}</span><span class="s2">, fit_mode=&#39;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">fit_mode</span><span class="si">}</span><span class="s2">&#39;, decision_function_mode=&#39;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">decision_function_mode</span><span class="si">}</span><span class="s2">&#39;,</span><span class="se">\n</span><span class="s2">&quot;</span>
         <span class="n">repr_str</span> <span class="o">+=</span> <span class="sa">f</span><span class="s2">&quot;  verbose=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">verbose</span><span class="si">}</span><span class="s2">, debug_verbose=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">debug_verbose</span><span class="si">}</span><span class="s2">&quot;</span>
         <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s2">&quot;classes_&quot;</span><span class="p">):</span>
@@ -342,16 +350,19 @@
 <div class="viewcode-block" id="FastRealBoostBins.fit"><a class="viewcode-back" href="../frbb.html#frbb.FastRealBoostBins.fit">[docs]</a>    <span class="k">def</span> <span class="nf">fit</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">X</span><span class="p">,</span> <span class="n">y</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Performs the fit operation according to a general scheme of RealBoost algorithm (data reweighting, real-valued responses)</span>
-<span class="sd">        and using an approach where bins with logit transform values play the role of &#39;weak learners&#39;. </span>
+<span class="sd">        and using an approach where bins with logit transform values play the role of \&quot;weak learners\&quot;. </span>
 <span class="sd">        Each weak learner is based on one selected feature - the minimizer of exponential criterion (for current boosting round).</span>
-<span class="sd">        Computations are carried out according to the chosen or default mode - possible choices: {`numpy`, `numba_jit`, `numba_cuda`}.   </span>
+<span class="sd">        Computations are carried out according to the formerly chosen ``fit_mode`` i.e. one of {``&quot;numpy&quot;``, ``&quot;numba_jit&quot;``, ``&quot;numba_cuda&quot;``}.   </span>
 <span class="sd">        </span>
 <span class="sd">        Args:</span>
-<span class="sd">            X (ndarray): two-dimensional data array of numeric type with examples written as rows and features as columns.</span>
-<span class="sd">            y (ndarray): one-dimensional array containing class labels associated with data examples in X.</span>
+<span class="sd">            X (ndarray): </span>
+<span class="sd">                two-dimensional data array of numeric type with examples written as rows and features as columns.</span>
+<span class="sd">            y (ndarray): </span>
+<span class="sd">                one-dimensional array containing class labels associated with data examples.</span>
 <span class="sd">            </span>
 <span class="sd">        Returns:</span>
-<span class="sd">            self (FastRealBoostBins): reference to self (in compliance with scikit-learn guidelines).</span>
+<span class="sd">            self (FastRealBoostBins): </span>
+<span class="sd">                reference to self (in compliance with scikit-learn guidelines).</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="c1"># sklearn checks</span>
         <span class="n">y</span> <span class="o">=</span> <span class="n">column_or_1d</span><span class="p">(</span><span class="n">y</span><span class="p">)</span>
@@ -363,6 +374,7 @@
         <span class="k">return</span> <span class="bp">self</span></div>
         
 <div class="viewcode-block" id="FastRealBoostBins._fit_init"><a class="viewcode-back" href="../frbb.html#frbb.FastRealBoostBins._fit_init">[docs]</a>    <span class="k">def</span> <span class="nf">_fit_init</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">X</span><span class="p">,</span> <span class="n">y</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Validates parameters and initializes some of the attributes and constants needed for actual fitting (taking into account information about the input data).&quot;&quot;&quot;</span>
         <span class="c1"># validation</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_validate_param</span><span class="p">(</span><span class="s2">&quot;T&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">T</span><span class="p">,</span> <span class="nb">int</span><span class="p">,</span> <span class="kc">False</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="kc">True</span><span class="p">,</span> <span class="n">inf</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">T_DEFAULT</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_validate_param</span><span class="p">(</span><span class="s2">&quot;B&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">B</span><span class="p">,</span> <span class="nb">int</span><span class="p">,</span> <span class="kc">False</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="kc">False</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">B_MAX</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">B_DEFAULT</span><span class="p">)</span>    
@@ -383,6 +395,7 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">n_features_in_</span> <span class="o">=</span> <span class="n">X</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>             </div>
     
 <div class="viewcode-block" id="FastRealBoostBins._bin_data"><a class="viewcode-back" href="../frbb.html#frbb.FastRealBoostBins._bin_data">[docs]</a>    <span class="k">def</span> <span class="nf">_bin_data</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">X</span><span class="p">,</span> <span class="n">mins</span><span class="p">,</span> <span class="n">maxes</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Returns a binned version of data array using given variability ranges and knowing the number of bins. In binning arithmetics, suitably handles outliers and broadens data type (temporarily).&quot;&quot;&quot;</span>
         <span class="n">X_binned</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="n">spreads</span> <span class="o">=</span> <span class="n">maxes</span> <span class="o">-</span> <span class="n">mins</span>
         <span class="n">info</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">iinfo</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">dtype_</span><span class="p">)</span> <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">issubdtype</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">dtype_</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">integer</span><span class="p">)</span> <span class="k">else</span> <span class="n">np</span><span class="o">.</span><span class="n">finfo</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">dtype_</span><span class="p">)</span> 
@@ -413,6 +426,7 @@
         <span class="k">return</span> <span class="n">X_binned</span></div>
 
 <div class="viewcode-block" id="FastRealBoostBins._find_ranges"><a class="viewcode-back" href="../frbb.html#frbb.FastRealBoostBins._find_ranges">[docs]</a>    <span class="k">def</span> <span class="nf">_find_ranges</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">X</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Finds and returns variability ranges after skipping a certain ratio of outliers on both ends.&quot;&quot;&quot;</span>
         <span class="n">m</span><span class="p">,</span> <span class="n">n</span> <span class="o">=</span> <span class="n">X</span><span class="o">.</span><span class="n">shape</span>
         <span class="n">mins</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">X</span><span class="o">.</span><span class="n">dtype</span><span class="p">)</span>
         <span class="n">maxes</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">X</span><span class="o">.</span><span class="n">dtype</span><span class="p">)</span>
@@ -430,6 +444,7 @@
         <span class="k">return</span> <span class="n">mins</span><span class="p">,</span> <span class="n">maxes</span>        </div>
            
 <div class="viewcode-block" id="FastRealBoostBins._fit_numpy"><a class="viewcode-back" href="../frbb.html#frbb.FastRealBoostBins._fit_numpy">[docs]</a>    <span class="k">def</span> <span class="nf">_fit_numpy</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">X</span><span class="p">,</span> <span class="n">y</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Performs the actual fit with computations carried out in ``&quot;numpy&quot;`` mode.&quot;&quot;&quot;</span> 
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">verbose</span><span class="p">:</span>
             <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;FIT... [fit_numpy, X.shape: </span><span class="si">{</span><span class="n">X</span><span class="o">.</span><span class="n">shape</span><span class="si">}</span><span class="s2">, X.dtype=</span><span class="si">{</span><span class="n">X</span><span class="o">.</span><span class="n">dtype</span><span class="si">}</span><span class="s2">, T: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">T</span><span class="si">}</span><span class="s2">, B: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">B</span><span class="si">}</span><span class="s2">]&quot;</span><span class="p">)</span>
         <span class="n">t1</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>        
@@ -509,6 +524,7 @@
             <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;FIT DONE. [fit_numpy; time: </span><span class="si">{</span><span class="n">t2</span> <span class="o">-</span> <span class="n">t1</span><span class="si">}</span><span class="s2"> s]&quot;</span><span class="p">)</span>    </div>
     
 <div class="viewcode-block" id="FastRealBoostBins._fit_numba_jit"><a class="viewcode-back" href="../frbb.html#frbb.FastRealBoostBins._fit_numba_jit">[docs]</a>    <span class="k">def</span> <span class="nf">_fit_numba_jit</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">X</span><span class="p">,</span> <span class="n">y</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Performs the actual fit with computations carried out in ``&quot;numba_jit&quot;`` mode.&quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">verbose</span><span class="p">:</span>
             <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;FIT... [fit_numba_jit, X.shape: </span><span class="si">{</span><span class="n">X</span><span class="o">.</span><span class="n">shape</span><span class="si">}</span><span class="s2">, X.dtype=</span><span class="si">{</span><span class="n">X</span><span class="o">.</span><span class="n">dtype</span><span class="si">}</span><span class="s2">, T: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">T</span><span class="si">}</span><span class="s2">, B: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">B</span><span class="si">}</span><span class="s2">]&quot;</span><span class="p">)</span>
         <span class="n">t1</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
@@ -561,6 +577,7 @@
 <div class="viewcode-block" id="FastRealBoostBins._fit_numba_jit_job"><a class="viewcode-back" href="../frbb.html#frbb.FastRealBoostBins._fit_numba_jit_job">[docs]</a>    <span class="nd">@staticmethod</span>
     <span class="nd">@jit</span><span class="p">(</span><span class="n">nbtypes</span><span class="o">.</span><span class="n">Tuple</span><span class="p">((</span><span class="n">int32</span><span class="p">,</span> <span class="n">float32</span><span class="p">,</span> <span class="n">float32</span><span class="p">[:],</span> <span class="n">float32</span><span class="p">[:]))(</span><span class="n">int8</span><span class="p">[:,</span> <span class="p">:],</span> <span class="n">int8</span><span class="p">[:],</span> <span class="n">float32</span><span class="p">[:],</span> <span class="n">int8</span><span class="p">,</span> <span class="n">float32</span><span class="p">),</span> <span class="n">nopython</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">cache</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>    
     <span class="k">def</span> <span class="nf">_fit_numba_jit_job</span><span class="p">(</span><span class="n">X_binned</span><span class="p">,</span> <span class="n">yy</span><span class="p">,</span> <span class="n">w</span><span class="p">,</span> <span class="n">B</span><span class="p">,</span> <span class="n">logit_max</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Body of the main boosting loop during fit carried out in ``&quot;numba_jit&quot;`` mode; called from within ``_fit_numba_jit`` function.&quot;&quot;&quot;</span>
         <span class="n">m</span><span class="p">,</span> <span class="n">n</span> <span class="o">=</span> <span class="n">X_binned</span><span class="o">.</span><span class="n">shape</span>           
         <span class="n">best_err_exp</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">finfo</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span><span class="o">.</span><span class="n">max</span>
         <span class="n">best_j</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span>
@@ -601,6 +618,7 @@
     
 <div class="viewcode-block" id="FastRealBoostBins._prepare_cuda_call_ranges"><a class="viewcode-back" href="../frbb.html#frbb.FastRealBoostBins._prepare_cuda_call_ranges">[docs]</a>    <span class="nd">@staticmethod</span>
     <span class="k">def</span> <span class="nf">_prepare_cuda_call_ranges</span><span class="p">(</span><span class="n">m</span><span class="p">,</span> <span class="n">n_calls_min</span><span class="p">,</span> <span class="n">power_two_sizes</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Prepares ranges of indexes (of data examples) for wanted number of subsequent calls for some CUDA kernel.&quot;&quot;&quot;</span>    
         <span class="k">if</span> <span class="n">n_calls_min</span> <span class="o">&gt;</span> <span class="n">m</span><span class="p">:</span>                
             <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;[warning: wanted n_calls_min = </span><span class="si">{</span><span class="n">n_calls_min</span><span class="si">}</span><span class="s2"> greater than m = </span><span class="si">{</span><span class="n">m</span><span class="si">}</span><span class="s2"> in prepare_cuda_call_ranges(...); hence, setting n_calls_min to m]&quot;</span><span class="p">)</span>
             <span class="n">n_calls_min</span> <span class="o">=</span> <span class="n">m</span>
@@ -618,6 +636,7 @@
         <span class="k">return</span> <span class="n">n_calls</span><span class="p">,</span> <span class="n">call_ranges</span>                                            </div>
                
 <div class="viewcode-block" id="FastRealBoostBins._fit_numba_cuda"><a class="viewcode-back" href="../frbb.html#frbb.FastRealBoostBins._fit_numba_cuda">[docs]</a>    <span class="k">def</span> <span class="nf">_fit_numba_cuda</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">X</span><span class="p">,</span> <span class="n">y</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Performs the actual fit with computations carried out in ``&quot;numba_cuda&quot;`` mode.&quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">verbose</span><span class="p">:</span>
             <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;FIT... [fit_numba_cuda, X.shape: </span><span class="si">{</span><span class="n">X</span><span class="o">.</span><span class="n">shape</span><span class="si">}</span><span class="s2">, X.dtype=</span><span class="si">{</span><span class="n">X</span><span class="o">.</span><span class="n">dtype</span><span class="si">}</span><span class="s2">, T: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">T</span><span class="si">}</span><span class="s2">, B: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">B</span><span class="si">}</span><span class="s2">]&quot;</span><span class="p">)</span>
         <span class="n">t1</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
@@ -777,7 +796,8 @@
 
     <span class="nd">@staticmethod</span>
     <span class="nd">@cuda</span><span class="o">.</span><span class="n">jit</span><span class="p">(</span><span class="n">void</span><span class="p">(</span><span class="n">int8</span><span class="p">[:,</span> <span class="p">:],</span> <span class="n">int8</span><span class="p">[:],</span> <span class="n">float32</span><span class="p">[:],</span> <span class="n">float32</span><span class="p">[:,</span> <span class="p">:],</span> <span class="n">float32</span><span class="p">[:,</span> <span class="p">:],</span> <span class="n">int32</span><span class="p">[:,</span> <span class="p">:]))</span>
-    <span class="k">def</span> <span class="nf">_bin_add_weights_numba_cuda</span><span class="p">(</span><span class="n">X_binned_sub</span><span class="p">,</span> <span class="n">yy_sub</span><span class="p">,</span> <span class="n">w_sub</span><span class="p">,</span> <span class="n">W_p</span><span class="p">,</span> <span class="n">W_n</span><span class="p">,</span> <span class="n">mutexes</span><span class="p">):</span>        
+    <span class="k">def</span> <span class="nf">_bin_add_weights_numba_cuda</span><span class="p">(</span><span class="n">X_binned_sub</span><span class="p">,</span> <span class="n">yy_sub</span><span class="p">,</span> <span class="n">w_sub</span><span class="p">,</span> <span class="n">W_p</span><span class="p">,</span> <span class="n">W_n</span><span class="p">,</span> <span class="n">mutexes</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;CUDA kernel responsible for binning and adding weights (within the main boosting loop).&quot;&quot;&quot;</span>         
         <span class="n">shared_w_p</span> <span class="o">=</span> <span class="n">cuda</span><span class="o">.</span><span class="n">shared</span><span class="o">.</span><span class="n">array</span><span class="p">((</span><span class="mi">128</span><span class="p">,</span> <span class="mi">32</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">float32</span><span class="p">)</span> <span class="c1"># assumed max constants for shared memory: 128 - subsample size (equal to self._cuda_tpb_bin_add_weights), 32 - no. of bins</span>
         <span class="n">shared_w_n</span> <span class="o">=</span> <span class="n">cuda</span><span class="o">.</span><span class="n">shared</span><span class="o">.</span><span class="n">array</span><span class="p">((</span><span class="mi">128</span><span class="p">,</span> <span class="mi">32</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">float32</span><span class="p">)</span> 
         <span class="n">m</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">X_binned_sub</span><span class="o">.</span><span class="n">shape</span>        
@@ -820,6 +840,7 @@
     <span class="nd">@staticmethod</span>
     <span class="nd">@cuda</span><span class="o">.</span><span class="n">jit</span><span class="p">(</span><span class="n">void</span><span class="p">(</span><span class="n">float32</span><span class="p">[:,</span> <span class="p">:],</span> <span class="n">float32</span><span class="p">[:,</span> <span class="p">:],</span> <span class="n">float32</span><span class="p">,</span> <span class="n">float32</span><span class="p">[:,</span> <span class="p">:]))</span>
     <span class="k">def</span> <span class="nf">_logits_numba_cuda</span><span class="p">(</span><span class="n">W_p</span><span class="p">,</span> <span class="n">W_n</span><span class="p">,</span> <span class="n">logit_max</span><span class="p">,</span> <span class="n">logits</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;CUDA kernel responsible for computing binned logit values (within the main boosting loop).&quot;&quot;&quot;</span>
         <span class="n">j</span> <span class="o">=</span> <span class="n">cuda</span><span class="o">.</span><span class="n">blockIdx</span><span class="o">.</span><span class="n">x</span>
         <span class="n">b</span> <span class="o">=</span> <span class="n">cuda</span><span class="o">.</span><span class="n">threadIdx</span><span class="o">.</span><span class="n">x</span>
         <span class="n">W_p_j_b</span> <span class="o">=</span> <span class="n">W_p</span><span class="p">[</span><span class="n">j</span><span class="p">,</span> <span class="n">b</span><span class="p">]</span>
@@ -841,6 +862,7 @@
     <span class="nd">@staticmethod</span>
     <span class="nd">@cuda</span><span class="o">.</span><span class="n">jit</span><span class="p">(</span><span class="n">void</span><span class="p">(</span><span class="n">int8</span><span class="p">[:,</span> <span class="p">:],</span> <span class="n">int8</span><span class="p">[:],</span> <span class="n">float32</span><span class="p">[:],</span> <span class="n">float32</span><span class="p">[:,</span> <span class="p">:],</span> <span class="n">float32</span><span class="p">[:],</span> <span class="n">int32</span><span class="p">[:,</span> <span class="p">:]))</span>
     <span class="k">def</span> <span class="nf">_errs_exp_numba_cuda</span><span class="p">(</span><span class="n">X_binned_sub</span><span class="p">,</span> <span class="n">yy_sub</span><span class="p">,</span> <span class="n">w_sub</span><span class="p">,</span> <span class="n">logits</span><span class="p">,</span> <span class="n">errs_exp</span><span class="p">,</span> <span class="n">mutexes</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;CUDA kernel responsible for computing exponential errors (within the main boosting loop).&quot;&quot;&quot;</span>
         <span class="n">shared_errs_exp</span> <span class="o">=</span> <span class="n">cuda</span><span class="o">.</span><span class="n">shared</span><span class="o">.</span><span class="n">array</span><span class="p">((</span><span class="mi">512</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">float32</span><span class="p">)</span> <span class="c1"># assumed max constant: 512 - subsample size                </span>
         <span class="n">m</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">X_binned_sub</span><span class="o">.</span><span class="n">shape</span>                                                
         <span class="n">tpb</span> <span class="o">=</span> <span class="n">cuda</span><span class="o">.</span><span class="n">blockDim</span><span class="o">.</span><span class="n">x</span>
@@ -867,6 +889,7 @@
     <span class="nd">@staticmethod</span>
     <span class="nd">@cuda</span><span class="o">.</span><span class="n">jit</span><span class="p">(</span><span class="n">void</span><span class="p">(</span><span class="n">float32</span><span class="p">[:],</span> <span class="n">float32</span><span class="p">[:,</span> <span class="p">:],</span> <span class="n">float32</span><span class="p">[:],</span> <span class="n">int32</span><span class="p">[:],</span> <span class="n">float32</span><span class="p">[:],</span> <span class="n">int32</span><span class="p">[:,</span> <span class="p">:]))</span>
     <span class="k">def</span> <span class="nf">_argmin_errs_exp_numba_cuda</span><span class="p">(</span><span class="n">errs_exp</span><span class="p">,</span> <span class="n">logits</span><span class="p">,</span> <span class="n">best_err_exp</span><span class="p">,</span> <span class="n">best_j</span><span class="p">,</span> <span class="n">best_logits</span><span class="p">,</span> <span class="n">mutexes</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;CUDA kernel responsible for finding the error minimizer (within the main boosting loop).&quot;&quot;&quot;</span>
         <span class="n">shared_errs_exp</span> <span class="o">=</span> <span class="n">cuda</span><span class="o">.</span><span class="n">shared</span><span class="o">.</span><span class="n">array</span><span class="p">((</span><span class="mi">512</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">float32</span><span class="p">)</span> <span class="c1"># assumed max tpb</span>
         <span class="n">shared_best_j</span> <span class="o">=</span> <span class="n">cuda</span><span class="o">.</span><span class="n">shared</span><span class="o">.</span><span class="n">array</span><span class="p">((</span><span class="mi">512</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">int32</span><span class="p">)</span> <span class="c1"># assumed max tpb</span>
         <span class="n">n</span> <span class="o">=</span> <span class="n">errs_exp</span><span class="o">.</span><span class="n">size</span>                
@@ -901,13 +924,22 @@
 
     <span class="nd">@staticmethod</span>
     <span class="nd">@cuda</span><span class="o">.</span><span class="n">jit</span><span class="p">(</span><span class="n">void</span><span class="p">(</span><span class="n">int8</span><span class="p">[:,</span> <span class="p">:],</span> <span class="n">int8</span><span class="p">[:],</span> <span class="n">float32</span><span class="p">[:],</span> <span class="n">int32</span><span class="p">[:],</span> <span class="n">float32</span><span class="p">[:],</span> <span class="n">float32</span><span class="p">[:]))</span>
-    <span class="k">def</span> <span class="nf">_reweight_numba_cuda</span><span class="p">(</span><span class="n">X_binned_sub</span><span class="p">,</span> <span class="n">yy_sub</span><span class="p">,</span> <span class="n">w_sub</span><span class="p">,</span> <span class="n">best_j</span><span class="p">,</span> <span class="n">best_exp_err</span><span class="p">,</span> <span class="n">best_logits</span><span class="p">):</span>           
+    <span class="k">def</span> <span class="nf">_reweight_numba_cuda</span><span class="p">(</span><span class="n">X_binned_sub</span><span class="p">,</span> <span class="n">yy_sub</span><span class="p">,</span> <span class="n">w_sub</span><span class="p">,</span> <span class="n">best_j</span><span class="p">,</span> <span class="n">best_exp_err</span><span class="p">,</span> <span class="n">best_logits</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;CUDA kernel responsible for reweighting data examples (within the main boosting loop).&quot;&quot;&quot;</span>           
         <span class="n">m</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">X_binned_sub</span><span class="o">.</span><span class="n">shape</span>
         <span class="n">i</span> <span class="o">=</span> <span class="n">cuda</span><span class="o">.</span><span class="n">grid</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>        
         <span class="k">if</span> <span class="n">i</span> <span class="o">&lt;</span> <span class="n">m</span><span class="p">:</span>
             <span class="n">w_sub</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">w_sub</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">*</span> <span class="n">math</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="n">yy_sub</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">*</span> <span class="n">best_logits</span><span class="p">[</span><span class="n">X_binned_sub</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="n">best_j</span><span class="p">[</span><span class="mi">0</span><span class="p">]]])</span> <span class="o">/</span> <span class="n">best_exp_err</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
 
 <div class="viewcode-block" id="FastRealBoostBins.decrease_T"><a class="viewcode-back" href="../frbb.html#frbb.FastRealBoostBins.decrease_T">[docs]</a>    <span class="k">def</span> <span class="nf">decrease_T</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">T</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Decreases the number of weak estimators in this ensemble classifier. Attention: can be used only when the classifier has been fit (after ``fit`` function was called).</span>
+<span class="sd">        Plays the role of a utility allowing one to easily reduce the classifier (e.g. to check accuracy of the smaller one) without having to refit it for a smaller ``T`` value.</span>
+<span class="sd">        </span>
+<span class="sd">        Args:</span>
+<span class="sd">            T (int): </span>
+<span class="sd">                new wanted number weak estimators.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">T</span> <span class="o">=</span> <span class="n">T</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">features_selected_</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">features_selected_</span><span class="p">[:</span><span class="n">T</span><span class="p">]</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">logits_</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">logits_</span><span class="p">[:</span><span class="n">T</span><span class="p">]</span>
@@ -918,6 +950,16 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">set_params</span><span class="p">(</span><span class="o">**</span><span class="n">params</span><span class="p">)</span></div>
 
 <div class="viewcode-block" id="FastRealBoostBins.decision_function"><a class="viewcode-back" href="../frbb.html#frbb.FastRealBoostBins.decision_function">[docs]</a>    <span class="k">def</span> <span class="nf">decision_function</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">X</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Computes real-valued responses of ensemble for given data array.</span>
+<span class="sd">        </span>
+<span class="sd">        Args:</span>
+<span class="sd">            X (ndarray[dtype_]):</span>
+<span class="sd">                two-dimensional data array of numeric type with examples written as rows and features as columns (must have the same number of features as registered at fit stage).</span>
+<span class="sd">                </span>
+<span class="sd">        Returns:</span>
+<span class="sd">            responses (ndarray[np.float32]): one-dimensional array of ensemble responses. </span>
+<span class="sd">        &quot;&quot;&quot;</span>
         <span class="c1"># sklearn checks</span>
         <span class="n">check_is_fitted</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
         <span class="n">X</span> <span class="o">=</span> <span class="n">check_array</span><span class="p">(</span><span class="n">X</span><span class="p">)</span>        
