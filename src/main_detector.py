@@ -926,9 +926,9 @@ def str_to_int_or_none(s):
 def parse_args():
     parser = argparse.ArgumentParser()
     parser.add_argument("-k", "--KIND", type=str, default=KIND, choices=["face", "hand"], help=f"detector kind (default: {KIND})")
-    parser.add_argument("-s", "--S", type=int, default=S, help=f"'scales' parameter of Haar-like features (default: {S})")
-    parser.add_argument("-p", "--P", type=int, default=P, help=f"'positions' parameter of Haar-like features (default: {P})")
-    parser.add_argument("-npi", "--NPI", type=int, default=NPI, help=f"'negatives per image' parameter, used in procedures generating data sets from images (default: {NPI} with -k set to {KIND})")
+    parser.add_argument("-s", "--S", type=int, default=S, help=f"\"scales\" parameter of Haar-like features (default: {S})")
+    parser.add_argument("-p", "--P", type=int, default=P, help=f"\"positions\" parameter of Haar-like features (default: {P})")
+    parser.add_argument("-npi", "--NPI", type=int, default=NPI, help=f"\"negatives per image\" parameter, used in procedures generating data sets from images (default: {NPI} with -k set to {KIND})")
     parser.add_argument("-t", "--T", type=int, default=T, help=f"number of boosting rounds, (default: {T})")
     parser.add_argument("-b", "--B", type=int, default=B, help=f"numbet of bins, (default: {B})")
     parser.add_argument("-seed", "--SEED", type=int, default=SEED, help=f"randomization seed, (default: {SEED})")
@@ -942,7 +942,7 @@ def parse_args():
     parser.add_argument("-ddivc", "--DEMO_DETECT_IN_VIDEO_COMPUTATIONS", type=str, choices=["gpu_cuda", "cpu_simple", "cpu_parallel"], default=DEMO_DETECT_IN_VIDEO_COMPUTATIONS, 
                         help=f"type of computations for demo of detection in video (default: {DEMO_DETECT_IN_VIDEO_COMPUTATIONS})")
     parser.add_argument("-ddivpj", "--DEMO_DETECT_IN_VIDEO_PARALLEL_JOBS", type=int, default=DEMO_DETECT_IN_VIDEO_PARALLEL_JOBS, 
-                        help=f"number of parallel jobs (only in case of 'cpu_parallel' set for -ddivc) (default: {DEMO_DETECT_IN_VIDEO_PARALLEL_JOBS})")
+                        help=f"number of parallel jobs (only in case of cpu_parallel set for -ddivc) (default: {DEMO_DETECT_IN_VIDEO_PARALLEL_JOBS})")
     parser.add_argument("-ddivvl", "--DEMO_DETECT_IN_VIDEO_VERBOSE_LOOP", action="store_true", help="turn on verbosity for main loop of detection in video")
     parser.add_argument("-ddivvd", "--DEMO_DETECT_IN_VIDEO_VERBOSE_DETECT", action="store_true", help="turn on detailed verbosity for detection in video")
     parser.add_argument("-ddivf", "--DEMO_DETECT_IN_VIDEO_FRAMES", type=str_to_float_or_none, default=DEMO_DETECT_IN_VIDEO_FRAMES, help="limit overall detection in video to given number of frames")

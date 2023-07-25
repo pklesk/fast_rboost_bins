@@ -1,18 +1,25 @@
 """
-This module contains the core machine learning functionalities of the project, embodied by the class `FastRealBoostBins` (compliant with scikit-learn).
+This module contains the core machine learning functionalities of the project, embodied by the class `FastRealBoostBins` (compliant with `scikit-learn`).
 The module includes:
 
-- `FastRealBoostBins`: class representing ensemble classifier for fast predictions implemented using numba.jit and numba.cuda,
+- `FastRealBoostBins`: class representing an ensemble classifier for fast predictions implemented using `numba.jit` and `numba.cuda`,
 
-- `_lock`, `_unlock`: utility functions (placed outside the class, related to mutex mechanisms in case of fit performed using 'numba_cuda' mode).
+- `_lock`, `_unlock`: utility functions (placed outside the class, related to mutex mechanisms in case of numba.cuda-based fit).
 
-In FastRealBoostBins class, attributes estimated by the fit function are named with trailing underscores (e.g. features_selected_, logits_, etc.)
-as indicated by scikit-learn guidelines. Private functions are named with single leading underscores and some of them are additionally described by 
-`@jit` or `@cuda.jit` decorators from `numba` module (intended to be compiled by Numba).  
+In ``FastRealBoostBins`` class, attributes estimated by the ``fit`` function are named with trailing underscores (e.g. ``features_selected_``, ``logits_``, etc.)
+as indicated in the scikit-learn guidelines. Private functions are named with single leading underscores and some of them are additionally described by 
+``@jit`` or ``@cuda.jit`` decorators coming from ``numba`` module (intended to be compiled by `Numba`).  
+
+Installation
+------------
+
+.. code-block:: console
+    
+    pip install frbb
 
 Example Usage
 -------------
-With frbb.py file (containing FastRealBoostBins class) included to some project, one can write e.g.:
+With ``frbb`` module installed, one can write e.g.:
 
 .. code-block:: python
 
@@ -38,13 +45,13 @@ Running the script above produces the following output:
 
 Dependencies
 ------------
-- numpy, math: required for mathematical computations.
+- ``numpy``, ``math``: required for mathematical computations.
 
-- numba: required for just-in-time compilation of crucial computational functions and CUDA kernels (decorated by numba.jit and numba.cuda) 
+- ``numba``: required for just-in-time compilation of crucial computational functions and CUDA kernels (decorated by ``@jit`` and ``@cuda.jit`` imported from ``numba``) 
 
-- sklearn: required for inheritence and other sklearn API purposes.
+- ``sklearn``: required for inheritence and other sklearn API purposes.
 
-- json: required for load / dump methods pertaining to json files 
+- ``json``: required for load / dump methods pertaining to json files 
 """
 
 import numpy as np
@@ -89,50 +96,46 @@ def _unlock(mutex):
 class FastRealBoostBins(BaseEstimator, ClassifierMixin):
     """
     An ensemble classifier for fast predictions implemented using numba.jit and numba.cuda. 
-    Bins with logit transform values play the role of 'weak learners'.
+    Bins with logit transform values play the role of \"weak learners\".
     
     Parameters:
         T (int): 
-            number of boosting rounds (=number of weak estimators), defaults to 256.            
+            number of boosting rounds (equivalently, number of weak estimators), defaults to ``256``.            
         B (int): 
-            number of bins, defaults to 8.            
+            number of bins, defaults to ``8``.            
         outliers_ratio (float): 
-            fraction of outliers to skip (on each end) when establishing features’ variability ranges, defaults to 0.05.
+            fraction of outliers to skip (on each end) when establishing features’ variability ranges, defaults to ``0.05``.
         logit_max (np.float32):
-            maximum absolute value of logit transform, outcomes clipped to interval [−logit_max, logit_max], defaults to np.float32(2.0).
+            maximum absolute value of logit transform, outcomes clipped to interval [``-logit_max``, ``logit_max``], defaults to ``np.float32(2.0)``.
         fit_mode (str):
-            choice of fit method from {'numpy', 'numba_jit', 'numba_cuda'}, defaults to 'numba_cuda'.
+            choice of fit method from {``"numpy"``, ``"numba_jit"``, ``"numba_cuda"``}, defaults to ``"numba_cuda"``.
         decision_function_mode (str):
-            choice of decision method from {'numpy', 'numba_jit', 'numba_cuda'} (called e.g. within predict), defaults to 'numba_cuda'.
+            choice of decision function method from {``"numpy"``, ``"numba_jit"``, ``"numba_cuda"``} (called e.g. within ``predict``), defaults to ``"numba_cuda"``.
         verbose (bool):
-            verbosity flag, if True then fit progress and auxiliary information are printed to console, defaults to False.
+            verbosity flag, if ``True`` then fit progress and auxiliary information are printed to console, defaults to ``False``.
         debug_verbose (bool):
-            detailed verbosity (only for 'numba_cuda' fit), defaults to False. 
+            detailed verbosity (only for ``'numba_cuda'`` fit), defaults to ``False``. 
         
     Attributes:
         features_selected_ (ndarray[np.int32]):
-            indexes of selected features, array of shape (T,).
+            indexes of selected features, array of shape ``(T,)``.
         dtype_ (np.dtype): 
-            type of input data array, one of {np.int8, np.uint8, ..., np.int64, np.uint64} or {np.float32, np.float64} - numeric types are only allowed.       
-        mins_selected_ (ndarray): 
-            left ends of ranges for selected features (type matching dtype_), array of shape (T,).
-        maxes_selected_ (ndarray):
-            right ends of ranges for selected features (type matching dtype_), array of shape (T,).
+            type of input data array, one of {``np.int8``, ``np.uint8``, ..., ``np.int64``, ``np.uint64``} or {``np.float32``, ``np.float64``} - numeric types only allowed.       
+        mins_selected_ (ndarray[dtype_]): 
+            left ends of ranges for selected features, array of shape ``(T,)``.
+        maxes_selected_ (ndarray[dtype_]):
+            right ends of ranges for selected features, array of shape ``(T,)``.
         logits_ (ndarray[np.float32]): 
-            binned logit values for selected features, array of shape (T, B).            
+            binned logit values for selected features, array of shape ``(T, B)``.            
         decision_function_numba_cuda_job_name_ (str): 
-            name, implied by dtype_, of decision function to be called in case of 'numba_cuda' mode (e.g. _decision_function_numba_cuda_job_int16).
+            name, implied by ``dtype_``, of decision function to be called in case of ``"numba_cuda"`` mode (e.g. ``_decision_function_numba_cuda_job_int16``).
         decision_threshold_ (float): 
-            threshold value for predict calls, defaults to 0.0.
+            threshold value used inside ``predict`` function, defaults to ``0.0``.
         classes_ (ndarray): 
             original class labels (scikit-learn requirement).
         n_features_in_ (int): 
-            number of features registered at fit stage and expected for subsequent predict calls (scikit-learn requirement).            
+            number of features registered in ``fit`` call and expected for subsequent ``predict`` calls (scikit-learn requirement).            
     """
-    
-        # Methods:
-        # fit(X: ndarray, y: ndarray): Fit classifier to given data X with associated class labels y.
-        # predict(X: ndarray): Return predictions of classfier for given data X.
 
     # constants
     T_DEFAULT = 256
@@ -159,25 +162,25 @@ class FastRealBoostBins(BaseEstimator, ClassifierMixin):
                  fit_mode=FIT_MODE_DEFAULT, decision_function_mode=DECISION_FUNCTION_MODE_DEFAULT, 
                  verbose=VERBOSE_DEFAULT, debug_verbose=DEBUG_VERBOSE_DEFAULT):
         """
-        Constructor of FastRealBoostBins instances.
+        Constructor of ``FastRealBoostBins`` instances.
          
         Args:
             T (int): 
-                number of boosting rounds (=number of weak estimators), defaults to 256.            
+                number of boosting rounds (equivalently, number of weak estimators), defaults to ``256``.            
             B (int): 
-                number of bins, defaults to 8.            
-            outliers_ratio(float): 
-                fraction of outliers to skip (on each end) when establishing features’ variability ranges, defaults to 0.05.
+                number of bins, defaults to ``8``.            
+            outliers_ratio (float): 
+                fraction of outliers to skip (on each end) when establishing features’ variability ranges, defaults to ``0.05``.
             logit_max (np.float32):
-                maximum absolute value of logit transform, outcomes clipped to interval [−logit_max, logit_max], defaults to np.float32(2.0).
+                maximum absolute value of logit transform, outcomes clipped to interval [``-logit_max``, ``logit_max``], defaults to ``np.float32(2.0)``.
             fit_mode (str):
-                choice of fit method from {'numpy', 'numba_jit', ’numba_cuda'}, defaults to 'numba_cuda'.
+                choice of fit method from {``"numpy"``, ``"numba_jit"``, ``"numba_cuda"``}, defaults to ``"numba_cuda"``.
             decision_function_mode (str):
-                choice of decision method from {'numpy', 'numba_jit', ’numba_cuda'} (called e.g. within predict), defaults to 'numba_cuda'.
+                choice of decision method from {``"numpy"``, ``"numba_jit"``, ``"numba_cuda"``} (called e.g. within ``predict``), defaults to ``"numba_cuda"``.
             verbose (bool):
-                verbosity flag, if True then fit progress and auxiliary information are printed to console, defaults to False.
+                verbosity flag, if ``True`` then fit progress and auxiliary information are printed to console, defaults to ``False``.
             debug_verbose (bool):
-                detailed verbosity (only for 'numba_cuda' fit), defaults to False.            
+                detailed verbosity (only for ``'numba_cuda'`` fit), defaults to ``False``.            
         """
         super().__init__()
         self.T = T
@@ -198,15 +201,20 @@ class FastRealBoostBins(BaseEstimator, ClassifierMixin):
     
     def __str__(self):
         """
-        Returns string representation of FastRealBoostBins instance.
+        Returns string representation of this classifier.
         
         Returns:
-            str: string representation of FastRealBoostBins instance.
+            str: string representation of this classifier.
         """
         return f"{self.__class__.__name__}(T={self.T}, B={self.B}, outliers_ratio={self.outliers_ratio}, logit_max: {self.logit_max}, fit_mode='{self.fit_mode}', decision_function_mode='{self.decision_function_mode}')"
             
     def __repr__(self):
-        """Returns repr(self)."""
+        """
+        Returns detailed string representation of this classifier.
+        
+        Returns:
+            str: detailed string representation of this classifier.
+        """
         repr_str = f"{self.__class__.__name__}(T={self.T}, B={self.B}, outliers_ratio={self.outliers_ratio}, logit_max: {self.logit_max}, fit_mode='{self.fit_mode}', decision_function_mode='{self.decision_function_mode}',\n"
         repr_str += f"  verbose={self.verbose}, debug_verbose={self.debug_verbose}"
         if hasattr(self, "classes_"):
@@ -272,16 +280,19 @@ class FastRealBoostBins(BaseEstimator, ClassifierMixin):
     def fit(self, X, y):
         """
         Performs the fit operation according to a general scheme of RealBoost algorithm (data reweighting, real-valued responses)
-        and using an approach where bins with logit transform values play the role of 'weak learners'. 
+        and using an approach where bins with logit transform values play the role of \"weak learners\". 
         Each weak learner is based on one selected feature - the minimizer of exponential criterion (for current boosting round).
-        Computations are carried out according to the chosen or default mode - possible choices: {`numpy`, `numba_jit`, `numba_cuda`}.   
+        Computations are carried out according to the formerly chosen ``fit_mode`` i.e. one of {``"numpy"``, ``"numba_jit"``, ``"numba_cuda"``}.   
         
         Args:
-            X (ndarray): two-dimensional data array of numeric type with examples written as rows and features as columns.
-            y (ndarray): one-dimensional array containing class labels associated with data examples in X.
+            X (ndarray): 
+                two-dimensional data array of numeric type with examples written as rows and features as columns.
+            y (ndarray): 
+                one-dimensional array containing class labels associated with data examples.
             
         Returns:
-            self (FastRealBoostBins): reference to self (in compliance with scikit-learn guidelines).
+            self (FastRealBoostBins): 
+                reference to self (in compliance with scikit-learn guidelines).
         """
         # sklearn checks
         y = column_or_1d(y)
@@ -293,6 +304,7 @@ class FastRealBoostBins(BaseEstimator, ClassifierMixin):
         return self
         
     def _fit_init(self, X, y):
+        """Validates parameters and initializes some of the attributes and constants needed for actual fitting (taking into account information about the input data)."""
         # validation
         self._validate_param("T", self.T, int, False, 1, True, inf, self.T_DEFAULT)
         self._validate_param("B", self.B, int, False, 1, False, self.B_MAX, self.B_DEFAULT)    
@@ -313,6 +325,7 @@ class FastRealBoostBins(BaseEstimator, ClassifierMixin):
         self.n_features_in_ = X.shape[1]             
     
     def _bin_data(self, X, mins, maxes):
+        """Returns a binned version of data array using given variability ranges and knowing the number of bins. In binning arithmetics, suitably handles outliers and broadens data type (temporarily)."""
         X_binned = None
         spreads = maxes - mins
         info = np.iinfo(self.dtype_) if np.issubdtype(self.dtype_, np.integer) else np.finfo(self.dtype_) 
@@ -343,6 +356,7 @@ class FastRealBoostBins(BaseEstimator, ClassifierMixin):
         return X_binned
 
     def _find_ranges(self, X):
+        """Finds and returns variability ranges after skipping a certain ratio of outliers on both ends."""
         m, n = X.shape
         mins = np.zeros(n, dtype=X.dtype)
         maxes = np.zeros(n, dtype=X.dtype)
@@ -360,6 +374,7 @@ class FastRealBoostBins(BaseEstimator, ClassifierMixin):
         return mins, maxes        
            
     def _fit_numpy(self, X, y):
+        """Performs the actual fit with computations carried out in ``"numpy"`` mode.""" 
         if self.verbose:
             print(f"FIT... [fit_numpy, X.shape: {X.shape}, X.dtype={X.dtype}, T: {self.T}, B: {self.B}]")
         t1 = time.time()        
@@ -439,6 +454,7 @@ class FastRealBoostBins(BaseEstimator, ClassifierMixin):
             print(f"FIT DONE. [fit_numpy; time: {t2 - t1} s]")    
     
     def _fit_numba_jit(self, X, y):
+        """Performs the actual fit with computations carried out in ``"numba_jit"`` mode."""
         if self.verbose:
             print(f"FIT... [fit_numba_jit, X.shape: {X.shape}, X.dtype={X.dtype}, T: {self.T}, B: {self.B}]")
         t1 = time.time()
@@ -491,6 +507,7 @@ class FastRealBoostBins(BaseEstimator, ClassifierMixin):
     @staticmethod
     @jit(nbtypes.Tuple((int32, float32, float32[:], float32[:]))(int8[:, :], int8[:], float32[:], int8, float32), nopython=True, cache=True)    
     def _fit_numba_jit_job(X_binned, yy, w, B, logit_max):
+        """Body of the main boosting loop during fit carried out in ``"numba_jit"`` mode; called from within ``_fit_numba_jit`` function."""
         m, n = X_binned.shape           
         best_err_exp = np.finfo(np.float32).max
         best_j = -1
@@ -531,6 +548,7 @@ class FastRealBoostBins(BaseEstimator, ClassifierMixin):
     
     @staticmethod
     def _prepare_cuda_call_ranges(m, n_calls_min, power_two_sizes=False):
+        """Prepares ranges of indexes (of data examples) for wanted number of subsequent calls for some CUDA kernel."""    
         if n_calls_min > m:                
             print(f"[warning: wanted n_calls_min = {n_calls_min} greater than m = {m} in prepare_cuda_call_ranges(...); hence, setting n_calls_min to m]")
             n_calls_min = m
@@ -548,6 +566,7 @@ class FastRealBoostBins(BaseEstimator, ClassifierMixin):
         return n_calls, call_ranges                                            
                
     def _fit_numba_cuda(self, X, y):
+        """Performs the actual fit with computations carried out in ``"numba_cuda"`` mode."""
         if self.verbose:
             print(f"FIT... [fit_numba_cuda, X.shape: {X.shape}, X.dtype={X.dtype}, T: {self.T}, B: {self.B}]")
         t1 = time.time()
@@ -707,7 +726,8 @@ class FastRealBoostBins(BaseEstimator, ClassifierMixin):
 
     @staticmethod
     @cuda.jit(void(int8[:, :], int8[:], float32[:], float32[:, :], float32[:, :], int32[:, :]))
-    def _bin_add_weights_numba_cuda(X_binned_sub, yy_sub, w_sub, W_p, W_n, mutexes):        
+    def _bin_add_weights_numba_cuda(X_binned_sub, yy_sub, w_sub, W_p, W_n, mutexes):
+        """CUDA kernel responsible for binning and adding weights (within the main boosting loop)."""         
         shared_w_p = cuda.shared.array((128, 32), dtype=float32) # assumed max constants for shared memory: 128 - subsample size (equal to self._cuda_tpb_bin_add_weights), 32 - no. of bins
         shared_w_n = cuda.shared.array((128, 32), dtype=float32) 
         m, _ = X_binned_sub.shape        
@@ -750,6 +770,7 @@ class FastRealBoostBins(BaseEstimator, ClassifierMixin):
     @staticmethod
     @cuda.jit(void(float32[:, :], float32[:, :], float32, float32[:, :]))
     def _logits_numba_cuda(W_p, W_n, logit_max, logits):
+        """CUDA kernel responsible for computing binned logit values (within the main boosting loop)."""
         j = cuda.blockIdx.x
         b = cuda.threadIdx.x
         W_p_j_b = W_p[j, b]
@@ -771,6 +792,7 @@ class FastRealBoostBins(BaseEstimator, ClassifierMixin):
     @staticmethod
     @cuda.jit(void(int8[:, :], int8[:], float32[:], float32[:, :], float32[:], int32[:, :]))
     def _errs_exp_numba_cuda(X_binned_sub, yy_sub, w_sub, logits, errs_exp, mutexes):
+        """CUDA kernel responsible for computing exponential errors (within the main boosting loop)."""
         shared_errs_exp = cuda.shared.array((512), dtype=float32) # assumed max constant: 512 - subsample size                
         m, _ = X_binned_sub.shape                                                
         tpb = cuda.blockDim.x
@@ -797,6 +819,7 @@ class FastRealBoostBins(BaseEstimator, ClassifierMixin):
     @staticmethod
     @cuda.jit(void(float32[:], float32[:, :], float32[:], int32[:], float32[:], int32[:, :]))
     def _argmin_errs_exp_numba_cuda(errs_exp, logits, best_err_exp, best_j, best_logits, mutexes):
+        """CUDA kernel responsible for finding the error minimizer (within the main boosting loop)."""
         shared_errs_exp = cuda.shared.array((512), dtype=float32) # assumed max tpb
         shared_best_j = cuda.shared.array((512), dtype=int32) # assumed max tpb
         n = errs_exp.size                
@@ -831,13 +854,22 @@ class FastRealBoostBins(BaseEstimator, ClassifierMixin):
 
     @staticmethod
     @cuda.jit(void(int8[:, :], int8[:], float32[:], int32[:], float32[:], float32[:]))
-    def _reweight_numba_cuda(X_binned_sub, yy_sub, w_sub, best_j, best_exp_err, best_logits):           
+    def _reweight_numba_cuda(X_binned_sub, yy_sub, w_sub, best_j, best_exp_err, best_logits):
+        """CUDA kernel responsible for reweighting data examples (within the main boosting loop)."""           
         m, _ = X_binned_sub.shape
         i = cuda.grid(1)        
         if i < m:
             w_sub[i] = w_sub[i] * math.exp(-yy_sub[i] * best_logits[X_binned_sub[i, best_j[0]]]) / best_exp_err[0]
 
     def decrease_T(self, T):
+        """
+        Decreases the number of weak estimators in this ensemble classifier. Attention: can be used only when the classifier has been fit (after ``fit`` function was called).
+        Plays the role of a utility allowing one to easily reduce the classifier (e.g. to check accuracy of the smaller one) without having to refit it for a smaller ``T`` value.
+        
+        Args:
+            T (int): 
+                new wanted number weak estimators.
+        """
         self.T = T
         self.features_selected_ = self.features_selected_[:T]
         self.logits_ = self.logits_[:T]
@@ -848,6 +880,16 @@ class FastRealBoostBins(BaseEstimator, ClassifierMixin):
         self.set_params(**params)
 
     def decision_function(self, X):
+        """
+        Computes real-valued responses of ensemble for given data array.
+        
+        Args:
+            X (ndarray[dtype_]):
+                two-dimensional data array of numeric type with examples written as rows and features as columns (must have the same number of features as registered at fit stage).
+                
+        Returns:
+            responses (ndarray[np.float32]): one-dimensional array of ensemble responses. 
+        """
         # sklearn checks
         check_is_fitted(self)
         X = check_array(X)        
