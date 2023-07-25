@@ -299,9 +299,9 @@ optional arguments:
   -h, --help            show this help message and exit
   -k {face,hand}, --KIND {face,hand}
                         detector kind (default: face)
-  -s S, --S S           'scales' parameter of Haar-like features (default: 5)
-  -p P, --P P           'positions' parameter of Haar-like features (default: 5)
-  -npi NPI, --NPI NPI   'negatives per image' parameter, used in procedures generating data sets from images (default: 300 with -k set to face)
+  -s S, --S S           "scales" parameter of Haar-like features (default: 5)
+  -p P, --P P           "positions" parameter of Haar-like features (default: 5)
+  -npi NPI, --NPI NPI   "negatives per image" parameter, used in procedures generating data sets from images (default: 300 with -k set to face)
   -t T, --T T           number of boosting rounds, (default: 1024)
   -b B, --B B           numbet of bins, (default: 8)
   -seed SEED, --SEED SEED
@@ -323,7 +323,7 @@ optional arguments:
   -ddivc {gpu_cuda,cpu_simple,cpu_parallel}, --DEMO_DETECT_IN_VIDEO_COMPUTATIONS {gpu_cuda,cpu_simple,cpu_parallel}
                         type of computations for demo of detection in video (default: gpu_cuda)
   -ddivpj DEMO_DETECT_IN_VIDEO_PARALLEL_JOBS, --DEMO_DETECT_IN_VIDEO_PARALLEL_JOBS DEMO_DETECT_IN_VIDEO_PARALLEL_JOBS
-                        number of parallel jobs (only in case of 'cpu_parallel' set for -ddivc) (default: 8)
+                        number of parallel jobs (only in case of cpu_parallel set for -ddivc) (default: 8)
   -ddivvl, --DEMO_DETECT_IN_VIDEO_VERBOSE_LOOP
                         turn on verbosity for main loop of detection in video
   -ddivvd, --DEMO_DETECT_IN_VIDEO_VERBOSE_DETECT
@@ -333,15 +333,15 @@ optional arguments:
   -ddivmc, --DEMO_DETECT_IN_VIDEO_MULTIPLE_CLFS
                         turn on demo of detection in video with multiple classifiers (currently: face and hand detectors)
   -cv2vcci CV2_VIDEO_CAPTURE_CAMERA_INDEX, --CV2_VIDEO_CAPTURE_CAMERA_INDEX CV2_VIDEO_CAPTURE_CAMERA_INDEX
-                        video camera index (default: 0)
+                        video camera index (default: 2)
   -cv2iim, --CV2_VIDEO_CAPTURE_IS_IT_MSWINDOWS
                         specify if OS is MS Windows (for cv2 and directx purposes)
   -ds DETECTION_SCALES, --DETECTION_SCALES DETECTION_SCALES
-                        number of detection scales (default: 9)
+                        number of detection scales (default: 12)
   -dwhm DETECTION_WINDOW_HEIGHT_MIN, --DETECTION_WINDOW_HEIGHT_MIN DETECTION_WINDOW_HEIGHT_MIN
-                        minimum height of detection window (default: 96)
+                        minimum height of detection window (default: 64)
   -dwwm DETECTION_WINDOW_WIDTH_MIN, --DETECTION_WINDOW_WIDTH_MIN DETECTION_WINDOW_WIDTH_MIN
-                        minimum width of detection window (default: 96)
+                        minimum width of detection window (default: 64)
   -dwg DETECTION_WINDOW_GROWTH, --DETECTION_WINDOW_GROWTH DETECTION_WINDOW_GROWTH
                         growth factor of detection window (default: 1.2)
   -dwj DETECTION_WINDOW_JUMP, --DETECTION_WINDOW_JUMP DETECTION_WINDOW_JUMP
