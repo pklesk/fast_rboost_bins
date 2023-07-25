@@ -122,7 +122,7 @@ Documentation for the `FastRealBoostBins` class is at: [https://pklesk.github.io
 ## Constructor parameters
 | parameter                      | description                                                                                                                          |
 |:-------------------------------|:-------------------------------------------------------------------------------------------------------------------------------------|
-| `T (int)`                      | number of boosting rounds (=number of weak estimators), defaults to `256`                                                            |
+| `T (int)`                      | number of boosting rounds (equivalently, number of weak estimators), defaults to `256`                                                            |
 | `B (int)`                      | number of bins, defaults to `8`                                                                                                      |
 | `outliers_ratio (float)`       | fraction of outliers to skip (on each end) when establishing features’ variability ranges, defaults to `0.05`                        |
 | `logit_max (np.float32)`       | maximum absolute value of logit transform, outcomes clipped to interval [−`logit_max`, `logit_max`], defaults to `np.float32(2.0)`   |
