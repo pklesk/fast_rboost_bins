@@ -142,7 +142,7 @@ Documentation for the `FastRealBoostBins` class is at: [https://pklesk.github.io
 | `decision_function_numba_cuda_job_name_ (str)` | name, implied by `dtype_`, of decision function to be called in case of `numba_cuda` mode (e.g.`_decision_function_numba_cuda_job_int16)`             |
 | `decision_threshold_ (float)`                  | threshold value used inside `predict` function, defaults to `0.0`                                                                                     |
 | `classes_ (ndarray)`                           | original class labels (scikit-learn requirement)                                                                                                      |
-| `n_features_in_ (int)`                         | number of features registered at ``fit`` stage and expected for subsequent ``predict`` calls (scikit-learn requirement).                              |
+| `n_features_in_ (int)`                         | number of features registered in ``fit`` call and expected for subsequent ``predict`` calls (scikit-learn requirement).                              |
                    
 
 ## Selected experimental results
