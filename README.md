@@ -149,8 +149,8 @@ Documentation for the `FastRealBoostBins` class is at: [https://pklesk.github.io
 
 ### Comparison against state-of-the-art classifier from `sklearn.ensemble`
 
-In tables below we write for shortness `FastRealBoostBins('numba_jit')` which, in fact, stands for `FastRealBoostBins(fit_mode='numba_jit', decision_function_mode='numba_jit')`,
-and `FastRealBoostBins('numba_cuda')` standing for `FastRealBoostBins(fit_mode='numba_cuda', decision_function_mode='numba_cuda')`.
+In tables below we write for shortness `FastRealBoostBins("numba_jit")` which, in fact, stands for `FastRealBoostBins(fit_mode="numba_jit", decision_function_mode="numba_jit")`,
+and `FastRealBoostBins("numba_cuda")` standing for `FastRealBoostBins(fit_mode="numba_cuda", decision_function_mode="numba_cuda")`.
 To have approximately equal conditions for comparison (e.g. same number of weak learners, each learner based on 1 feature) we forced the following settings on classifiers
 from `sklearn.ensemble`:
 ```python
@@ -169,8 +169,8 @@ Software environment: Linux 5.15.0-71-generic, Python 3.8.10, GCC 9.4.0, numpy 1
 | `AdaBoostClassifier`              |        1 421 |            $\times$ 1 |                   33.285 |                $\times$ 1 |       99.94 |            2.702 |                $\times$ 1 |      89.56 |
 | `GradientBoostingClassifier`      |        1 341 |            $\times$ 1 |                    0.191 |              $\times$ 174 |       94.04 |            0.013 |              $\times$ 208 |      90.18 |
 | `HistGradientBoostingClassifier`  |           14 |          $\times$ 102 |                    0.288 |              $\times$ 116 |       93.17 |            0.030 |               $\times$ 90 |      90.02 |
-| `FastRealBoostBins('numba_jit')`  |          395 |            $\times$ 4 |                    0.096 |              $\times$ 347 |       99.98 |            0.009 |              $\times$ 300 |      88.41 |
-| `FastRealBoostBins('numba_cuda')` |           43 |           $\times$ 33 |                    0.068 |              $\times$ 489 |       99.97 |            0.003 |              $\times$ 901 |      88.33 |
+| `FastRealBoostBins("numba_jit")`  |          395 |            $\times$ 4 |                    0.096 |              $\times$ 347 |       99.98 |            0.009 |              $\times$ 300 |      88.41 |
+| `FastRealBoostBins("numba_cuda")` |           43 |           $\times$ 33 |                    0.068 |              $\times$ 489 |       99.97 |            0.003 |              $\times$ 901 |      88.33 |
 
 |fit times along growing T|predict times (test) along growing T|
 |-|-|
@@ -183,8 +183,8 @@ Software environment: Linux 5.15.0-71-generic, Python 3.8.10, GCC 9.4.0, numpy 1
 | `AdaBoostClassifier`              |        1 754 |            $\times$ 1 |                   44.398 |                $\times$ 1 |      100.00 |            6.013 |                $\times$ 1 |      98.69 |
 | `GradientBoostingClassifier`      |        1 641 |            $\times$ 1 |                    0.665 |              $\times$  67 |       99.13 |            0.089 |               $\times$ 68 |      98.85 |
 | `HistGradientBoostingClassifier`  |            9 |          $\times$ 195 |                    0.457 |              $\times$  97 |       98.99 |            0.072 |               $\times$ 84 |      98.89 |
-| `FastRealBoostBins('numba_jit')`  |          510 |            $\times$ 3 |                    0.393 |              $\times$ 113 |      100.00 |            0.036 |              $\times$ 167 |      98.50 |
-| `FastRealBoostBins('numba_cuda')` |           53 |           $\times$ 33 |                    0.257 |              $\times$ 173 |      100.00 |            0.018 |              $\times$ 334 |      98.41 |
+| `FastRealBoostBins("numba_jit")`  |          510 |            $\times$ 3 |                    0.393 |              $\times$ 113 |      100.00 |            0.036 |              $\times$ 167 |      98.50 |
+| `FastRealBoostBins("numba_cuda")` |           53 |           $\times$ 33 |                    0.257 |              $\times$ 173 |      100.00 |            0.018 |              $\times$ 334 |      98.41 |
 
 |fit times along growing T|predict times (test) along growing T|
 |-|-|
@@ -195,7 +195,7 @@ Software environment: Linux 5.15.0-71-generic, Python 3.8.10, GCC 9.4.0, numpy 1
 |:----------------------------------|-------------:|----------------------:|-------------------------:|--------------------------:|------------:|-----------------:|--------------------------:|-----------:|
 |                                   |  **(train)** |           **(train)** |              **(train)** |               **(train)** | **(train)** |       **(test)** |                **(test)** | **(test)** |
 | `HistGradientBoostingClassifier`  |        2 662 |          $\times$ 3.3 |                   13.667 |              $\times$ 1.0 |       98.71 |            4.493 |              $\times$ 1.0 |      98.65 |
-| `FastRealBoostBins('numba_cuda')` |        8 908 |          $\times$ 1.0 |                    5.060 |              $\times$ 2.7 |      100.00 |            1.277 |              $\times$ 3.5 |      99.07 |
+| `FastRealBoostBins("numba_cuda")` |        8 908 |          $\times$ 1.0 |                    5.060 |              $\times$ 2.7 |      100.00 |            1.277 |              $\times$ 3.5 |      99.07 |
 
 |fit times along growing T|predict times (test) along growing T|
 |-|-|
