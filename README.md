@@ -118,19 +118,30 @@ Complete developer documentation of the project is accessible at: [https://pkles
 Documentation for the `FastRealBoostBins` class is at: [https://pklesk.github.io/fast_rboost_bins/frbb.html](https://pklesk.github.io/fast_rboost_bins/frbb.html).
 
 ## Constructor parameters
-| parameter                      | description                                                                                                                        |
-|:-------------------------------|:-----------------------------------------------------------------------------------------------------------------------------------|
-| `T (int)`                      | number of boosting rounds (=number of weak estimators), defaults to `256`                                                          |
-| `B (int)`                      | number of bins, defaults to `8`                                                                                                    |
-| `outliers_ratio (float)`       | fraction of outliers to skip (on each end) when establishing features’ variability ranges, defaults to `0.05`                      |
-| `logit_max (np.float32)`       | maximum absolute value of logit transform, outcomes clipped to interval [−`logit_max`, `logit_max`], defaults to `np.float32(2.0)` |
-| `fit_mode (str)`               | choice of fit method from {`'numpy'`, `'numba_jit'`, `'numba_cuda'`}, defaults to `'numba_cuda'`                                   |
-| `decision_function_mode (str)` | choice of decision method from {`'numpy'`, `'numba_jit'`, `numba_cuda`} (called e.g. within `predict`), defaults to `'numba_cuda'` |
-| `verbose (bool)`               | verbosity flag, if `True` then fit progress and auxiliary information are printed to console, defaults to `False`                  |
-| `debug_verbose (bool)`         | detailed verbosity (only for `'numba_cuda'` fit), defaults to `False`                                                              |
+| parameter                      | description                                                                                                                          |
+|:-------------------------------|:-------------------------------------------------------------------------------------------------------------------------------------|
+| `T (int)`                      | number of boosting rounds (=number of weak estimators), defaults to `256`                                                            |
+| `B (int)`                      | number of bins, defaults to `8`                                                                                                      |
+| `outliers_ratio (float)`       | fraction of outliers to skip (on each end) when establishing features’ variability ranges, defaults to `0.05`                        |
+| `logit_max (np.float32)`       | maximum absolute value of logit transform, outcomes clipped to interval [−`logit_max`, `logit_max`], defaults to `np.float32(2.0)`   |
+| `fit_mode (str)`               | choice of fit method from {`"numpy"`, `"numba_jit"`, `"numba_cuda"`}, defaults to `"numba_cuda"`                                     |
+| `decision_function_mode (str)` | choice of decision method from {`"numpy"`, `"numba_jit"`, `"numba_cuda"`} (called e.g. within `predict`), defaults to `"numba_cuda"` |
+| `verbose (bool)`               | verbosity flag, if `True` then fit progress and auxiliary information are printed to console, defaults to `False`                    |
+| `debug_verbose (bool)`         | detailed verbosity (only for `"numba_cuda"` fit), defaults to `False`                                                                |
 
 ## Estimated attributes
-TODO
+| attribute                                      | description                                                                                                                                           |
+|:-----------------------------------------------|:------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `features_selected ndarray[np.int32]`          | indexes of selected features, array of shape `(T,)`                                                                                                   |
+| `dtype_ (np.dtype)`                            | type of input data array, one of {`np.int8`, `np.uint8`, …, `np.int64`,` np.uint64`} or {`np.float32`, `np.float64`} - numeric types are only allowed |                                               
+| `mins_selected_ (ndarray[dtype_])`             | left ends of ranges for selected features, array of shape `(T,)`                                                                                      |
+| `maxes_selected_ (ndarray[dtype_])`            | right ends of ranges for selected features, array of shape `(T,)`                                                                                     |
+| `logits_ (ndarray[np.float32])`                | binned logit values for selected features, array of shape `(T, B)`                                                                                    |
+| `decision_function_numba_cuda_job_name_ (str)` | name, implied by `dtype_`, of decision function to be called in case of `numba_cuda` mode (e.g.` _decision_function_numba_cuda_job_int16)`            |
+| `decision_threshold_ (float)`                  | threshold value used inside `predict` function, defaults to `0.0`                                                                                     |
+| `classes_ (ndarray)`                           | original class labels (scikit-learn requirement)                                                                                                      |
+| `n_features_in_ (int)`                         | number of features registered at ``fit`` stage and expected for subsequent ``predict`` calls (scikit-learn requirement).                              |
+                   
 
 ## Selected experimental results
 
