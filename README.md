@@ -134,7 +134,7 @@ Documentation for the `FastRealBoostBins` class is at: [https://pklesk.github.io
 ## Estimated attributes
 | attribute                                      | description                                                                                                                                           |
 |:-----------------------------------------------|:------------------------------------------------------------------------------------------------------------------------------------------------------|
-| `features_selected ndarray[np.int32]`          | indexes of selected features, array of shape `(T,)`                                                                                                   |
+| `features_selected_ ndarray[np.int32]`         | indexes of selected features, array of shape `(T,)`                                                                                                   |
 | `dtype_ (np.dtype)`                            | type of input data array, one of {`np.int8`, `np.uint8`, …, `np.int64`,` np.uint64`} or {`np.float32`, `np.float64`} - numeric types are only allowed |                                               
 | `mins_selected_ (ndarray[dtype_])`             | left ends of ranges for selected features, array of shape `(T,)`                                                                                      |
 | `maxes_selected_ (ndarray[dtype_])`            | right ends of ranges for selected features, array of shape `(T,)`                                                                                     |
