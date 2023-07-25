@@ -25,7 +25,9 @@ using large data sets and focusing on response times. In an additional experimen
 classifiers operate as object detectors under heavy computational load (over 60k queries per a video frame using ensembles of size 2048).
 
 ## Installation
-TODO
+```bash
+pip install frbb
+```
 
 ## Example usage
 With `frbb` module installed, one can write e.g.:
