@@ -139,7 +139,7 @@ Documentation for the `FastRealBoostBins` class is at: [https://pklesk.github.io
 | `mins_selected_ (ndarray[dtype_])`             | left ends of ranges for selected features, array of shape `(T,)`                                                                                      |
 | `maxes_selected_ (ndarray[dtype_])`            | right ends of ranges for selected features, array of shape `(T,)`                                                                                     |
 | `logits_ (ndarray[np.float32])`                | binned logit values for selected features, array of shape `(T, B)`                                                                                    |
-| `decision_function_numba_cuda_job_name_ (str)` | name, implied by `dtype_`, of decision function to be called in case of `numba_cuda` mode (e.g.` _decision_function_numba_cuda_job_int16)`            |
+| `decision_function_numba_cuda_job_name_ (str)` | name, implied by `dtype_`, of decision function to be called in case of `numba_cuda` mode (e.g.`_decision_function_numba_cuda_job_int16)`             |
 | `decision_threshold_ (float)`                  | threshold value used inside `predict` function, defaults to `0.0`                                                                                     |
 | `classes_ (ndarray)`                           | original class labels (scikit-learn requirement)                                                                                                      |
 | `n_features_in_ (int)`                         | number of features registered at ``fit`` stage and expected for subsequent ``predict`` calls (scikit-learn requirement).                              |
