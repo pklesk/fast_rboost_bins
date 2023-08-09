@@ -44,13 +44,13 @@ DEMO_DETECT_IN_VIDEO_FRAMES = None # if not None but integer then detection is s
 DEMO_DETECT_IN_VIDEO_MULTIPLE_CLFS = True
 
 # cv2 camera settings
-CV2_VIDEO_CAPTURE_CAMERA_INDEX = 2
+CV2_VIDEO_CAPTURE_CAMERA_INDEX = 0
 CV2_VIDEO_CAPTURE_IS_IT_MSWINDOWS = False
 
 # detection procedure settings
-DETECTION_SCALES = 12 # 9 (lighter), 12 (heavier)
-DETECTION_WINDOW_HEIGHT_MIN = 64 # 96 (lighter), 64 (heavier) 
-DETECTION_WINDOW_WIDTH_MIN = 64 # 96 (lighter), 64 (heavier)
+DETECTION_SCALES = 9 # 9 (lighter), 12 (heavier)
+DETECTION_WINDOW_HEIGHT_MIN = 96 # 96 (lighter), 64 (heavier) 
+DETECTION_WINDOW_WIDTH_MIN = 96 # 96 (lighter), 64 (heavier)
 DETECTION_WINDOW_GROWTH = 1.2
 DETECTION_WINDOW_JUMP = 0.05
 DETECTION_DECISION_THRESHOLD = None # can be set to None (then classfier's internal threshold is used)
@@ -64,9 +64,6 @@ MC_DECISION_THRESHOLDS = [None, None]
 FOLDER_DATA = "../data/"
 FOLDER_CLFS = "../models/"
 FOLDER_EXTRAS = "../extras/"
-  
-# colorama-related
-SILVER = "\x1b[48;5;250m"
                             
 def pickle_objects(fname, some_list):
     print(f"PICKLE OBJECTS... [to file: {fname}]")
@@ -589,7 +586,9 @@ def demo_detect_in_video(clf, hcoords, decision_threshold, computations="gpu_cud
     gpu_name = gpu_props()["name"]
     cpu_name = short_cpu_name(cpu_and_system_props()["cpu_name"])
     features_indexes = clf.features_selected_
-    video = cv2.VideoCapture(CV2_VIDEO_CAPTURE_CAMERA_INDEX + (cv2.CAP_DSHOW if CV2_VIDEO_CAPTURE_IS_IT_MSWINDOWS else 0))
+    camera_index = CV2_VIDEO_CAPTURE_CAMERA_INDEX + (cv2.CAP_DSHOW if CV2_VIDEO_CAPTURE_IS_IT_MSWINDOWS else 0)
+    print(f"[about to start video camera with index {camera_index}]")
+    video = cv2.VideoCapture(camera_index)
     video.set(cv2.CAP_PROP_FRAME_WIDTH, 640)
     video.set(cv2.CAP_PROP_FRAME_HEIGHT, 480)
     video.set(cv2.CAP_PROP_FPS, 30)    
@@ -605,7 +604,7 @@ def demo_detect_in_video(clf, hcoords, decision_threshold, computations="gpu_cud
     if decision_threshold is None: 
         decision_threshold = clf.decision_threshold_
     print(f"[decision threshold: {decision_threshold}, source: {decision_threshold_source}]")    
-    print(f"[about to start video camera...]")
+    print(f"[video camera starting...]")
     h_scale = frame_h / resized_height
     w_scale = frame_w / resized_width
     n_frames = 0
@@ -737,7 +736,9 @@ def demo_detect_in_video_multiple_clfs(clfs, hcoords, decision_thresholds, postp
     font_size = 1.0
     text_shift = int(font_size * 16)        
     gpu_name = gpu_props()["name"]
-    video = cv2.VideoCapture(CV2_VIDEO_CAPTURE_CAMERA_INDEX + (cv2.CAP_DSHOW if CV2_VIDEO_CAPTURE_IS_IT_MSWINDOWS else 0))
+    camera_index = CV2_VIDEO_CAPTURE_CAMERA_INDEX + (cv2.CAP_DSHOW if CV2_VIDEO_CAPTURE_IS_IT_MSWINDOWS else 0)
+    print(f"[about to start video camera with index {camera_index}]")
+    video = cv2.VideoCapture(camera_index)
     video.set(cv2.CAP_PROP_FRAME_WIDTH, 640)
     video.set(cv2.CAP_PROP_FRAME_HEIGHT, 480)
     video.set(cv2.CAP_PROP_FPS, 30)    
@@ -756,7 +757,7 @@ def demo_detect_in_video_multiple_clfs(clfs, hcoords, decision_thresholds, postp
     print(f"[terms per window per clfs: {[clf.T for clf in clfs]}]")        
     print(f"[decision thresholds within clfs (internal): {[clf.decision_threshold_ for clf in clfs]}]")    
     print(f"[decision thresholds (external overriding argument): {decision_thresholds}]")        
-    print(f"[about to start video camera...]")
+    print(f"[video camera starting...]")
     h_scale = frame_h / resized_height
     w_scale = frame_w / resized_width 
     n_frames = 0

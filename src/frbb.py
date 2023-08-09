@@ -8,7 +8,10 @@ The module includes:
 
 In ``FastRealBoostBins`` class, attributes estimated by the ``fit`` function are named with trailing underscores (e.g. ``features_selected_``, ``logits_``, etc.)
 as indicated in the scikit-learn guidelines. Private functions are named with single leading underscores and some of them are additionally described by 
-``@jit`` or ``@cuda.jit`` decorators coming from ``numba`` module (intended to be compiled by `Numba`).  
+``@jit`` or ``@cuda.jit`` decorators coming from ``numba`` module (intended to be compiled by `Numba`). 
+
+Documentation note: this documentation was built with `Sphinx` tool, which does not generate correctly the documentation for CUDA kernel functions,
+i.e. functions decorated with ``@cuda.jit`` that produce ``numba.cuda.compiler.Dispatcher`` objects. For actual docstrings associated with those functions see the source code. 
 
 Installation
 ------------
@@ -96,7 +99,7 @@ def _unlock(mutex):
 class FastRealBoostBins(BaseEstimator, ClassifierMixin):
     """
     An ensemble classifier for fast predictions implemented using numba.jit and numba.cuda. 
-    Bins with logit transform values play the role of \"weak learners\".
+    Bins with logit transform values play the role of "weak learners".
     
     Parameters:
         T (int): 
@@ -280,9 +283,10 @@ class FastRealBoostBins(BaseEstimator, ClassifierMixin):
     def fit(self, X, y):
         """
         Performs the fit operation according to a general scheme of RealBoost algorithm (data reweighting, real-valued responses)
-        and using an approach where bins with logit transform values play the role of \"weak learners\". 
-        Each weak learner is based on one selected feature - the minimizer of exponential criterion (for current boosting round).
-        Computations are carried out according to the formerly chosen ``fit_mode`` i.e. one of {``"numpy"``, ``"numba_jit"``, ``"numba_cuda"``}.   
+        and using an approach where bins with logit transform values play the role of "weak learners". 
+        Each weak learner is based on one selected feature - the minimizer of exponential criterion (taking into account weights of data examples from a current boosting round).
+        Computations are carried out according to the formerly chosen ``fit_mode`` i.e. one of {``"numpy"``, ``"numba_jit"``, ``"numba_cuda"``}.
+        Depending on the mode, the function calls one of the following functions: ``_fit_numpy``, ``_fit_numba_jit``, or ``_fit_numba_cuda``.
         
         Args:
             X (ndarray): 
@@ -374,7 +378,7 @@ class FastRealBoostBins(BaseEstimator, ClassifierMixin):
         return mins, maxes        
            
     def _fit_numpy(self, X, y):
-        """Performs the actual fit with computations carried out in ``"numpy"`` mode.""" 
+        """Performs the actual fit with computations carried out in ``"numpy"`` mode (the slowest one).""" 
         if self.verbose:
             print(f"FIT... [fit_numpy, X.shape: {X.shape}, X.dtype={X.dtype}, T: {self.T}, B: {self.B}]")
         t1 = time.time()        
@@ -454,7 +458,11 @@ class FastRealBoostBins(BaseEstimator, ClassifierMixin):
             print(f"FIT DONE. [fit_numpy; time: {t2 - t1} s]")    
     
     def _fit_numba_jit(self, X, y):
-        """Performs the actual fit with computations carried out in ``"numba_jit"`` mode."""
+        """
+        Performs the actual fit with computations carried out in ``"numba_jit"`` mode.
+        Inside the main boosting loop, all operations (weights binning, computing logits, computing exponential errors, finding the error minimizer, and examples reweighting)
+        are perfomed  within a call to ``_fit_numba_jit_job`` function.
+        """
         if self.verbose:
             print(f"FIT... [fit_numba_jit, X.shape: {X.shape}, X.dtype={X.dtype}, T: {self.T}, B: {self.B}]")
         t1 = time.time()
@@ -566,7 +574,12 @@ class FastRealBoostBins(BaseEstimator, ClassifierMixin):
         return n_calls, call_ranges                                            
                
     def _fit_numba_cuda(self, X, y):
-        """Performs the actual fit with computations carried out in ``"numba_cuda"`` mode."""
+        """
+        Performs the actual fit with computations carried out in ``"numba_cuda"`` mode.
+        Inside the main boosting loop, all operations (weights binning, computing logits, computing exponential errors, finding the error minimizer, and examples reweighting)
+        are perfomed, respectively, by the following CUDA kernel functions: ``_bin_add_weights_numba_cuda``, ``_logits_numba_cuda``, ``_errs_exp_numba_cuda``, ``_argmin_errs_exp_numba_cuda``, and ``_reweight_numba_cuda``.
+        Three from those five kernels (1st, 3rd, 5th) are perfomed "in chunks", i.e. for successive data slices, relying on CUDA streams mechanism (partial parallelization of computations and data transfers).        
+        """
         if self.verbose:
             print(f"FIT... [fit_numba_cuda, X.shape: {X.shape}, X.dtype={X.dtype}, T: {self.T}, B: {self.B}]")
         t1 = time.time()
@@ -723,9 +736,9 @@ class FastRealBoostBins(BaseEstimator, ClassifierMixin):
         t2 = time.time()
         if self.verbose:
             print(f"FIT DONE. [fit_numba_cuda; time: {t2 - t1} s]")      
-
+                
     @staticmethod
-    @cuda.jit(void(int8[:, :], int8[:], float32[:], float32[:, :], float32[:, :], int32[:, :]))
+    @cuda.jit(void(int8[:, :], int8[:], float32[:], float32[:, :], float32[:, :], int32[:, :]))    
     def _bin_add_weights_numba_cuda(X_binned_sub, yy_sub, w_sub, W_p, W_n, mutexes):
         """CUDA kernel responsible for binning and adding weights (within the main boosting loop)."""         
         shared_w_p = cuda.shared.array((128, 32), dtype=float32) # assumed max constants for shared memory: 128 - subsample size (equal to self._cuda_tpb_bin_add_weights), 32 - no. of bins
@@ -882,13 +895,15 @@ class FastRealBoostBins(BaseEstimator, ClassifierMixin):
     def decision_function(self, X):
         """
         Computes real-valued responses of ensemble for given data array.
+        Depending on the mode, delegates actual computations to one of the following functions: ``_decision_function_numpy``, ``_decision_function_numba_jit``, or ``_decision_function_numba_cuda``.
         
         Args:
             X (ndarray[dtype_]):
                 two-dimensional data array of numeric type with examples written as rows and features as columns (must have the same number of features as registered at fit stage).
                 
         Returns:
-            responses (ndarray[np.float32]): one-dimensional array of ensemble responses. 
+            responses (ndarray[np.float32]): 
+                one-dimensional array of ensemble responses. 
         """
         # sklearn checks
         check_is_fitted(self)
@@ -899,6 +914,7 @@ class FastRealBoostBins(BaseEstimator, ClassifierMixin):
         return self._decision_function_method(X)
         
     def _decision_function_numpy(self, X):
+        """Performs the actual decision function with computations carried out in ``"numpy"`` mode (the slowest one)."""
         X_selected = X[:, self.features_selected_]
         X_binned = self.bin_data(X_selected, self.mins_selected_, self.maxes_selected_)
         m = X_binned.shape[0]
@@ -908,13 +924,15 @@ class FastRealBoostBins(BaseEstimator, ClassifierMixin):
         return responses
 
     def _decision_function_numba_jit(self, X):
+        """Performs the actual decision function with computations carried out in ``"numba_jit"`` mode."""
         X_selected = X[:, self.features_selected_]
         X_binned = self._bin_data(X_selected, self.mins_selected_, self.maxes_selected_)        
         return FastRealBoostBins._decision_function_numba_jit_job(X_binned, self.logits_)
     
     @staticmethod
     @jit(float32[:](int8[:, :], float32[:, :]), nopython=True, cache=True)
-    def _decision_function_numba_jit_job(X_binned, logits):           
+    def _decision_function_numba_jit_job(X_binned, logits):
+        """Body of the decision function carried out in ``"numba_jit"`` mode; called from within ``_decision_function_numba_jit`` function."""
         m, T = X_binned.shape
         responses = np.zeros(m, dtype=np.float32)
         for i in range(m):
@@ -923,6 +941,12 @@ class FastRealBoostBins(BaseEstimator, ClassifierMixin):
         return responses
     
     def _decision_function_numba_cuda(self, X):
+        """
+        Performs the actual decision function with computations carried out in ``"numba_cuda"`` mode.
+        Depending on the type of input data array, delegates actual computations to one of the following kernel functions: 
+        ``_decision_function_numba_cuda_job_int8``, ``_decision_function_numba_cuda_job_uint8``, ..., ``_decision_function_numba_cuda_job_int64``, ``_decision_function_numba_cuda_job_uint64``,
+        or ``_decision_function_numba_cuda_job_float32``, ``_decision_function_numba_cuda_job_int64``.
+        """
         X_selected = X[:, self.features_selected_]
         m = X_selected.shape[0]
         dev_X_selected = cuda.to_device(X_selected)
@@ -941,6 +965,7 @@ class FastRealBoostBins(BaseEstimator, ClassifierMixin):
     @staticmethod
     @cuda.jit(void(int8[:, :], int8[:], int8[:], float32[:, :], float32[:]))
     def _decision_function_numba_cuda_job_int8(X_selected, mins_selected, maxes_selected, logits, responses):
+        """Body of the decision function carried out in ``"numba_cuda"`` mode suitable for input arrays of type ``int8``; called from within ``_decision_function_numba_cuda`` function."""
         shared_logits = cuda.shared.array(1024, dtype=float32) # 1024 - corresponds to assumed max tpb           
         i = cuda.blockIdx.x
         tpb = cuda.blockDim.x
@@ -972,6 +997,7 @@ class FastRealBoostBins(BaseEstimator, ClassifierMixin):
     @staticmethod
     @cuda.jit(void(uint8[:, :], uint8[:], uint8[:], float32[:, :], float32[:]))
     def _decision_function_numba_cuda_job_uint8(X_selected, mins_selected, maxes_selected, logits, responses):
+        """Body of the decision function carried out in ``"numba_cuda"`` mode suitable for input arrays of type ``uint8``; called from within ``_decision_function_numba_cuda`` function."""
         shared_logits = cuda.shared.array(1024, dtype=float32) # 1024 - corresponds to assumed max tpb           
         i = cuda.blockIdx.x
         tpb = cuda.blockDim.x
@@ -1003,6 +1029,7 @@ class FastRealBoostBins(BaseEstimator, ClassifierMixin):
     @staticmethod
     @cuda.jit(void(int16[:, :], int16[:], int16[:], float32[:, :], float32[:]))
     def _decision_function_numba_cuda_job_int16(X_selected, mins_selected, maxes_selected, logits, responses):
+        """Body of the decision function carried out in ``"numba_cuda"`` mode suitable for input arrays of type ``int16``; called from within ``_decision_function_numba_cuda`` function."""
         shared_logits = cuda.shared.array(1024, dtype=float32) # 1024 - corresponds to assumed max tpb
         i = cuda.blockIdx.x
         tpb = cuda.blockDim.x
@@ -1034,6 +1061,7 @@ class FastRealBoostBins(BaseEstimator, ClassifierMixin):
     @staticmethod
     @cuda.jit(void(uint16[:, :], uint16[:], uint16[:], float32[:, :], float32[:]))
     def _decision_function_numba_cuda_job_uint16(X_selected, mins_selected, maxes_selected, logits, responses):
+        """Body of the decision function carried out in ``"numba_cuda"`` mode suitable for input arrays of type ``uint16``; called from within ``_decision_function_numba_cuda`` function."""
         shared_logits = cuda.shared.array(1024, dtype=float32) # 1024 - corresponds to assumed max tpb           
         i = cuda.blockIdx.x
         tpb = cuda.blockDim.x
@@ -1065,6 +1093,7 @@ class FastRealBoostBins(BaseEstimator, ClassifierMixin):
     @staticmethod
     @cuda.jit(void(int32[:, :], int32[:], int32[:], float32[:, :], float32[:]))
     def _decision_function_numba_cuda_job_int32(X_selected, mins_selected, maxes_selected, logits, responses):
+        """Body of the decision function carried out in ``"numba_cuda"`` mode suitable for input arrays of type ``int32``; called from within ``_decision_function_numba_cuda`` function."""
         shared_logits = cuda.shared.array(1024, dtype=float32) # 1024 - corresponds to assumed max tpb           
         i = cuda.blockIdx.x
         tpb = cuda.blockDim.x
@@ -1096,6 +1125,7 @@ class FastRealBoostBins(BaseEstimator, ClassifierMixin):
     @staticmethod
     @cuda.jit(void(uint32[:, :], uint32[:], uint32[:], float32[:, :], float32[:]))
     def _decision_function_numba_cuda_job_uint32(X_selected, mins_selected, maxes_selected, logits, responses):
+        """Body of the decision function carried out in ``"numba_cuda"`` mode suitable for input arrays of type ``uint32``; called from within ``_decision_function_numba_cuda`` function."""
         shared_logits = cuda.shared.array(1024, dtype=float32) # 1024 - corresponds to assumed max tpb           
         i = cuda.blockIdx.x
         tpb = cuda.blockDim.x
@@ -1127,6 +1157,7 @@ class FastRealBoostBins(BaseEstimator, ClassifierMixin):
     @staticmethod
     @cuda.jit(void(int64[:, :], int64[:], int64[:], float32[:, :], float32[:]))
     def _decision_function_numba_cuda_job_int64(X_selected, mins_selected, maxes_selected, logits, responses):
+        """Body of the decision function carried out in ``"numba_cuda"`` mode suitable for input arrays of type ``int64``; called from within ``_decision_function_numba_cuda`` function."""
         shared_logits = cuda.shared.array(1024, dtype=float32) # 1024 - corresponds to assumed max tpb           
         i = cuda.blockIdx.x
         tpb = cuda.blockDim.x
@@ -1158,6 +1189,7 @@ class FastRealBoostBins(BaseEstimator, ClassifierMixin):
     @staticmethod
     @cuda.jit(void(uint64[:, :], uint64[:], uint64[:], float32[:, :], float32[:]))
     def _decision_function_numba_cuda_job_uint64(X_selected, mins_selected, maxes_selected, logits, responses):
+        """Body of the decision function carried out in ``"numba_cuda"`` mode suitable for input arrays of type ``uint32``; called from within ``_decision_function_numba_cuda`` function."""
         shared_logits = cuda.shared.array(1024, dtype=float32) # 1024 - corresponds to assumed max tpb           
         i = cuda.blockIdx.x
         tpb = cuda.blockDim.x
@@ -1247,11 +1279,31 @@ class FastRealBoostBins(BaseEstimator, ClassifierMixin):
             stride >>= 1
         if tx == 0:
             responses[i] = shared_logits[0]            
-                
+         
     def predict(self, X):
+        """
+        Returns class labels predicted for given data array.
+        Delegates actual computations to ``decision_function`` and maps real-valued responses obtained from it to one of two class labels (negative or positive) kept in ``self.classes_``, 
+        taking into account the ``self.decision_threshold_`` attribute.   
+        
+        Args:
+            X (ndarray[dtype_]):
+                two-dimensional data array of numeric type with examples written as rows and features as columns (must have the same number of features as registered at fit stage).
+                
+        Returns:
+            class labels (ndarray): 
+                one-dimensional array of predicted class labels. 
+        """        
         return self.classes_[1 * (self.decision_function(X) > self.decision_threshold_)]
     
     def json_dump(self, fname):
+        """
+        Dumps (saves) this ensemble classifier to a text file in json format.   
+        
+        Args:
+            fname (string):
+                file name.             
+        """        
         if self.verbose:
             print(f"JSON DUMP... [to file: {fname}]")
         t1 = time.time()        
@@ -1285,8 +1337,16 @@ class FastRealBoostBins(BaseEstimator, ClassifierMixin):
             print(f"JSON DUMP DONE. [time: {t2 - t1} s]")
             
     @staticmethod
-    def json_load(fname, verbose=True):
-        """Creates and returns an instance of FastRealBoostBins from json file given its file path."""
+    def json_load(fname, verbose=True):        
+        """
+        Creates and returns an instance of ``FastRealBoostBins`` from a text file in json format given its file path.   
+        
+        Args:
+            fname (string):
+                file name.
+            verbose (bool):
+                verbosity flag.        
+        """
         if verbose:
             print(f"JSON LOAD... [from file: {fname}]")
         t1 = time.time()
@@ -1320,4 +1380,4 @@ class FastRealBoostBins(BaseEstimator, ClassifierMixin):
         t2 = time.time()
         if verbose:
             print(f"JSON LOAD DONE. [time: {t2 - t1} s]")    
-        return clf    
+        return clf
