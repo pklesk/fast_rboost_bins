@@ -4,7 +4,7 @@
   <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>frbb module &mdash; fast_rboost_bins 1.0.0 documentation</title>
+  <title>frbb module &mdash; fast_rboost_bins 0.9.0 documentation</title>
       <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
       <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
   <!--[if lt IE 9]>
@@ -33,6 +33,9 @@
           <a href="index.html" class="icon icon-home">
             fast_rboost_bins
           </a>
+              <div class="version">
+                0.9.0
+              </div>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
     <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
@@ -95,6 +98,8 @@ The module includes:</p>
 <p>In <code class="docutils literal notranslate"><span class="pre">FastRealBoostBins</span></code> class, attributes estimated by the <code class="docutils literal notranslate"><span class="pre">fit</span></code> function are named with trailing underscores (e.g. <code class="docutils literal notranslate"><span class="pre">features_selected_</span></code>, <code class="docutils literal notranslate"><span class="pre">logits_</span></code>, etc.)
 as indicated in the scikit-learn guidelines. Private functions are named with single leading underscores and some of them are additionally described by 
 <code class="docutils literal notranslate"><span class="pre">&#64;jit</span></code> or <code class="docutils literal notranslate"><span class="pre">&#64;cuda.jit</span></code> decorators coming from <code class="docutils literal notranslate"><span class="pre">numba</span></code> module (intended to be compiled by <cite>Numba</cite>).</p>
+<p>Documentation note: this documentation was built with <cite>Sphinx</cite> tool, which does not generate correctly the documentation for CUDA kernel functions,
+i.e. functions decorated with <code class="docutils literal notranslate"><span class="pre">&#64;cuda.jit</span></code> that produce <code class="docutils literal notranslate"><span class="pre">numba.cuda.compiler.Dispatcher</span></code> objects. For actual docstrings associated with those functions see the source code.</p>
 <section id="installation">
 <h2>Installation<a class="headerlink" href="#installation" title="Permalink to this headline"></a></h2>
 <div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="go">pip install frbb</span>
@@ -342,8 +347,9 @@ Bins with logit transform values play the role of “weak learners”.</p>
 <span class="sig-name descname"><span class="pre">fit</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">X</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">y</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/frbb.html#FastRealBoostBins.fit"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#frbb.FastRealBoostBins.fit" title="Permalink to this definition"></a></dt>
 <dd><p>Performs the fit operation according to a general scheme of RealBoost algorithm (data reweighting, real-valued responses)
 and using an approach where bins with logit transform values play the role of “weak learners”. 
-Each weak learner is based on one selected feature - the minimizer of exponential criterion (for current boosting round).
-Computations are carried out according to the formerly chosen <code class="docutils literal notranslate"><span class="pre">fit_mode</span></code> i.e. one of {<code class="docutils literal notranslate"><span class="pre">&quot;numpy&quot;</span></code>, <code class="docutils literal notranslate"><span class="pre">&quot;numba_jit&quot;</span></code>, <code class="docutils literal notranslate"><span class="pre">&quot;numba_cuda&quot;</span></code>}.</p>
+Each weak learner is based on one selected feature - the minimizer of exponential criterion (taking into account weights of data examples from a current boosting round).
+Computations are carried out according to the formerly chosen <code class="docutils literal notranslate"><span class="pre">fit_mode</span></code> i.e. one of {<code class="docutils literal notranslate"><span class="pre">&quot;numpy&quot;</span></code>, <code class="docutils literal notranslate"><span class="pre">&quot;numba_jit&quot;</span></code>, <code class="docutils literal notranslate"><span class="pre">&quot;numba_cuda&quot;</span></code>}.
+Depending on the mode, the function calls one of the following functions: <code class="docutils literal notranslate"><span class="pre">_fit_numpy</span></code>, <code class="docutils literal notranslate"><span class="pre">_fit_numba_jit</span></code>, or <code class="docutils literal notranslate"><span class="pre">_fit_numba_cuda</span></code>.</p>
 <dl class="simple">
 <dt>Args:</dt><dd><dl class="simple">
 <dt>X (ndarray): </dt><dd><p>two-dimensional data array of numeric type with examples written as rows and features as columns.</p>
@@ -381,13 +387,15 @@ Computations are carried out according to the formerly chosen <code class="docut
 <dl class="py method">
 <dt class="sig sig-object py" id="frbb.FastRealBoostBins._fit_numpy">
 <span class="sig-name descname"><span class="pre">_fit_numpy</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">X</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">y</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/frbb.html#FastRealBoostBins._fit_numpy"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#frbb.FastRealBoostBins._fit_numpy" title="Permalink to this definition"></a></dt>
-<dd><p>Performs the actual fit with computations carried out in <code class="docutils literal notranslate"><span class="pre">&quot;numpy&quot;</span></code> mode.</p>
+<dd><p>Performs the actual fit with computations carried out in <code class="docutils literal notranslate"><span class="pre">&quot;numpy&quot;</span></code> mode (the slowest one).</p>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="frbb.FastRealBoostBins._fit_numba_jit">
 <span class="sig-name descname"><span class="pre">_fit_numba_jit</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">X</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">y</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/frbb.html#FastRealBoostBins._fit_numba_jit"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#frbb.FastRealBoostBins._fit_numba_jit" title="Permalink to this definition"></a></dt>
-<dd><p>Performs the actual fit with computations carried out in <code class="docutils literal notranslate"><span class="pre">&quot;numba_jit&quot;</span></code> mode.</p>
+<dd><p>Performs the actual fit with computations carried out in <code class="docutils literal notranslate"><span class="pre">&quot;numba_jit&quot;</span></code> mode.
+Inside the main boosting loop, all operations (weights binning, computing logits, computing exponential errors, finding the error minimizer, and examples reweighting)
+are perfomed  within a call to <code class="docutils literal notranslate"><span class="pre">_fit_numba_jit_job</span></code> function.</p>
 </dd></dl>
 
 <dl class="py method">
@@ -405,7 +413,10 @@ Computations are carried out according to the formerly chosen <code class="docut
 <dl class="py method">
 <dt class="sig sig-object py" id="frbb.FastRealBoostBins._fit_numba_cuda">
 <span class="sig-name descname"><span class="pre">_fit_numba_cuda</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">X</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">y</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/frbb.html#FastRealBoostBins._fit_numba_cuda"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#frbb.FastRealBoostBins._fit_numba_cuda" title="Permalink to this definition"></a></dt>
-<dd><p>Performs the actual fit with computations carried out in <code class="docutils literal notranslate"><span class="pre">&quot;numba_cuda&quot;</span></code> mode.</p>
+<dd><p>Performs the actual fit with computations carried out in <code class="docutils literal notranslate"><span class="pre">&quot;numba_cuda&quot;</span></code> mode.
+Inside the main boosting loop, all operations (weights binning, computing logits, computing exponential errors, finding the error minimizer, and examples reweighting)
+are perfomed, respectively, by the following CUDA kernel functions: <code class="docutils literal notranslate"><span class="pre">_bin_add_weights_numba_cuda</span></code>, <code class="docutils literal notranslate"><span class="pre">_logits_numba_cuda</span></code>, <code class="docutils literal notranslate"><span class="pre">_errs_exp_numba_cuda</span></code>, <code class="docutils literal notranslate"><span class="pre">_argmin_errs_exp_numba_cuda</span></code>, and <code class="docutils literal notranslate"><span class="pre">_reweight_numba_cuda</span></code>.
+Three from those five kernels (1st, 3rd, 5th) are perfomed “in chunks”, i.e. for successive data slices, relying on CUDA streams mechanism (partial parallelization of computations and data transfers).</p>
 </dd></dl>
 
 <dl class="py attribute">
@@ -450,14 +461,18 @@ Plays the role of a utility allowing one to easily reduce the classifier (e.g. t
 <dl class="py method">
 <dt class="sig sig-object py" id="frbb.FastRealBoostBins.decision_function">
 <span class="sig-name descname"><span class="pre">decision_function</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">X</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/frbb.html#FastRealBoostBins.decision_function"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#frbb.FastRealBoostBins.decision_function" title="Permalink to this definition"></a></dt>
-<dd><p>Computes real-valued responses of ensemble for given data array.</p>
+<dd><p>Computes real-valued responses of ensemble for given data array.
+Depending on the mode, delegates actual computations to one of the following functions: <code class="docutils literal notranslate"><span class="pre">_decision_function_numpy</span></code>, <code class="docutils literal notranslate"><span class="pre">_decision_function_numba_jit</span></code>, or <code class="docutils literal notranslate"><span class="pre">_decision_function_numba_cuda</span></code>.</p>
 <dl class="simple">
 <dt>Args:</dt><dd><dl class="simple">
 <dt>X (ndarray[<a href="#id23"><span class="problematic" id="id24">dtype_</span></a>]):</dt><dd><p>two-dimensional data array of numeric type with examples written as rows and features as columns (must have the same number of features as registered at fit stage).</p>
 </dd>
 </dl>
 </dd>
-<dt>Returns:</dt><dd><p>responses (ndarray[np.float32]): one-dimensional array of ensemble responses.</p>
+<dt>Returns:</dt><dd><dl class="simple">
+<dt>responses (ndarray[np.float32]): </dt><dd><p>one-dimensional array of ensemble responses.</p>
+</dd>
+</dl>
 </dd>
 </dl>
 </dd></dl>
@@ -465,22 +480,29 @@ Plays the role of a utility allowing one to easily reduce the classifier (e.g. t
 <dl class="py method">
 <dt class="sig sig-object py" id="frbb.FastRealBoostBins._decision_function_numpy">
 <span class="sig-name descname"><span class="pre">_decision_function_numpy</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">X</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/frbb.html#FastRealBoostBins._decision_function_numpy"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#frbb.FastRealBoostBins._decision_function_numpy" title="Permalink to this definition"></a></dt>
-<dd></dd></dl>
+<dd><p>Performs the actual decision function with computations carried out in <code class="docutils literal notranslate"><span class="pre">&quot;numpy&quot;</span></code> mode (the slowest one).</p>
+</dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="frbb.FastRealBoostBins._decision_function_numba_jit">
 <span class="sig-name descname"><span class="pre">_decision_function_numba_jit</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">X</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/frbb.html#FastRealBoostBins._decision_function_numba_jit"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#frbb.FastRealBoostBins._decision_function_numba_jit" title="Permalink to this definition"></a></dt>
-<dd></dd></dl>
+<dd><p>Performs the actual decision function with computations carried out in <code class="docutils literal notranslate"><span class="pre">&quot;numba_jit&quot;</span></code> mode.</p>
+</dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="frbb.FastRealBoostBins._decision_function_numba_jit_job">
 <em class="property"><span class="pre">static</span> </em><span class="sig-name descname"><span class="pre">_decision_function_numba_jit_job</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">X_binned</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">logits</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/frbb.html#FastRealBoostBins._decision_function_numba_jit_job"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#frbb.FastRealBoostBins._decision_function_numba_jit_job" title="Permalink to this definition"></a></dt>
-<dd></dd></dl>
+<dd><p>Body of the decision function carried out in <code class="docutils literal notranslate"><span class="pre">&quot;numba_jit&quot;</span></code> mode; called from within <code class="docutils literal notranslate"><span class="pre">_decision_function_numba_jit</span></code> function.</p>
+</dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="frbb.FastRealBoostBins._decision_function_numba_cuda">
 <span class="sig-name descname"><span class="pre">_decision_function_numba_cuda</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">X</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/frbb.html#FastRealBoostBins._decision_function_numba_cuda"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#frbb.FastRealBoostBins._decision_function_numba_cuda" title="Permalink to this definition"></a></dt>
-<dd></dd></dl>
+<dd><p>Performs the actual decision function with computations carried out in <code class="docutils literal notranslate"><span class="pre">&quot;numba_cuda&quot;</span></code> mode.
+Depending on the type of input data array, delegates actual computations to one of the following kernel functions: 
+<code class="docutils literal notranslate"><span class="pre">_decision_function_numba_cuda_job_int8</span></code>, <code class="docutils literal notranslate"><span class="pre">_decision_function_numba_cuda_job_uint8</span></code>, …, <code class="docutils literal notranslate"><span class="pre">_decision_function_numba_cuda_job_int64</span></code>, <code class="docutils literal notranslate"><span class="pre">_decision_function_numba_cuda_job_uint64</span></code>,
+or <code class="docutils literal notranslate"><span class="pre">_decision_function_numba_cuda_job_float32</span></code>, <code class="docutils literal notranslate"><span class="pre">_decision_function_numba_cuda_job_int64</span></code>.</p>
+</dd></dl>
 
 <dl class="py attribute">
 <dt class="sig sig-object py" id="frbb.FastRealBoostBins._decision_function_numba_cuda_job_int8">
@@ -535,17 +557,49 @@ Plays the role of a utility allowing one to easily reduce the classifier (e.g. t
 <dl class="py method">
 <dt class="sig sig-object py" id="frbb.FastRealBoostBins.predict">
 <span class="sig-name descname"><span class="pre">predict</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">X</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/frbb.html#FastRealBoostBins.predict"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#frbb.FastRealBoostBins.predict" title="Permalink to this definition"></a></dt>
-<dd></dd></dl>
+<dd><p>Returns class labels predicted for given data array.
+Delegates actual computations to <code class="docutils literal notranslate"><span class="pre">decision_function</span></code> and maps real-valued responses obtained from it to one of two class labels (negative or positive) kept in <code class="docutils literal notranslate"><span class="pre">self.classes_</span></code>, 
+taking into account the <code class="docutils literal notranslate"><span class="pre">self.decision_threshold_</span></code> attribute.</p>
+<dl class="simple">
+<dt>Args:</dt><dd><dl class="simple">
+<dt>X (ndarray[<a href="#id25"><span class="problematic" id="id26">dtype_</span></a>]):</dt><dd><p>two-dimensional data array of numeric type with examples written as rows and features as columns (must have the same number of features as registered at fit stage).</p>
+</dd>
+</dl>
+</dd>
+<dt>Returns:</dt><dd><dl class="simple">
+<dt>class labels (ndarray): </dt><dd><p>one-dimensional array of predicted class labels.</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="frbb.FastRealBoostBins.json_dump">
 <span class="sig-name descname"><span class="pre">json_dump</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">fname</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/frbb.html#FastRealBoostBins.json_dump"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#frbb.FastRealBoostBins.json_dump" title="Permalink to this definition"></a></dt>
-<dd></dd></dl>
+<dd><p>Dumps (saves) this ensemble classifier to a text file in json format.</p>
+<dl class="simple">
+<dt>Args:</dt><dd><dl class="simple">
+<dt>fname (string):</dt><dd><p>file name.</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="frbb.FastRealBoostBins.json_load">
 <em class="property"><span class="pre">static</span> </em><span class="sig-name descname"><span class="pre">json_load</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">fname</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">verbose</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/frbb.html#FastRealBoostBins.json_load"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#frbb.FastRealBoostBins.json_load" title="Permalink to this definition"></a></dt>
-<dd><p>Creates and returns an instance of FastRealBoostBins from json file given its file path.</p>
+<dd><p>Creates and returns an instance of <code class="docutils literal notranslate"><span class="pre">FastRealBoostBins</span></code> from a text file in json format given its file path.</p>
+<dl class="simple">
+<dt>Args:</dt><dd><dl class="simple">
+<dt>fname (string):</dt><dd><p>file name.</p>
+</dd>
+<dt>verbose (bool):</dt><dd><p>verbosity flag.</p>
+</dd>
+</dl>
+</dd>
+</dl>
 </dd></dl>
 
 <dl class="py attribute">
