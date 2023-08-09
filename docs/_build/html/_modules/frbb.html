@@ -78,7 +78,10 @@
 
 <span class="sd">In ``FastRealBoostBins`` class, attributes estimated by the ``fit`` function are named with trailing underscores (e.g. ``features_selected_``, ``logits_``, etc.)</span>
 <span class="sd">as indicated in the scikit-learn guidelines. Private functions are named with single leading underscores and some of them are additionally described by </span>
-<span class="sd">``@jit`` or ``@cuda.jit`` decorators coming from ``numba`` module (intended to be compiled by `Numba`).  </span>
+<span class="sd">``@jit`` or ``@cuda.jit`` decorators coming from ``numba`` module (intended to be compiled by `Numba`). </span>
+
+<span class="sd">Documentation note: this documentation was built with `Sphinx` tool, which does not generate correctly the documentation for CUDA kernel functions,</span>
+<span class="sd">i.e. functions decorated with ``@cuda.jit`` that produce ``numba.cuda.compiler.Dispatcher`` objects. For actual docstrings associated with those functions see the source code. </span>
 
 <span class="sd">Installation</span>
 <span class="sd">------------</span>
@@ -166,7 +169,7 @@
 <div class="viewcode-block" id="FastRealBoostBins"><a class="viewcode-back" href="../frbb.html#frbb.FastRealBoostBins">[docs]</a><span class="k">class</span> <span class="nc">FastRealBoostBins</span><span class="p">(</span><span class="n">BaseEstimator</span><span class="p">,</span> <span class="n">ClassifierMixin</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    An ensemble classifier for fast predictions implemented using numba.jit and numba.cuda. </span>
-<span class="sd">    Bins with logit transform values play the role of \&quot;weak learners\&quot;.</span>
+<span class="sd">    Bins with logit transform values play the role of &quot;weak learners&quot;.</span>
 <span class="sd">    </span>
 <span class="sd">    Parameters:</span>
 <span class="sd">        T (int): </span>
@@ -350,9 +353,10 @@
 <div class="viewcode-block" id="FastRealBoostBins.fit"><a class="viewcode-back" href="../frbb.html#frbb.FastRealBoostBins.fit">[docs]</a>    <span class="k">def</span> <span class="nf">fit</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">X</span><span class="p">,</span> <span class="n">y</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Performs the fit operation according to a general scheme of RealBoost algorithm (data reweighting, real-valued responses)</span>
-<span class="sd">        and using an approach where bins with logit transform values play the role of \&quot;weak learners\&quot;. </span>
-<span class="sd">        Each weak learner is based on one selected feature - the minimizer of exponential criterion (for current boosting round).</span>
-<span class="sd">        Computations are carried out according to the formerly chosen ``fit_mode`` i.e. one of {``&quot;numpy&quot;``, ``&quot;numba_jit&quot;``, ``&quot;numba_cuda&quot;``}.   </span>
+<span class="sd">        and using an approach where bins with logit transform values play the role of &quot;weak learners&quot;. </span>
+<span class="sd">        Each weak learner is based on one selected feature - the minimizer of exponential criterion (taking into account weights of data examples from a current boosting round).</span>
+<span class="sd">        Computations are carried out according to the formerly chosen ``fit_mode`` i.e. one of {``&quot;numpy&quot;``, ``&quot;numba_jit&quot;``, ``&quot;numba_cuda&quot;``}.</span>
+<span class="sd">        Depending on the mode, the function calls one of the following functions: ``_fit_numpy``, ``_fit_numba_jit``, or ``_fit_numba_cuda``.</span>
 <span class="sd">        </span>
 <span class="sd">        Args:</span>
 <span class="sd">            X (ndarray): </span>
@@ -444,7 +448,7 @@
         <span class="k">return</span> <span class="n">mins</span><span class="p">,</span> <span class="n">maxes</span>        </div>
            
 <div class="viewcode-block" id="FastRealBoostBins._fit_numpy"><a class="viewcode-back" href="../frbb.html#frbb.FastRealBoostBins._fit_numpy">[docs]</a>    <span class="k">def</span> <span class="nf">_fit_numpy</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">X</span><span class="p">,</span> <span class="n">y</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Performs the actual fit with computations carried out in ``&quot;numpy&quot;`` mode.&quot;&quot;&quot;</span> 
+        <span class="sd">&quot;&quot;&quot;Performs the actual fit with computations carried out in ``&quot;numpy&quot;`` mode (the slowest one).&quot;&quot;&quot;</span> 
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">verbose</span><span class="p">:</span>
             <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;FIT... [fit_numpy, X.shape: </span><span class="si">{</span><span class="n">X</span><span class="o">.</span><span class="n">shape</span><span class="si">}</span><span class="s2">, X.dtype=</span><span class="si">{</span><span class="n">X</span><span class="o">.</span><span class="n">dtype</span><span class="si">}</span><span class="s2">, T: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">T</span><span class="si">}</span><span class="s2">, B: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">B</span><span class="si">}</span><span class="s2">]&quot;</span><span class="p">)</span>
         <span class="n">t1</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>        
@@ -524,7 +528,11 @@
             <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;FIT DONE. [fit_numpy; time: </span><span class="si">{</span><span class="n">t2</span> <span class="o">-</span> <span class="n">t1</span><span class="si">}</span><span class="s2"> s]&quot;</span><span class="p">)</span>    </div>
     
 <div class="viewcode-block" id="FastRealBoostBins._fit_numba_jit"><a class="viewcode-back" href="../frbb.html#frbb.FastRealBoostBins._fit_numba_jit">[docs]</a>    <span class="k">def</span> <span class="nf">_fit_numba_jit</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">X</span><span class="p">,</span> <span class="n">y</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Performs the actual fit with computations carried out in ``&quot;numba_jit&quot;`` mode.&quot;&quot;&quot;</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Performs the actual fit with computations carried out in ``&quot;numba_jit&quot;`` mode.</span>
+<span class="sd">        Inside the main boosting loop, all operations (weights binning, computing logits, computing exponential errors, finding the error minimizer, and examples reweighting)</span>
+<span class="sd">        are perfomed  within a call to ``_fit_numba_jit_job`` function.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">verbose</span><span class="p">:</span>
             <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;FIT... [fit_numba_jit, X.shape: </span><span class="si">{</span><span class="n">X</span><span class="o">.</span><span class="n">shape</span><span class="si">}</span><span class="s2">, X.dtype=</span><span class="si">{</span><span class="n">X</span><span class="o">.</span><span class="n">dtype</span><span class="si">}</span><span class="s2">, T: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">T</span><span class="si">}</span><span class="s2">, B: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">B</span><span class="si">}</span><span class="s2">]&quot;</span><span class="p">)</span>
         <span class="n">t1</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
@@ -636,7 +644,12 @@
         <span class="k">return</span> <span class="n">n_calls</span><span class="p">,</span> <span class="n">call_ranges</span>                                            </div>
                
 <div class="viewcode-block" id="FastRealBoostBins._fit_numba_cuda"><a class="viewcode-back" href="../frbb.html#frbb.FastRealBoostBins._fit_numba_cuda">[docs]</a>    <span class="k">def</span> <span class="nf">_fit_numba_cuda</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">X</span><span class="p">,</span> <span class="n">y</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Performs the actual fit with computations carried out in ``&quot;numba_cuda&quot;`` mode.&quot;&quot;&quot;</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Performs the actual fit with computations carried out in ``&quot;numba_cuda&quot;`` mode.</span>
+<span class="sd">        Inside the main boosting loop, all operations (weights binning, computing logits, computing exponential errors, finding the error minimizer, and examples reweighting)</span>
+<span class="sd">        are perfomed, respectively, by the following CUDA kernel functions: ``_bin_add_weights_numba_cuda``, ``_logits_numba_cuda``, ``_errs_exp_numba_cuda``, ``_argmin_errs_exp_numba_cuda``, and ``_reweight_numba_cuda``.</span>
+<span class="sd">        Three from those five kernels (1st, 3rd, 5th) are perfomed &quot;in chunks&quot;, i.e. for successive data slices, relying on CUDA streams mechanism (partial parallelization of computations and data transfers).        </span>
+<span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">verbose</span><span class="p">:</span>
             <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;FIT... [fit_numba_cuda, X.shape: </span><span class="si">{</span><span class="n">X</span><span class="o">.</span><span class="n">shape</span><span class="si">}</span><span class="s2">, X.dtype=</span><span class="si">{</span><span class="n">X</span><span class="o">.</span><span class="n">dtype</span><span class="si">}</span><span class="s2">, T: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">T</span><span class="si">}</span><span class="s2">, B: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">B</span><span class="si">}</span><span class="s2">]&quot;</span><span class="p">)</span>
         <span class="n">t1</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
@@ -793,9 +806,9 @@
         <span class="n">t2</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">verbose</span><span class="p">:</span>
             <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;FIT DONE. [fit_numba_cuda; time: </span><span class="si">{</span><span class="n">t2</span> <span class="o">-</span> <span class="n">t1</span><span class="si">}</span><span class="s2"> s]&quot;</span><span class="p">)</span>      </div>
-
+                
     <span class="nd">@staticmethod</span>
-    <span class="nd">@cuda</span><span class="o">.</span><span class="n">jit</span><span class="p">(</span><span class="n">void</span><span class="p">(</span><span class="n">int8</span><span class="p">[:,</span> <span class="p">:],</span> <span class="n">int8</span><span class="p">[:],</span> <span class="n">float32</span><span class="p">[:],</span> <span class="n">float32</span><span class="p">[:,</span> <span class="p">:],</span> <span class="n">float32</span><span class="p">[:,</span> <span class="p">:],</span> <span class="n">int32</span><span class="p">[:,</span> <span class="p">:]))</span>
+    <span class="nd">@cuda</span><span class="o">.</span><span class="n">jit</span><span class="p">(</span><span class="n">void</span><span class="p">(</span><span class="n">int8</span><span class="p">[:,</span> <span class="p">:],</span> <span class="n">int8</span><span class="p">[:],</span> <span class="n">float32</span><span class="p">[:],</span> <span class="n">float32</span><span class="p">[:,</span> <span class="p">:],</span> <span class="n">float32</span><span class="p">[:,</span> <span class="p">:],</span> <span class="n">int32</span><span class="p">[:,</span> <span class="p">:]))</span>    
     <span class="k">def</span> <span class="nf">_bin_add_weights_numba_cuda</span><span class="p">(</span><span class="n">X_binned_sub</span><span class="p">,</span> <span class="n">yy_sub</span><span class="p">,</span> <span class="n">w_sub</span><span class="p">,</span> <span class="n">W_p</span><span class="p">,</span> <span class="n">W_n</span><span class="p">,</span> <span class="n">mutexes</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;CUDA kernel responsible for binning and adding weights (within the main boosting loop).&quot;&quot;&quot;</span>         
         <span class="n">shared_w_p</span> <span class="o">=</span> <span class="n">cuda</span><span class="o">.</span><span class="n">shared</span><span class="o">.</span><span class="n">array</span><span class="p">((</span><span class="mi">128</span><span class="p">,</span> <span class="mi">32</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">float32</span><span class="p">)</span> <span class="c1"># assumed max constants for shared memory: 128 - subsample size (equal to self._cuda_tpb_bin_add_weights), 32 - no. of bins</span>
@@ -952,13 +965,15 @@
 <div class="viewcode-block" id="FastRealBoostBins.decision_function"><a class="viewcode-back" href="../frbb.html#frbb.FastRealBoostBins.decision_function">[docs]</a>    <span class="k">def</span> <span class="nf">decision_function</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">X</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Computes real-valued responses of ensemble for given data array.</span>
+<span class="sd">        Depending on the mode, delegates actual computations to one of the following functions: ``_decision_function_numpy``, ``_decision_function_numba_jit``, or ``_decision_function_numba_cuda``.</span>
 <span class="sd">        </span>
 <span class="sd">        Args:</span>
 <span class="sd">            X (ndarray[dtype_]):</span>
 <span class="sd">                two-dimensional data array of numeric type with examples written as rows and features as columns (must have the same number of features as registered at fit stage).</span>
 <span class="sd">                </span>
 <span class="sd">        Returns:</span>
-<span class="sd">            responses (ndarray[np.float32]): one-dimensional array of ensemble responses. </span>
+<span class="sd">            responses (ndarray[np.float32]): </span>
+<span class="sd">                one-dimensional array of ensemble responses. </span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="c1"># sklearn checks</span>
         <span class="n">check_is_fitted</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
@@ -969,6 +984,7 @@
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_decision_function_method</span><span class="p">(</span><span class="n">X</span><span class="p">)</span></div>
         
 <div class="viewcode-block" id="FastRealBoostBins._decision_function_numpy"><a class="viewcode-back" href="../frbb.html#frbb.FastRealBoostBins._decision_function_numpy">[docs]</a>    <span class="k">def</span> <span class="nf">_decision_function_numpy</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">X</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Performs the actual decision function with computations carried out in ``&quot;numpy&quot;`` mode (the slowest one).&quot;&quot;&quot;</span>
         <span class="n">X_selected</span> <span class="o">=</span> <span class="n">X</span><span class="p">[:,</span> <span class="bp">self</span><span class="o">.</span><span class="n">features_selected_</span><span class="p">]</span>
         <span class="n">X_binned</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">bin_data</span><span class="p">(</span><span class="n">X_selected</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">mins_selected_</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">maxes_selected_</span><span class="p">)</span>
         <span class="n">m</span> <span class="o">=</span> <span class="n">X_binned</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
@@ -978,13 +994,15 @@
         <span class="k">return</span> <span class="n">responses</span></div>
 
 <div class="viewcode-block" id="FastRealBoostBins._decision_function_numba_jit"><a class="viewcode-back" href="../frbb.html#frbb.FastRealBoostBins._decision_function_numba_jit">[docs]</a>    <span class="k">def</span> <span class="nf">_decision_function_numba_jit</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">X</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Performs the actual decision function with computations carried out in ``&quot;numba_jit&quot;`` mode.&quot;&quot;&quot;</span>
         <span class="n">X_selected</span> <span class="o">=</span> <span class="n">X</span><span class="p">[:,</span> <span class="bp">self</span><span class="o">.</span><span class="n">features_selected_</span><span class="p">]</span>
         <span class="n">X_binned</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_bin_data</span><span class="p">(</span><span class="n">X_selected</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">mins_selected_</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">maxes_selected_</span><span class="p">)</span>        
         <span class="k">return</span> <span class="n">FastRealBoostBins</span><span class="o">.</span><span class="n">_decision_function_numba_jit_job</span><span class="p">(</span><span class="n">X_binned</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">logits_</span><span class="p">)</span></div>
     
 <div class="viewcode-block" id="FastRealBoostBins._decision_function_numba_jit_job"><a class="viewcode-back" href="../frbb.html#frbb.FastRealBoostBins._decision_function_numba_jit_job">[docs]</a>    <span class="nd">@staticmethod</span>
     <span class="nd">@jit</span><span class="p">(</span><span class="n">float32</span><span class="p">[:](</span><span class="n">int8</span><span class="p">[:,</span> <span class="p">:],</span> <span class="n">float32</span><span class="p">[:,</span> <span class="p">:]),</span> <span class="n">nopython</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">cache</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-    <span class="k">def</span> <span class="nf">_decision_function_numba_jit_job</span><span class="p">(</span><span class="n">X_binned</span><span class="p">,</span> <span class="n">logits</span><span class="p">):</span>           
+    <span class="k">def</span> <span class="nf">_decision_function_numba_jit_job</span><span class="p">(</span><span class="n">X_binned</span><span class="p">,</span> <span class="n">logits</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Body of the decision function carried out in ``&quot;numba_jit&quot;`` mode; called from within ``_decision_function_numba_jit`` function.&quot;&quot;&quot;</span>
         <span class="n">m</span><span class="p">,</span> <span class="n">T</span> <span class="o">=</span> <span class="n">X_binned</span><span class="o">.</span><span class="n">shape</span>
         <span class="n">responses</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">m</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span>
         <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">m</span><span class="p">):</span>
@@ -993,6 +1011,12 @@
         <span class="k">return</span> <span class="n">responses</span></div>
     
 <div class="viewcode-block" id="FastRealBoostBins._decision_function_numba_cuda"><a class="viewcode-back" href="../frbb.html#frbb.FastRealBoostBins._decision_function_numba_cuda">[docs]</a>    <span class="k">def</span> <span class="nf">_decision_function_numba_cuda</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">X</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Performs the actual decision function with computations carried out in ``&quot;numba_cuda&quot;`` mode.</span>
+<span class="sd">        Depending on the type of input data array, delegates actual computations to one of the following kernel functions: </span>
+<span class="sd">        ``_decision_function_numba_cuda_job_int8``, ``_decision_function_numba_cuda_job_uint8``, ..., ``_decision_function_numba_cuda_job_int64``, ``_decision_function_numba_cuda_job_uint64``,</span>
+<span class="sd">        or ``_decision_function_numba_cuda_job_float32``, ``_decision_function_numba_cuda_job_int64``.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">X_selected</span> <span class="o">=</span> <span class="n">X</span><span class="p">[:,</span> <span class="bp">self</span><span class="o">.</span><span class="n">features_selected_</span><span class="p">]</span>
         <span class="n">m</span> <span class="o">=</span> <span class="n">X_selected</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
         <span class="n">dev_X_selected</span> <span class="o">=</span> <span class="n">cuda</span><span class="o">.</span><span class="n">to_device</span><span class="p">(</span><span class="n">X_selected</span><span class="p">)</span>
@@ -1011,6 +1035,7 @@
     <span class="nd">@staticmethod</span>
     <span class="nd">@cuda</span><span class="o">.</span><span class="n">jit</span><span class="p">(</span><span class="n">void</span><span class="p">(</span><span class="n">int8</span><span class="p">[:,</span> <span class="p">:],</span> <span class="n">int8</span><span class="p">[:],</span> <span class="n">int8</span><span class="p">[:],</span> <span class="n">float32</span><span class="p">[:,</span> <span class="p">:],</span> <span class="n">float32</span><span class="p">[:]))</span>
     <span class="k">def</span> <span class="nf">_decision_function_numba_cuda_job_int8</span><span class="p">(</span><span class="n">X_selected</span><span class="p">,</span> <span class="n">mins_selected</span><span class="p">,</span> <span class="n">maxes_selected</span><span class="p">,</span> <span class="n">logits</span><span class="p">,</span> <span class="n">responses</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Body of the decision function carried out in ``&quot;numba_cuda&quot;`` mode suitable for input arrays of type ``int8``; called from within ``_decision_function_numba_cuda`` function.&quot;&quot;&quot;</span>
         <span class="n">shared_logits</span> <span class="o">=</span> <span class="n">cuda</span><span class="o">.</span><span class="n">shared</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="mi">1024</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">float32</span><span class="p">)</span> <span class="c1"># 1024 - corresponds to assumed max tpb           </span>
         <span class="n">i</span> <span class="o">=</span> <span class="n">cuda</span><span class="o">.</span><span class="n">blockIdx</span><span class="o">.</span><span class="n">x</span>
         <span class="n">tpb</span> <span class="o">=</span> <span class="n">cuda</span><span class="o">.</span><span class="n">blockDim</span><span class="o">.</span><span class="n">x</span>
@@ -1042,6 +1067,7 @@
     <span class="nd">@staticmethod</span>
     <span class="nd">@cuda</span><span class="o">.</span><span class="n">jit</span><span class="p">(</span><span class="n">void</span><span class="p">(</span><span class="n">uint8</span><span class="p">[:,</span> <span class="p">:],</span> <span class="n">uint8</span><span class="p">[:],</span> <span class="n">uint8</span><span class="p">[:],</span> <span class="n">float32</span><span class="p">[:,</span> <span class="p">:],</span> <span class="n">float32</span><span class="p">[:]))</span>
     <span class="k">def</span> <span class="nf">_decision_function_numba_cuda_job_uint8</span><span class="p">(</span><span class="n">X_selected</span><span class="p">,</span> <span class="n">mins_selected</span><span class="p">,</span> <span class="n">maxes_selected</span><span class="p">,</span> <span class="n">logits</span><span class="p">,</span> <span class="n">responses</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Body of the decision function carried out in ``&quot;numba_cuda&quot;`` mode suitable for input arrays of type ``uint8``; called from within ``_decision_function_numba_cuda`` function.&quot;&quot;&quot;</span>
         <span class="n">shared_logits</span> <span class="o">=</span> <span class="n">cuda</span><span class="o">.</span><span class="n">shared</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="mi">1024</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">float32</span><span class="p">)</span> <span class="c1"># 1024 - corresponds to assumed max tpb           </span>
         <span class="n">i</span> <span class="o">=</span> <span class="n">cuda</span><span class="o">.</span><span class="n">blockIdx</span><span class="o">.</span><span class="n">x</span>
         <span class="n">tpb</span> <span class="o">=</span> <span class="n">cuda</span><span class="o">.</span><span class="n">blockDim</span><span class="o">.</span><span class="n">x</span>
@@ -1073,6 +1099,7 @@
     <span class="nd">@staticmethod</span>
     <span class="nd">@cuda</span><span class="o">.</span><span class="n">jit</span><span class="p">(</span><span class="n">void</span><span class="p">(</span><span class="n">int16</span><span class="p">[:,</span> <span class="p">:],</span> <span class="n">int16</span><span class="p">[:],</span> <span class="n">int16</span><span class="p">[:],</span> <span class="n">float32</span><span class="p">[:,</span> <span class="p">:],</span> <span class="n">float32</span><span class="p">[:]))</span>
     <span class="k">def</span> <span class="nf">_decision_function_numba_cuda_job_int16</span><span class="p">(</span><span class="n">X_selected</span><span class="p">,</span> <span class="n">mins_selected</span><span class="p">,</span> <span class="n">maxes_selected</span><span class="p">,</span> <span class="n">logits</span><span class="p">,</span> <span class="n">responses</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Body of the decision function carried out in ``&quot;numba_cuda&quot;`` mode suitable for input arrays of type ``int16``; called from within ``_decision_function_numba_cuda`` function.&quot;&quot;&quot;</span>
         <span class="n">shared_logits</span> <span class="o">=</span> <span class="n">cuda</span><span class="o">.</span><span class="n">shared</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="mi">1024</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">float32</span><span class="p">)</span> <span class="c1"># 1024 - corresponds to assumed max tpb</span>
         <span class="n">i</span> <span class="o">=</span> <span class="n">cuda</span><span class="o">.</span><span class="n">blockIdx</span><span class="o">.</span><span class="n">x</span>
         <span class="n">tpb</span> <span class="o">=</span> <span class="n">cuda</span><span class="o">.</span><span class="n">blockDim</span><span class="o">.</span><span class="n">x</span>
@@ -1104,6 +1131,7 @@
     <span class="nd">@staticmethod</span>
     <span class="nd">@cuda</span><span class="o">.</span><span class="n">jit</span><span class="p">(</span><span class="n">void</span><span class="p">(</span><span class="n">uint16</span><span class="p">[:,</span> <span class="p">:],</span> <span class="n">uint16</span><span class="p">[:],</span> <span class="n">uint16</span><span class="p">[:],</span> <span class="n">float32</span><span class="p">[:,</span> <span class="p">:],</span> <span class="n">float32</span><span class="p">[:]))</span>
     <span class="k">def</span> <span class="nf">_decision_function_numba_cuda_job_uint16</span><span class="p">(</span><span class="n">X_selected</span><span class="p">,</span> <span class="n">mins_selected</span><span class="p">,</span> <span class="n">maxes_selected</span><span class="p">,</span> <span class="n">logits</span><span class="p">,</span> <span class="n">responses</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Body of the decision function carried out in ``&quot;numba_cuda&quot;`` mode suitable for input arrays of type ``uint16``; called from within ``_decision_function_numba_cuda`` function.&quot;&quot;&quot;</span>
         <span class="n">shared_logits</span> <span class="o">=</span> <span class="n">cuda</span><span class="o">.</span><span class="n">shared</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="mi">1024</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">float32</span><span class="p">)</span> <span class="c1"># 1024 - corresponds to assumed max tpb           </span>
         <span class="n">i</span> <span class="o">=</span> <span class="n">cuda</span><span class="o">.</span><span class="n">blockIdx</span><span class="o">.</span><span class="n">x</span>
         <span class="n">tpb</span> <span class="o">=</span> <span class="n">cuda</span><span class="o">.</span><span class="n">blockDim</span><span class="o">.</span><span class="n">x</span>
@@ -1135,6 +1163,7 @@
     <span class="nd">@staticmethod</span>
     <span class="nd">@cuda</span><span class="o">.</span><span class="n">jit</span><span class="p">(</span><span class="n">void</span><span class="p">(</span><span class="n">int32</span><span class="p">[:,</span> <span class="p">:],</span> <span class="n">int32</span><span class="p">[:],</span> <span class="n">int32</span><span class="p">[:],</span> <span class="n">float32</span><span class="p">[:,</span> <span class="p">:],</span> <span class="n">float32</span><span class="p">[:]))</span>
     <span class="k">def</span> <span class="nf">_decision_function_numba_cuda_job_int32</span><span class="p">(</span><span class="n">X_selected</span><span class="p">,</span> <span class="n">mins_selected</span><span class="p">,</span> <span class="n">maxes_selected</span><span class="p">,</span> <span class="n">logits</span><span class="p">,</span> <span class="n">responses</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Body of the decision function carried out in ``&quot;numba_cuda&quot;`` mode suitable for input arrays of type ``int32``; called from within ``_decision_function_numba_cuda`` function.&quot;&quot;&quot;</span>
         <span class="n">shared_logits</span> <span class="o">=</span> <span class="n">cuda</span><span class="o">.</span><span class="n">shared</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="mi">1024</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">float32</span><span class="p">)</span> <span class="c1"># 1024 - corresponds to assumed max tpb           </span>
         <span class="n">i</span> <span class="o">=</span> <span class="n">cuda</span><span class="o">.</span><span class="n">blockIdx</span><span class="o">.</span><span class="n">x</span>
         <span class="n">tpb</span> <span class="o">=</span> <span class="n">cuda</span><span class="o">.</span><span class="n">blockDim</span><span class="o">.</span><span class="n">x</span>
@@ -1166,6 +1195,7 @@
     <span class="nd">@staticmethod</span>
     <span class="nd">@cuda</span><span class="o">.</span><span class="n">jit</span><span class="p">(</span><span class="n">void</span><span class="p">(</span><span class="n">uint32</span><span class="p">[:,</span> <span class="p">:],</span> <span class="n">uint32</span><span class="p">[:],</span> <span class="n">uint32</span><span class="p">[:],</span> <span class="n">float32</span><span class="p">[:,</span> <span class="p">:],</span> <span class="n">float32</span><span class="p">[:]))</span>
     <span class="k">def</span> <span class="nf">_decision_function_numba_cuda_job_uint32</span><span class="p">(</span><span class="n">X_selected</span><span class="p">,</span> <span class="n">mins_selected</span><span class="p">,</span> <span class="n">maxes_selected</span><span class="p">,</span> <span class="n">logits</span><span class="p">,</span> <span class="n">responses</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Body of the decision function carried out in ``&quot;numba_cuda&quot;`` mode suitable for input arrays of type ``uint32``; called from within ``_decision_function_numba_cuda`` function.&quot;&quot;&quot;</span>
         <span class="n">shared_logits</span> <span class="o">=</span> <span class="n">cuda</span><span class="o">.</span><span class="n">shared</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="mi">1024</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">float32</span><span class="p">)</span> <span class="c1"># 1024 - corresponds to assumed max tpb           </span>
         <span class="n">i</span> <span class="o">=</span> <span class="n">cuda</span><span class="o">.</span><span class="n">blockIdx</span><span class="o">.</span><span class="n">x</span>
         <span class="n">tpb</span> <span class="o">=</span> <span class="n">cuda</span><span class="o">.</span><span class="n">blockDim</span><span class="o">.</span><span class="n">x</span>
@@ -1197,6 +1227,7 @@
     <span class="nd">@staticmethod</span>
     <span class="nd">@cuda</span><span class="o">.</span><span class="n">jit</span><span class="p">(</span><span class="n">void</span><span class="p">(</span><span class="n">int64</span><span class="p">[:,</span> <span class="p">:],</span> <span class="n">int64</span><span class="p">[:],</span> <span class="n">int64</span><span class="p">[:],</span> <span class="n">float32</span><span class="p">[:,</span> <span class="p">:],</span> <span class="n">float32</span><span class="p">[:]))</span>
     <span class="k">def</span> <span class="nf">_decision_function_numba_cuda_job_int64</span><span class="p">(</span><span class="n">X_selected</span><span class="p">,</span> <span class="n">mins_selected</span><span class="p">,</span> <span class="n">maxes_selected</span><span class="p">,</span> <span class="n">logits</span><span class="p">,</span> <span class="n">responses</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Body of the decision function carried out in ``&quot;numba_cuda&quot;`` mode suitable for input arrays of type ``int64``; called from within ``_decision_function_numba_cuda`` function.&quot;&quot;&quot;</span>
         <span class="n">shared_logits</span> <span class="o">=</span> <span class="n">cuda</span><span class="o">.</span><span class="n">shared</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="mi">1024</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">float32</span><span class="p">)</span> <span class="c1"># 1024 - corresponds to assumed max tpb           </span>
         <span class="n">i</span> <span class="o">=</span> <span class="n">cuda</span><span class="o">.</span><span class="n">blockIdx</span><span class="o">.</span><span class="n">x</span>
         <span class="n">tpb</span> <span class="o">=</span> <span class="n">cuda</span><span class="o">.</span><span class="n">blockDim</span><span class="o">.</span><span class="n">x</span>
@@ -1228,6 +1259,7 @@
     <span class="nd">@staticmethod</span>
     <span class="nd">@cuda</span><span class="o">.</span><span class="n">jit</span><span class="p">(</span><span class="n">void</span><span class="p">(</span><span class="n">uint64</span><span class="p">[:,</span> <span class="p">:],</span> <span class="n">uint64</span><span class="p">[:],</span> <span class="n">uint64</span><span class="p">[:],</span> <span class="n">float32</span><span class="p">[:,</span> <span class="p">:],</span> <span class="n">float32</span><span class="p">[:]))</span>
     <span class="k">def</span> <span class="nf">_decision_function_numba_cuda_job_uint64</span><span class="p">(</span><span class="n">X_selected</span><span class="p">,</span> <span class="n">mins_selected</span><span class="p">,</span> <span class="n">maxes_selected</span><span class="p">,</span> <span class="n">logits</span><span class="p">,</span> <span class="n">responses</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Body of the decision function carried out in ``&quot;numba_cuda&quot;`` mode suitable for input arrays of type ``uint32``; called from within ``_decision_function_numba_cuda`` function.&quot;&quot;&quot;</span>
         <span class="n">shared_logits</span> <span class="o">=</span> <span class="n">cuda</span><span class="o">.</span><span class="n">shared</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="mi">1024</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">float32</span><span class="p">)</span> <span class="c1"># 1024 - corresponds to assumed max tpb           </span>
         <span class="n">i</span> <span class="o">=</span> <span class="n">cuda</span><span class="o">.</span><span class="n">blockIdx</span><span class="o">.</span><span class="n">x</span>
         <span class="n">tpb</span> <span class="o">=</span> <span class="n">cuda</span><span class="o">.</span><span class="n">blockDim</span><span class="o">.</span><span class="n">x</span>
@@ -1317,11 +1349,31 @@
             <span class="n">stride</span> <span class="o">&gt;&gt;=</span> <span class="mi">1</span>
         <span class="k">if</span> <span class="n">tx</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
             <span class="n">responses</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">shared_logits</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>            
-                
+         
 <div class="viewcode-block" id="FastRealBoostBins.predict"><a class="viewcode-back" href="../frbb.html#frbb.FastRealBoostBins.predict">[docs]</a>    <span class="k">def</span> <span class="nf">predict</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">X</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Returns class labels predicted for given data array.</span>
+<span class="sd">        Delegates actual computations to ``decision_function`` and maps real-valued responses obtained from it to one of two class labels (negative or positive) kept in ``self.classes_``, </span>
+<span class="sd">        taking into account the ``self.decision_threshold_`` attribute.   </span>
+<span class="sd">        </span>
+<span class="sd">        Args:</span>
+<span class="sd">            X (ndarray[dtype_]):</span>
+<span class="sd">                two-dimensional data array of numeric type with examples written as rows and features as columns (must have the same number of features as registered at fit stage).</span>
+<span class="sd">                </span>
+<span class="sd">        Returns:</span>
+<span class="sd">            class labels (ndarray): </span>
+<span class="sd">                one-dimensional array of predicted class labels. </span>
+<span class="sd">        &quot;&quot;&quot;</span>        
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">classes_</span><span class="p">[</span><span class="mi">1</span> <span class="o">*</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">decision_function</span><span class="p">(</span><span class="n">X</span><span class="p">)</span> <span class="o">&gt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">decision_threshold_</span><span class="p">)]</span></div>
     
 <div class="viewcode-block" id="FastRealBoostBins.json_dump"><a class="viewcode-back" href="../frbb.html#frbb.FastRealBoostBins.json_dump">[docs]</a>    <span class="k">def</span> <span class="nf">json_dump</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">fname</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Dumps (saves) this ensemble classifier to a text file in json format.   </span>
+<span class="sd">        </span>
+<span class="sd">        Args:</span>
+<span class="sd">            fname (string):</span>
+<span class="sd">                file name.             </span>
+<span class="sd">        &quot;&quot;&quot;</span>        
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">verbose</span><span class="p">:</span>
             <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;JSON DUMP... [to file: </span><span class="si">{</span><span class="n">fname</span><span class="si">}</span><span class="s2">]&quot;</span><span class="p">)</span>
         <span class="n">t1</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>        
@@ -1355,8 +1407,16 @@
             <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;JSON DUMP DONE. [time: </span><span class="si">{</span><span class="n">t2</span> <span class="o">-</span> <span class="n">t1</span><span class="si">}</span><span class="s2"> s]&quot;</span><span class="p">)</span></div>
             
 <div class="viewcode-block" id="FastRealBoostBins.json_load"><a class="viewcode-back" href="../frbb.html#frbb.FastRealBoostBins.json_load">[docs]</a>    <span class="nd">@staticmethod</span>
-    <span class="k">def</span> <span class="nf">json_load</span><span class="p">(</span><span class="n">fname</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Creates and returns an instance of FastRealBoostBins from json file given its file path.&quot;&quot;&quot;</span>
+    <span class="k">def</span> <span class="nf">json_load</span><span class="p">(</span><span class="n">fname</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>        
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Creates and returns an instance of ``FastRealBoostBins`` from a text file in json format given its file path.   </span>
+<span class="sd">        </span>
+<span class="sd">        Args:</span>
+<span class="sd">            fname (string):</span>
+<span class="sd">                file name.</span>
+<span class="sd">            verbose (bool):</span>
+<span class="sd">                verbosity flag.        </span>
+<span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="n">verbose</span><span class="p">:</span>
             <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;JSON LOAD... [from file: </span><span class="si">{</span><span class="n">fname</span><span class="si">}</span><span class="s2">]&quot;</span><span class="p">)</span>
         <span class="n">t1</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
@@ -1390,7 +1450,7 @@
         <span class="n">t2</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
         <span class="k">if</span> <span class="n">verbose</span><span class="p">:</span>
             <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;JSON LOAD DONE. [time: </span><span class="si">{</span><span class="n">t2</span> <span class="o">-</span> <span class="n">t1</span><span class="si">}</span><span class="s2"> s]&quot;</span><span class="p">)</span>    
-        <span class="k">return</span> <span class="n">clf</span>    </div></div>
+        <span class="k">return</span> <span class="n">clf</span></div></div>
 </pre></div>
 
            </div>

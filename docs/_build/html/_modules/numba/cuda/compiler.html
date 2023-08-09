@@ -1,0 +1,1303 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>numba.cuda.compiler &mdash; fast_rboost_bins 1.0.0 documentation</title>
+      <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js"></script>
+        <script src="../../../_static/jquery.js"></script>
+        <script src="../../../_static/underscore.js"></script>
+        <script src="../../../_static/doctools.js"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../index.html" class="icon icon-home">
+            fast_rboost_bins
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../modules.html">src</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">fast_rboost_bins</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">numba.cuda.compiler</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for numba.cuda.compiler</h1><div class="highlight"><pre>
+<span></span><span class="kn">import</span> <span class="nn">collections</span>
+<span class="kn">import</span> <span class="nn">ctypes</span>
+<span class="kn">import</span> <span class="nn">functools</span>
+<span class="kn">import</span> <span class="nn">inspect</span>
+<span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">import</span> <span class="nn">sys</span>
+
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+
+<span class="kn">from</span> <span class="nn">numba</span> <span class="kn">import</span> <span class="n">_dispatcher</span>
+<span class="kn">from</span> <span class="nn">numba.core.typing.templates</span> <span class="kn">import</span> <span class="n">AbstractTemplate</span><span class="p">,</span> <span class="n">ConcreteTemplate</span>
+<span class="kn">from</span> <span class="nn">numba.core</span> <span class="kn">import</span> <span class="p">(</span><span class="n">types</span><span class="p">,</span> <span class="n">typing</span><span class="p">,</span> <span class="n">utils</span><span class="p">,</span> <span class="n">funcdesc</span><span class="p">,</span> <span class="n">serialize</span><span class="p">,</span> <span class="n">config</span><span class="p">,</span>
+                        <span class="n">compiler</span><span class="p">,</span> <span class="n">sigutils</span><span class="p">)</span>
+<span class="kn">from</span> <span class="nn">numba.core.typeconv.rules</span> <span class="kn">import</span> <span class="n">default_type_manager</span>
+<span class="kn">from</span> <span class="nn">numba.core.compiler</span> <span class="kn">import</span> <span class="p">(</span><span class="n">CompilerBase</span><span class="p">,</span> <span class="n">DefaultPassBuilder</span><span class="p">,</span>
+                                 <span class="n">compile_result</span><span class="p">,</span> <span class="n">Flags</span><span class="p">,</span> <span class="n">Option</span><span class="p">)</span>
+<span class="kn">from</span> <span class="nn">numba.core.compiler_lock</span> <span class="kn">import</span> <span class="n">global_compiler_lock</span>
+<span class="kn">from</span> <span class="nn">numba.core.compiler_machinery</span> <span class="kn">import</span> <span class="p">(</span><span class="n">LoweringPass</span><span class="p">,</span> <span class="n">PassManager</span><span class="p">,</span>
+                                           <span class="n">register_pass</span><span class="p">)</span>
+<span class="kn">from</span> <span class="nn">numba.core.dispatcher</span> <span class="kn">import</span> <span class="n">OmittedArg</span>
+<span class="kn">from</span> <span class="nn">numba.core.errors</span> <span class="kn">import</span> <span class="n">NumbaDeprecationWarning</span>
+<span class="kn">from</span> <span class="nn">numba.core.typed_passes</span> <span class="kn">import</span> <span class="n">IRLegalization</span><span class="p">,</span> <span class="n">NativeLowering</span>
+<span class="kn">from</span> <span class="nn">numba.core.typing.typeof</span> <span class="kn">import</span> <span class="n">Purpose</span><span class="p">,</span> <span class="n">typeof</span>
+<span class="kn">from</span> <span class="nn">warnings</span> <span class="kn">import</span> <span class="n">warn</span>
+<span class="kn">import</span> <span class="nn">numba</span>
+<span class="kn">from</span> <span class="nn">.cudadrv.devices</span> <span class="kn">import</span> <span class="n">get_context</span>
+<span class="kn">from</span> <span class="nn">.cudadrv.libs</span> <span class="kn">import</span> <span class="n">get_cudalib</span>
+<span class="kn">from</span> <span class="nn">.cudadrv</span> <span class="kn">import</span> <span class="n">driver</span>
+<span class="kn">from</span> <span class="nn">.errors</span> <span class="kn">import</span> <span class="n">missing_launch_config_msg</span><span class="p">,</span> <span class="n">normalize_kernel_dimensions</span>
+<span class="kn">from</span> <span class="nn">.api</span> <span class="kn">import</span> <span class="n">get_current_device</span>
+<span class="kn">from</span> <span class="nn">.args</span> <span class="kn">import</span> <span class="n">wrap_arg</span>
+<span class="kn">from</span> <span class="nn">numba.core.errors</span> <span class="kn">import</span> <span class="n">NumbaPerformanceWarning</span>
+<span class="kn">from</span> <span class="nn">.descriptor</span> <span class="kn">import</span> <span class="n">cuda_target</span>
+
+
+<span class="k">def</span> <span class="nf">_nvvm_options_type</span><span class="p">(</span><span class="n">x</span><span class="p">):</span>
+    <span class="k">if</span> <span class="n">x</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">return</span> <span class="kc">None</span>
+
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="nb">dict</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">x</span>
+
+
+<span class="k">class</span> <span class="nc">CUDAFlags</span><span class="p">(</span><span class="n">Flags</span><span class="p">):</span>
+    <span class="n">nvvm_options</span> <span class="o">=</span> <span class="n">Option</span><span class="p">(</span>
+        <span class="nb">type</span><span class="o">=</span><span class="n">_nvvm_options_type</span><span class="p">,</span>
+        <span class="n">default</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+        <span class="n">doc</span><span class="o">=</span><span class="s2">&quot;NVVM options&quot;</span><span class="p">,</span>
+    <span class="p">)</span>
+
+
+<span class="nd">@register_pass</span><span class="p">(</span><span class="n">mutates_CFG</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">analysis_only</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+<span class="k">class</span> <span class="nc">CUDABackend</span><span class="p">(</span><span class="n">LoweringPass</span><span class="p">):</span>
+
+    <span class="n">_name</span> <span class="o">=</span> <span class="s2">&quot;cuda_backend&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">LoweringPass</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">run_pass</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">state</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Back-end: Packages lowering output in a compile result</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">lowered</span> <span class="o">=</span> <span class="n">state</span><span class="p">[</span><span class="s1">&#39;cr&#39;</span><span class="p">]</span>
+        <span class="n">signature</span> <span class="o">=</span> <span class="n">typing</span><span class="o">.</span><span class="n">signature</span><span class="p">(</span><span class="n">state</span><span class="o">.</span><span class="n">return_type</span><span class="p">,</span> <span class="o">*</span><span class="n">state</span><span class="o">.</span><span class="n">args</span><span class="p">)</span>
+
+        <span class="n">state</span><span class="o">.</span><span class="n">cr</span> <span class="o">=</span> <span class="n">compile_result</span><span class="p">(</span>
+            <span class="n">typing_context</span><span class="o">=</span><span class="n">state</span><span class="o">.</span><span class="n">typingctx</span><span class="p">,</span>
+            <span class="n">target_context</span><span class="o">=</span><span class="n">state</span><span class="o">.</span><span class="n">targetctx</span><span class="p">,</span>
+            <span class="n">typing_error</span><span class="o">=</span><span class="n">state</span><span class="o">.</span><span class="n">status</span><span class="o">.</span><span class="n">fail_reason</span><span class="p">,</span>
+            <span class="n">type_annotation</span><span class="o">=</span><span class="n">state</span><span class="o">.</span><span class="n">type_annotation</span><span class="p">,</span>
+            <span class="n">library</span><span class="o">=</span><span class="n">state</span><span class="o">.</span><span class="n">library</span><span class="p">,</span>
+            <span class="n">call_helper</span><span class="o">=</span><span class="n">lowered</span><span class="o">.</span><span class="n">call_helper</span><span class="p">,</span>
+            <span class="n">signature</span><span class="o">=</span><span class="n">signature</span><span class="p">,</span>
+            <span class="n">fndesc</span><span class="o">=</span><span class="n">lowered</span><span class="o">.</span><span class="n">fndesc</span><span class="p">,</span>
+        <span class="p">)</span>
+        <span class="k">return</span> <span class="kc">True</span>
+
+
+<span class="nd">@register_pass</span><span class="p">(</span><span class="n">mutates_CFG</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">analysis_only</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+<span class="k">class</span> <span class="nc">CreateLibrary</span><span class="p">(</span><span class="n">LoweringPass</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Create a CUDACodeLibrary for the NativeLowering pass to populate. The</span>
+<span class="sd">    NativeLowering pass will create a code library if none exists, but we need</span>
+<span class="sd">    to set it up with nvvm_options from the flags if they are present.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">_name</span> <span class="o">=</span> <span class="s2">&quot;create_library&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">LoweringPass</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">run_pass</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">state</span><span class="p">):</span>
+        <span class="n">codegen</span> <span class="o">=</span> <span class="n">state</span><span class="o">.</span><span class="n">targetctx</span><span class="o">.</span><span class="n">codegen</span><span class="p">()</span>
+        <span class="n">name</span> <span class="o">=</span> <span class="n">state</span><span class="o">.</span><span class="n">func_id</span><span class="o">.</span><span class="n">func_qualname</span>
+        <span class="n">nvvm_options</span> <span class="o">=</span> <span class="n">state</span><span class="o">.</span><span class="n">flags</span><span class="o">.</span><span class="n">nvvm_options</span>
+        <span class="n">state</span><span class="o">.</span><span class="n">library</span> <span class="o">=</span> <span class="n">codegen</span><span class="o">.</span><span class="n">create_library</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">nvvm_options</span><span class="o">=</span><span class="n">nvvm_options</span><span class="p">)</span>
+        <span class="c1"># Enable object caching upfront so that the library can be serialized.</span>
+        <span class="n">state</span><span class="o">.</span><span class="n">library</span><span class="o">.</span><span class="n">enable_object_caching</span><span class="p">()</span>
+
+        <span class="k">return</span> <span class="kc">True</span>
+
+
+<span class="k">class</span> <span class="nc">CUDACompiler</span><span class="p">(</span><span class="n">CompilerBase</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">define_pipelines</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">dpb</span> <span class="o">=</span> <span class="n">DefaultPassBuilder</span>
+        <span class="n">pm</span> <span class="o">=</span> <span class="n">PassManager</span><span class="p">(</span><span class="s1">&#39;cuda&#39;</span><span class="p">)</span>
+
+        <span class="n">untyped_passes</span> <span class="o">=</span> <span class="n">dpb</span><span class="o">.</span><span class="n">define_untyped_pipeline</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">state</span><span class="p">)</span>
+        <span class="n">pm</span><span class="o">.</span><span class="n">passes</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">untyped_passes</span><span class="o">.</span><span class="n">passes</span><span class="p">)</span>
+
+        <span class="n">typed_passes</span> <span class="o">=</span> <span class="n">dpb</span><span class="o">.</span><span class="n">define_typed_pipeline</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">state</span><span class="p">)</span>
+        <span class="n">pm</span><span class="o">.</span><span class="n">passes</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">typed_passes</span><span class="o">.</span><span class="n">passes</span><span class="p">)</span>
+
+        <span class="n">lowering_passes</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">define_cuda_lowering_pipeline</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">state</span><span class="p">)</span>
+        <span class="n">pm</span><span class="o">.</span><span class="n">passes</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">lowering_passes</span><span class="o">.</span><span class="n">passes</span><span class="p">)</span>
+
+        <span class="n">pm</span><span class="o">.</span><span class="n">finalize</span><span class="p">()</span>
+        <span class="k">return</span> <span class="p">[</span><span class="n">pm</span><span class="p">]</span>
+
+    <span class="k">def</span> <span class="nf">define_cuda_lowering_pipeline</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">state</span><span class="p">):</span>
+        <span class="n">pm</span> <span class="o">=</span> <span class="n">PassManager</span><span class="p">(</span><span class="s1">&#39;cuda_lowering&#39;</span><span class="p">)</span>
+        <span class="c1"># legalise</span>
+        <span class="n">pm</span><span class="o">.</span><span class="n">add_pass</span><span class="p">(</span><span class="n">IRLegalization</span><span class="p">,</span>
+                    <span class="s2">&quot;ensure IR is legal prior to lowering&quot;</span><span class="p">)</span>
+
+        <span class="c1"># lower</span>
+        <span class="n">pm</span><span class="o">.</span><span class="n">add_pass</span><span class="p">(</span><span class="n">CreateLibrary</span><span class="p">,</span> <span class="s2">&quot;create library&quot;</span><span class="p">)</span>
+        <span class="n">pm</span><span class="o">.</span><span class="n">add_pass</span><span class="p">(</span><span class="n">NativeLowering</span><span class="p">,</span> <span class="s2">&quot;native lowering&quot;</span><span class="p">)</span>
+        <span class="n">pm</span><span class="o">.</span><span class="n">add_pass</span><span class="p">(</span><span class="n">CUDABackend</span><span class="p">,</span> <span class="s2">&quot;cuda backend&quot;</span><span class="p">)</span>
+
+        <span class="n">pm</span><span class="o">.</span><span class="n">finalize</span><span class="p">()</span>
+        <span class="k">return</span> <span class="n">pm</span>
+
+
+<span class="nd">@global_compiler_lock</span>
+<span class="k">def</span> <span class="nf">compile_cuda</span><span class="p">(</span><span class="n">pyfunc</span><span class="p">,</span> <span class="n">return_type</span><span class="p">,</span> <span class="n">args</span><span class="p">,</span> <span class="n">debug</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">lineinfo</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+                 <span class="n">inline</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">fastmath</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">nvvm_options</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="kn">from</span> <span class="nn">.descriptor</span> <span class="kn">import</span> <span class="n">cuda_target</span>
+    <span class="n">typingctx</span> <span class="o">=</span> <span class="n">cuda_target</span><span class="o">.</span><span class="n">typing_context</span>
+    <span class="n">targetctx</span> <span class="o">=</span> <span class="n">cuda_target</span><span class="o">.</span><span class="n">target_context</span>
+
+    <span class="n">flags</span> <span class="o">=</span> <span class="n">CUDAFlags</span><span class="p">()</span>
+    <span class="c1"># Do not compile (generate native code), just lower (to LLVM)</span>
+    <span class="n">flags</span><span class="o">.</span><span class="n">no_compile</span> <span class="o">=</span> <span class="kc">True</span>
+    <span class="n">flags</span><span class="o">.</span><span class="n">no_cpython_wrapper</span> <span class="o">=</span> <span class="kc">True</span>
+    <span class="n">flags</span><span class="o">.</span><span class="n">no_cfunc_wrapper</span> <span class="o">=</span> <span class="kc">True</span>
+    <span class="k">if</span> <span class="n">debug</span> <span class="ow">or</span> <span class="n">lineinfo</span><span class="p">:</span>
+        <span class="c1"># Note both debug and lineinfo turn on debug information in the</span>
+        <span class="c1"># compiled code, but we keep them separate arguments in case we</span>
+        <span class="c1"># later want to overload some other behavior on the debug flag.</span>
+        <span class="c1"># In particular, -opt=3 is not supported with -g.</span>
+        <span class="n">flags</span><span class="o">.</span><span class="n">debuginfo</span> <span class="o">=</span> <span class="kc">True</span>
+    <span class="k">if</span> <span class="n">inline</span><span class="p">:</span>
+        <span class="n">flags</span><span class="o">.</span><span class="n">forceinline</span> <span class="o">=</span> <span class="kc">True</span>
+    <span class="k">if</span> <span class="n">fastmath</span><span class="p">:</span>
+        <span class="n">flags</span><span class="o">.</span><span class="n">fastmath</span> <span class="o">=</span> <span class="kc">True</span>
+    <span class="k">if</span> <span class="n">nvvm_options</span><span class="p">:</span>
+        <span class="n">flags</span><span class="o">.</span><span class="n">nvvm_options</span> <span class="o">=</span> <span class="n">nvvm_options</span>
+
+    <span class="c1"># Run compilation pipeline</span>
+    <span class="n">cres</span> <span class="o">=</span> <span class="n">compiler</span><span class="o">.</span><span class="n">compile_extra</span><span class="p">(</span><span class="n">typingctx</span><span class="o">=</span><span class="n">typingctx</span><span class="p">,</span>
+                                  <span class="n">targetctx</span><span class="o">=</span><span class="n">targetctx</span><span class="p">,</span>
+                                  <span class="n">func</span><span class="o">=</span><span class="n">pyfunc</span><span class="p">,</span>
+                                  <span class="n">args</span><span class="o">=</span><span class="n">args</span><span class="p">,</span>
+                                  <span class="n">return_type</span><span class="o">=</span><span class="n">return_type</span><span class="p">,</span>
+                                  <span class="n">flags</span><span class="o">=</span><span class="n">flags</span><span class="p">,</span>
+                                  <span class="nb">locals</span><span class="o">=</span><span class="p">{},</span>
+                                  <span class="n">pipeline_class</span><span class="o">=</span><span class="n">CUDACompiler</span><span class="p">)</span>
+
+    <span class="n">library</span> <span class="o">=</span> <span class="n">cres</span><span class="o">.</span><span class="n">library</span>
+    <span class="n">library</span><span class="o">.</span><span class="n">finalize</span><span class="p">()</span>
+
+    <span class="k">return</span> <span class="n">cres</span>
+
+
+<span class="k">def</span> <span class="nf">compile_kernel</span><span class="p">(</span><span class="n">pyfunc</span><span class="p">,</span> <span class="n">args</span><span class="p">,</span> <span class="n">link</span><span class="p">,</span> <span class="n">debug</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">lineinfo</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+                   <span class="n">inline</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">fastmath</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">extensions</span><span class="o">=</span><span class="p">[],</span>
+                   <span class="n">max_registers</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">opt</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+    <span class="k">return</span> <span class="n">_Kernel</span><span class="p">(</span><span class="n">pyfunc</span><span class="p">,</span> <span class="n">args</span><span class="p">,</span> <span class="n">link</span><span class="p">,</span> <span class="n">debug</span><span class="o">=</span><span class="n">debug</span><span class="p">,</span> <span class="n">lineinfo</span><span class="o">=</span><span class="n">lineinfo</span><span class="p">,</span>
+                   <span class="n">inline</span><span class="o">=</span><span class="n">inline</span><span class="p">,</span> <span class="n">fastmath</span><span class="o">=</span><span class="n">fastmath</span><span class="p">,</span> <span class="n">extensions</span><span class="o">=</span><span class="n">extensions</span><span class="p">,</span>
+                   <span class="n">max_registers</span><span class="o">=</span><span class="n">max_registers</span><span class="p">,</span> <span class="n">opt</span><span class="o">=</span><span class="n">opt</span><span class="p">)</span>
+
+
+<span class="nd">@global_compiler_lock</span>
+<span class="k">def</span> <span class="nf">compile_ptx</span><span class="p">(</span><span class="n">pyfunc</span><span class="p">,</span> <span class="n">args</span><span class="p">,</span> <span class="n">debug</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">lineinfo</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+                <span class="n">fastmath</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">cc</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">opt</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Compile a Python function to PTX for a given set of argument types.</span>
+
+<span class="sd">    :param pyfunc: The Python function to compile.</span>
+<span class="sd">    :param args: A tuple of argument types to compile for.</span>
+<span class="sd">    :param debug: Whether to include debug info in the generated PTX.</span>
+<span class="sd">    :type debug: bool</span>
+<span class="sd">    :param lineinfo: Whether to include a line mapping from the generated PTX</span>
+<span class="sd">                     to the source code. Usually this is used with optimized</span>
+<span class="sd">                     code (since debug mode would automatically include this),</span>
+<span class="sd">                     so we want debug info in the LLVM but only the line</span>
+<span class="sd">                     mapping in the final PTX.</span>
+<span class="sd">    :type lineinfo: bool</span>
+<span class="sd">    :param device: Whether to compile a device function. Defaults to ``False``,</span>
+<span class="sd">                   to compile global kernel functions.</span>
+<span class="sd">    :type device: bool</span>
+<span class="sd">    :param fastmath: Whether to enable fast math flags (ftz=1, prec_sqrt=0,</span>
+<span class="sd">                     prec_div=, and fma=1)</span>
+<span class="sd">    :type fastmath: bool</span>
+<span class="sd">    :param cc: Compute capability to compile for, as a tuple ``(MAJOR, MINOR)``.</span>
+<span class="sd">               Defaults to ``(5, 2)``.</span>
+<span class="sd">    :type cc: tuple</span>
+<span class="sd">    :param opt: Enable optimizations. Defaults to ``True``.</span>
+<span class="sd">    :type opt: bool</span>
+<span class="sd">    :return: (ptx, resty): The PTX code and inferred return type</span>
+<span class="sd">    :rtype: tuple</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">nvvm_options</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="s1">&#39;debug&#39;</span><span class="p">:</span> <span class="n">debug</span><span class="p">,</span>
+        <span class="s1">&#39;lineinfo&#39;</span><span class="p">:</span> <span class="n">lineinfo</span><span class="p">,</span>
+        <span class="s1">&#39;fastmath&#39;</span><span class="p">:</span> <span class="n">fastmath</span><span class="p">,</span>
+        <span class="s1">&#39;opt&#39;</span><span class="p">:</span> <span class="mi">3</span> <span class="k">if</span> <span class="n">opt</span> <span class="k">else</span> <span class="mi">0</span>
+    <span class="p">}</span>
+
+    <span class="n">cres</span> <span class="o">=</span> <span class="n">compile_cuda</span><span class="p">(</span><span class="n">pyfunc</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="n">args</span><span class="p">,</span> <span class="n">debug</span><span class="o">=</span><span class="n">debug</span><span class="p">,</span> <span class="n">lineinfo</span><span class="o">=</span><span class="n">lineinfo</span><span class="p">,</span>
+                        <span class="n">nvvm_options</span><span class="o">=</span><span class="n">nvvm_options</span><span class="p">)</span>
+    <span class="n">resty</span> <span class="o">=</span> <span class="n">cres</span><span class="o">.</span><span class="n">signature</span><span class="o">.</span><span class="n">return_type</span>
+    <span class="k">if</span> <span class="n">device</span><span class="p">:</span>
+        <span class="n">lib</span> <span class="o">=</span> <span class="n">cres</span><span class="o">.</span><span class="n">library</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">fname</span> <span class="o">=</span> <span class="n">cres</span><span class="o">.</span><span class="n">fndesc</span><span class="o">.</span><span class="n">llvm_func_name</span>
+        <span class="n">tgt</span> <span class="o">=</span> <span class="n">cres</span><span class="o">.</span><span class="n">target_context</span>
+        <span class="n">filename</span> <span class="o">=</span> <span class="n">cres</span><span class="o">.</span><span class="n">type_annotation</span><span class="o">.</span><span class="n">filename</span>
+        <span class="n">linenum</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">cres</span><span class="o">.</span><span class="n">type_annotation</span><span class="o">.</span><span class="n">linenum</span><span class="p">)</span>
+        <span class="n">lib</span><span class="p">,</span> <span class="n">kernel</span> <span class="o">=</span> <span class="n">tgt</span><span class="o">.</span><span class="n">prepare_cuda_kernel</span><span class="p">(</span><span class="n">cres</span><span class="o">.</span><span class="n">library</span><span class="p">,</span> <span class="n">fname</span><span class="p">,</span>
+                                              <span class="n">cres</span><span class="o">.</span><span class="n">signature</span><span class="o">.</span><span class="n">args</span><span class="p">,</span> <span class="n">debug</span><span class="p">,</span>
+                                              <span class="n">nvvm_options</span><span class="p">,</span> <span class="n">filename</span><span class="p">,</span> <span class="n">linenum</span><span class="p">)</span>
+
+    <span class="n">cc</span> <span class="o">=</span> <span class="n">cc</span> <span class="ow">or</span> <span class="n">config</span><span class="o">.</span><span class="n">CUDA_DEFAULT_PTX_CC</span>
+    <span class="n">ptx</span> <span class="o">=</span> <span class="n">lib</span><span class="o">.</span><span class="n">get_asm_str</span><span class="p">(</span><span class="n">cc</span><span class="o">=</span><span class="n">cc</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">ptx</span><span class="p">,</span> <span class="n">resty</span>
+
+
+<span class="k">def</span> <span class="nf">compile_ptx_for_current_device</span><span class="p">(</span><span class="n">pyfunc</span><span class="p">,</span> <span class="n">args</span><span class="p">,</span> <span class="n">debug</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">lineinfo</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+                                   <span class="n">device</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">fastmath</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">opt</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Compile a Python function to PTX for a given set of argument types for</span>
+<span class="sd">    the current device&#39;s compute capabilility. This calls :func:`compile_ptx`</span>
+<span class="sd">    with an appropriate ``cc`` value for the current device.&quot;&quot;&quot;</span>
+    <span class="n">cc</span> <span class="o">=</span> <span class="n">get_current_device</span><span class="p">()</span><span class="o">.</span><span class="n">compute_capability</span>
+    <span class="k">return</span> <span class="n">compile_ptx</span><span class="p">(</span><span class="n">pyfunc</span><span class="p">,</span> <span class="n">args</span><span class="p">,</span> <span class="n">debug</span><span class="o">=</span><span class="n">debug</span><span class="p">,</span> <span class="n">lineinfo</span><span class="o">=</span><span class="n">lineinfo</span><span class="p">,</span>
+                       <span class="n">device</span><span class="o">=</span><span class="n">device</span><span class="p">,</span> <span class="n">fastmath</span><span class="o">=</span><span class="n">fastmath</span><span class="p">,</span> <span class="n">cc</span><span class="o">=</span><span class="n">cc</span><span class="p">,</span> <span class="n">opt</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+
+<span class="k">class</span> <span class="nc">DeviceDispatcher</span><span class="p">(</span><span class="n">serialize</span><span class="o">.</span><span class="n">ReduceMixin</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Unmaterialized device function</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">pyfunc</span><span class="p">,</span> <span class="n">debug</span><span class="p">,</span> <span class="n">inline</span><span class="p">,</span> <span class="n">opt</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">py_func</span> <span class="o">=</span> <span class="n">pyfunc</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">debug</span> <span class="o">=</span> <span class="n">debug</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">inline</span> <span class="o">=</span> <span class="n">inline</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">opt</span> <span class="o">=</span> <span class="n">opt</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">overloads</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="n">name</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">pyfunc</span><span class="p">,</span> <span class="s1">&#39;__name__&#39;</span><span class="p">,</span> <span class="s1">&#39;unknown&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="vm">__name__</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2"> &lt;CUDA device function&gt;&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">name</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_reduce_states</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="nb">dict</span><span class="p">(</span><span class="n">py_func</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">py_func</span><span class="p">,</span> <span class="n">debug</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">debug</span><span class="p">,</span> <span class="n">inline</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">inline</span><span class="p">)</span>
+
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">_rebuild</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">py_func</span><span class="p">,</span> <span class="n">debug</span><span class="p">,</span> <span class="n">inline</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">compile_device_dispatcher</span><span class="p">(</span><span class="n">py_func</span><span class="p">,</span> <span class="n">debug</span><span class="o">=</span><span class="n">debug</span><span class="p">,</span> <span class="n">inline</span><span class="o">=</span><span class="n">inline</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">get_call_template</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">args</span><span class="p">,</span> <span class="n">kws</span><span class="p">):</span>
+        <span class="c1"># Copied and simplified from _DispatcherBase.get_call_template.</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get a typing.ConcreteTemplate for this dispatcher and the given</span>
+<span class="sd">        *args* and *kws* types.  This allows to resolve the return type.</span>
+
+<span class="sd">        A (template, pysig, args, kws) tuple is returned.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># Ensure an overload is available</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span><span class="nb">tuple</span><span class="p">(</span><span class="n">args</span><span class="p">))</span>
+
+        <span class="c1"># Create function type for typing</span>
+        <span class="n">func_name</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">py_func</span><span class="o">.</span><span class="vm">__name__</span>
+        <span class="n">name</span> <span class="o">=</span> <span class="s2">&quot;CallTemplate(</span><span class="si">{0}</span><span class="s2">)&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">func_name</span><span class="p">)</span>
+
+        <span class="c1"># The `key` isn&#39;t really used except for diagnosis here,</span>
+        <span class="c1"># so avoid keeping a reference to `cfunc`.</span>
+        <span class="n">call_template</span> <span class="o">=</span> <span class="n">typing</span><span class="o">.</span><span class="n">make_concrete_template</span><span class="p">(</span>
+            <span class="n">name</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="n">func_name</span><span class="p">,</span> <span class="n">signatures</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">nopython_signatures</span><span class="p">)</span>
+        <span class="n">pysig</span> <span class="o">=</span> <span class="n">utils</span><span class="o">.</span><span class="n">pysignature</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">py_func</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">call_template</span><span class="p">,</span> <span class="n">pysig</span><span class="p">,</span> <span class="n">args</span><span class="p">,</span> <span class="n">kws</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">nopython_signatures</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="c1"># All overloads are for nopython mode, because there is only</span>
+        <span class="c1"># nopython mode in CUDA</span>
+        <span class="k">return</span> <span class="p">[</span><span class="n">info</span><span class="o">.</span><span class="n">signature</span> <span class="k">for</span> <span class="n">info</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">overloads</span><span class="o">.</span><span class="n">values</span><span class="p">()]</span>
+
+    <span class="k">def</span> <span class="nf">get_overload</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">sig</span><span class="p">):</span>
+        <span class="c1"># NOTE: This dispatcher seems to be used as the key for the dict of</span>
+        <span class="c1"># implementations elsewhere in Numba, so we return this dispatcher</span>
+        <span class="c1"># instead of a compiled entry point as in</span>
+        <span class="c1"># _DispatcherBase.get_overload().</span>
+        <span class="k">return</span> <span class="bp">self</span>
+
+    <span class="k">def</span> <span class="nf">compile</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">args</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Compile the function for the given argument types.</span>
+
+<span class="sd">        Each signature is compiled once by caching the compiled function inside</span>
+<span class="sd">        this object.</span>
+
+<span class="sd">        Returns the `CompileResult`.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">args</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">overloads</span><span class="p">:</span>
+            <span class="n">nvvm_options</span> <span class="o">=</span> <span class="p">{</span>
+                <span class="s1">&#39;debug&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">debug</span><span class="p">,</span>
+                <span class="s1">&#39;opt&#39;</span><span class="p">:</span> <span class="mi">3</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">opt</span> <span class="k">else</span> <span class="mi">0</span>
+            <span class="p">}</span>
+
+            <span class="n">cres</span> <span class="o">=</span> <span class="n">compile_cuda</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">py_func</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="n">args</span><span class="p">,</span> <span class="n">debug</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">debug</span><span class="p">,</span>
+                                <span class="n">inline</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">inline</span><span class="p">,</span> <span class="n">nvvm_options</span><span class="o">=</span><span class="n">nvvm_options</span><span class="p">)</span>
+            <span class="n">first_definition</span> <span class="o">=</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">overloads</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">overloads</span><span class="p">[</span><span class="n">args</span><span class="p">]</span> <span class="o">=</span> <span class="n">cres</span>
+            <span class="n">libs</span> <span class="o">=</span> <span class="p">[</span><span class="n">cres</span><span class="o">.</span><span class="n">library</span><span class="p">]</span>
+
+            <span class="k">if</span> <span class="n">first_definition</span><span class="p">:</span>
+                <span class="c1"># First definition</span>
+                <span class="n">cres</span><span class="o">.</span><span class="n">target_context</span><span class="o">.</span><span class="n">insert_user_function</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">cres</span><span class="o">.</span><span class="n">fndesc</span><span class="p">,</span>
+                                                         <span class="n">libs</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">cres</span><span class="o">.</span><span class="n">target_context</span><span class="o">.</span><span class="n">add_user_function</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">cres</span><span class="o">.</span><span class="n">fndesc</span><span class="p">,</span> <span class="n">libs</span><span class="p">)</span>
+
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">cres</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">overloads</span><span class="p">[</span><span class="n">args</span><span class="p">]</span>
+
+        <span class="k">return</span> <span class="n">cres</span>
+
+    <span class="k">def</span> <span class="nf">inspect_llvm</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">args</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Returns the LLVM-IR text compiled for *args*.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        args: tuple[Type]</span>
+<span class="sd">            Argument types.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        llvmir : str</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">modules</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span><span class="n">args</span><span class="p">)</span><span class="o">.</span><span class="n">library</span><span class="o">.</span><span class="n">modules</span>
+        <span class="k">return</span> <span class="s2">&quot;</span><span class="se">\n\n</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="nb">str</span><span class="p">(</span><span class="n">mod</span><span class="p">)</span> <span class="k">for</span> <span class="n">mod</span> <span class="ow">in</span> <span class="n">modules</span><span class="p">])</span>
+
+    <span class="k">def</span> <span class="nf">inspect_ptx</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">args</span><span class="p">,</span> <span class="n">nvvm_options</span><span class="o">=</span><span class="p">{}):</span>
+        <span class="sd">&quot;&quot;&quot;Returns the PTX compiled for *args* for the currently active GPU</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        args: tuple[Type]</span>
+<span class="sd">            Argument types.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        ptx : bytes</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">msg</span> <span class="o">=</span> <span class="p">(</span><span class="s1">&#39;inspect_ptx for device functions is deprecated. Use &#39;</span>
+               <span class="s1">&#39;compile_ptx instead.&#39;</span><span class="p">)</span>
+        <span class="n">warn</span><span class="p">(</span><span class="n">msg</span><span class="p">,</span> <span class="n">category</span><span class="o">=</span><span class="n">NumbaDeprecationWarning</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">nvvm_options</span><span class="p">:</span>
+            <span class="n">msg</span> <span class="o">=</span> <span class="p">(</span><span class="s1">&#39;nvvm_options are ignored. Use compile_ptx if you want to &#39;</span>
+                   <span class="s1">&#39;set NVVM options.&#39;</span><span class="p">)</span>
+            <span class="n">warn</span><span class="p">(</span><span class="n">msg</span><span class="p">,</span> <span class="n">category</span><span class="o">=</span><span class="n">NumbaDeprecationWarning</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span><span class="n">args</span><span class="p">)</span><span class="o">.</span><span class="n">library</span><span class="o">.</span><span class="n">get_asm_str</span><span class="p">()</span><span class="o">.</span><span class="n">encode</span><span class="p">()</span>
+
+
+<span class="k">def</span> <span class="nf">compile_device_dispatcher</span><span class="p">(</span><span class="n">pyfunc</span><span class="p">,</span> <span class="n">debug</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">inline</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">opt</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Create a DeviceDispatcher and register it to the CUDA typing context.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="kn">from</span> <span class="nn">.descriptor</span> <span class="kn">import</span> <span class="n">cuda_target</span>
+
+    <span class="n">dispatcher</span> <span class="o">=</span> <span class="n">DeviceDispatcher</span><span class="p">(</span><span class="n">pyfunc</span><span class="p">,</span> <span class="n">debug</span><span class="o">=</span><span class="n">debug</span><span class="p">,</span> <span class="n">inline</span><span class="o">=</span><span class="n">inline</span><span class="p">,</span> <span class="n">opt</span><span class="o">=</span><span class="n">opt</span><span class="p">)</span>
+
+    <span class="k">class</span> <span class="nc">device_function_template</span><span class="p">(</span><span class="n">AbstractTemplate</span><span class="p">):</span>
+        <span class="n">key</span> <span class="o">=</span> <span class="n">dispatcher</span>
+
+        <span class="k">def</span> <span class="nf">generic</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">args</span><span class="p">,</span> <span class="n">kws</span><span class="p">):</span>
+            <span class="k">assert</span> <span class="ow">not</span> <span class="n">kws</span>
+            <span class="k">return</span> <span class="n">dispatcher</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span><span class="n">args</span><span class="p">)</span><span class="o">.</span><span class="n">signature</span>
+
+        <span class="k">def</span> <span class="nf">get_template_info</span><span class="p">(</span><span class="bp">cls</span><span class="p">):</span>
+            <span class="n">basepath</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">dirname</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">dirname</span><span class="p">(</span><span class="n">numba</span><span class="o">.</span><span class="vm">__file__</span><span class="p">))</span>
+            <span class="n">code</span><span class="p">,</span> <span class="n">firstlineno</span> <span class="o">=</span> <span class="n">inspect</span><span class="o">.</span><span class="n">getsourcelines</span><span class="p">(</span><span class="n">pyfunc</span><span class="p">)</span>
+            <span class="n">path</span> <span class="o">=</span> <span class="n">inspect</span><span class="o">.</span><span class="n">getsourcefile</span><span class="p">(</span><span class="n">pyfunc</span><span class="p">)</span>
+            <span class="n">sig</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">utils</span><span class="o">.</span><span class="n">pysignature</span><span class="p">(</span><span class="n">pyfunc</span><span class="p">))</span>
+            <span class="n">info</span> <span class="o">=</span> <span class="p">{</span>
+                <span class="s1">&#39;kind&#39;</span><span class="p">:</span> <span class="s2">&quot;overload&quot;</span><span class="p">,</span>
+                <span class="s1">&#39;name&#39;</span><span class="p">:</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">cls</span><span class="o">.</span><span class="n">key</span><span class="p">,</span> <span class="s1">&#39;__name__&#39;</span><span class="p">,</span> <span class="s2">&quot;unknown&quot;</span><span class="p">),</span>
+                <span class="s1">&#39;sig&#39;</span><span class="p">:</span> <span class="n">sig</span><span class="p">,</span>
+                <span class="s1">&#39;filename&#39;</span><span class="p">:</span> <span class="n">utils</span><span class="o">.</span><span class="n">safe_relpath</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="n">start</span><span class="o">=</span><span class="n">basepath</span><span class="p">),</span>
+                <span class="s1">&#39;lines&#39;</span><span class="p">:</span> <span class="p">(</span><span class="n">firstlineno</span><span class="p">,</span> <span class="n">firstlineno</span> <span class="o">+</span> <span class="nb">len</span><span class="p">(</span><span class="n">code</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span><span class="p">),</span>
+                <span class="s1">&#39;docstring&#39;</span><span class="p">:</span> <span class="n">pyfunc</span><span class="o">.</span><span class="vm">__doc__</span>
+            <span class="p">}</span>
+            <span class="k">return</span> <span class="n">info</span>
+
+    <span class="n">typingctx</span> <span class="o">=</span> <span class="n">cuda_target</span><span class="o">.</span><span class="n">typing_context</span>
+    <span class="n">typingctx</span><span class="o">.</span><span class="n">insert_user_function</span><span class="p">(</span><span class="n">dispatcher</span><span class="p">,</span> <span class="n">device_function_template</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">dispatcher</span>
+
+
+<span class="k">def</span> <span class="nf">compile_device</span><span class="p">(</span><span class="n">pyfunc</span><span class="p">,</span> <span class="n">return_type</span><span class="p">,</span> <span class="n">args</span><span class="p">,</span> <span class="n">inline</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">debug</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+                   <span class="n">lineinfo</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+    <span class="k">return</span> <span class="n">DeviceFunction</span><span class="p">(</span><span class="n">pyfunc</span><span class="p">,</span> <span class="n">return_type</span><span class="p">,</span> <span class="n">args</span><span class="p">,</span> <span class="n">inline</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">debug</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+                          <span class="n">lineinfo</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+
+
+<span class="k">def</span> <span class="nf">declare_device_function</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">restype</span><span class="p">,</span> <span class="n">argtypes</span><span class="p">):</span>
+    <span class="kn">from</span> <span class="nn">.descriptor</span> <span class="kn">import</span> <span class="n">cuda_target</span>
+    <span class="n">typingctx</span> <span class="o">=</span> <span class="n">cuda_target</span><span class="o">.</span><span class="n">typing_context</span>
+    <span class="n">targetctx</span> <span class="o">=</span> <span class="n">cuda_target</span><span class="o">.</span><span class="n">target_context</span>
+    <span class="n">sig</span> <span class="o">=</span> <span class="n">typing</span><span class="o">.</span><span class="n">signature</span><span class="p">(</span><span class="n">restype</span><span class="p">,</span> <span class="o">*</span><span class="n">argtypes</span><span class="p">)</span>
+    <span class="n">extfn</span> <span class="o">=</span> <span class="n">ExternFunction</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">sig</span><span class="p">)</span>
+
+    <span class="k">class</span> <span class="nc">device_function_template</span><span class="p">(</span><span class="n">ConcreteTemplate</span><span class="p">):</span>
+        <span class="n">key</span> <span class="o">=</span> <span class="n">extfn</span>
+        <span class="n">cases</span> <span class="o">=</span> <span class="p">[</span><span class="n">sig</span><span class="p">]</span>
+
+    <span class="n">fndesc</span> <span class="o">=</span> <span class="n">funcdesc</span><span class="o">.</span><span class="n">ExternalFunctionDescriptor</span><span class="p">(</span>
+        <span class="n">name</span><span class="o">=</span><span class="n">name</span><span class="p">,</span> <span class="n">restype</span><span class="o">=</span><span class="n">restype</span><span class="p">,</span> <span class="n">argtypes</span><span class="o">=</span><span class="n">argtypes</span><span class="p">)</span>
+    <span class="n">typingctx</span><span class="o">.</span><span class="n">insert_user_function</span><span class="p">(</span><span class="n">extfn</span><span class="p">,</span> <span class="n">device_function_template</span><span class="p">)</span>
+    <span class="n">targetctx</span><span class="o">.</span><span class="n">insert_user_function</span><span class="p">(</span><span class="n">extfn</span><span class="p">,</span> <span class="n">fndesc</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">extfn</span>
+
+
+<span class="k">class</span> <span class="nc">DeviceFunction</span><span class="p">(</span><span class="n">serialize</span><span class="o">.</span><span class="n">ReduceMixin</span><span class="p">):</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">pyfunc</span><span class="p">,</span> <span class="n">return_type</span><span class="p">,</span> <span class="n">args</span><span class="p">,</span> <span class="n">inline</span><span class="p">,</span> <span class="n">debug</span><span class="p">,</span> <span class="n">lineinfo</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">py_func</span> <span class="o">=</span> <span class="n">pyfunc</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">return_type</span> <span class="o">=</span> <span class="n">return_type</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">args</span> <span class="o">=</span> <span class="n">args</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">inline</span> <span class="o">=</span> <span class="kc">True</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">debug</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">lineinfo</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="n">cres</span> <span class="o">=</span> <span class="n">compile_cuda</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">py_func</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">return_type</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="p">,</span>
+                            <span class="n">debug</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">debug</span><span class="p">,</span> <span class="n">inline</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">inline</span><span class="p">,</span>
+                            <span class="n">lineinfo</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">lineinfo</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">cres</span> <span class="o">=</span> <span class="n">cres</span>
+
+        <span class="k">class</span> <span class="nc">device_function_template</span><span class="p">(</span><span class="n">ConcreteTemplate</span><span class="p">):</span>
+            <span class="n">key</span> <span class="o">=</span> <span class="bp">self</span>
+            <span class="n">cases</span> <span class="o">=</span> <span class="p">[</span><span class="n">cres</span><span class="o">.</span><span class="n">signature</span><span class="p">]</span>
+
+        <span class="n">cres</span><span class="o">.</span><span class="n">typing_context</span><span class="o">.</span><span class="n">insert_user_function</span><span class="p">(</span>
+            <span class="bp">self</span><span class="p">,</span> <span class="n">device_function_template</span><span class="p">)</span>
+        <span class="n">cres</span><span class="o">.</span><span class="n">target_context</span><span class="o">.</span><span class="n">insert_user_function</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">cres</span><span class="o">.</span><span class="n">fndesc</span><span class="p">,</span>
+                                                 <span class="p">[</span><span class="n">cres</span><span class="o">.</span><span class="n">library</span><span class="p">])</span>
+
+    <span class="k">def</span> <span class="nf">_reduce_states</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="nb">dict</span><span class="p">(</span><span class="n">py_func</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">py_func</span><span class="p">,</span> <span class="n">return_type</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">return_type</span><span class="p">,</span>
+                    <span class="n">args</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="p">,</span> <span class="n">inline</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">inline</span><span class="p">,</span> <span class="n">debug</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">debug</span><span class="p">,</span>
+                    <span class="n">lineinfo</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">lineinfo</span><span class="p">)</span>
+
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">_rebuild</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">py_func</span><span class="p">,</span> <span class="n">return_type</span><span class="p">,</span> <span class="n">args</span><span class="p">,</span> <span class="n">inline</span><span class="p">,</span> <span class="n">debug</span><span class="p">,</span> <span class="n">lineinfo</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">cls</span><span class="p">(</span><span class="n">py_func</span><span class="p">,</span> <span class="n">return_type</span><span class="p">,</span> <span class="n">args</span><span class="p">,</span> <span class="n">inline</span><span class="p">,</span> <span class="n">debug</span><span class="p">,</span> <span class="n">lineinfo</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">fmt</span> <span class="o">=</span> <span class="s2">&quot;&lt;DeviceFunction py_func=</span><span class="si">{0}</span><span class="s2"> signature=</span><span class="si">{1}</span><span class="s2">&gt;&quot;</span>
+        <span class="k">return</span> <span class="n">fmt</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">py_func</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">cres</span><span class="o">.</span><span class="n">signature</span><span class="p">)</span>
+
+
+<span class="k">class</span> <span class="nc">ExternFunction</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">sig</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="n">name</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">sig</span> <span class="o">=</span> <span class="n">sig</span>
+
+
+<span class="k">class</span> <span class="nc">ForAll</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">kernel</span><span class="p">,</span> <span class="n">ntasks</span><span class="p">,</span> <span class="n">tpb</span><span class="p">,</span> <span class="n">stream</span><span class="p">,</span> <span class="n">sharedmem</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">ntasks</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Can&#39;t create ForAll with negative task count: </span><span class="si">%s</span><span class="s2">&quot;</span>
+                             <span class="o">%</span> <span class="n">ntasks</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">kernel</span> <span class="o">=</span> <span class="n">kernel</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ntasks</span> <span class="o">=</span> <span class="n">ntasks</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">thread_per_block</span> <span class="o">=</span> <span class="n">tpb</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">stream</span> <span class="o">=</span> <span class="n">stream</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">sharedmem</span> <span class="o">=</span> <span class="n">sharedmem</span>
+
+    <span class="k">def</span> <span class="fm">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">):</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">ntasks</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">return</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">kernel</span><span class="o">.</span><span class="n">specialized</span><span class="p">:</span>
+            <span class="n">kernel</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">kernel</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">kernel</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">kernel</span><span class="o">.</span><span class="n">specialize</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">)</span>
+        <span class="n">blockdim</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_compute_thread_per_block</span><span class="p">(</span><span class="n">kernel</span><span class="p">)</span>
+        <span class="n">griddim</span> <span class="o">=</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">ntasks</span> <span class="o">+</span> <span class="n">blockdim</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span> <span class="o">//</span> <span class="n">blockdim</span>
+
+        <span class="k">return</span> <span class="n">kernel</span><span class="p">[</span><span class="n">griddim</span><span class="p">,</span> <span class="n">blockdim</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">stream</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">sharedmem</span><span class="p">](</span><span class="o">*</span><span class="n">args</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_compute_thread_per_block</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">kernel</span><span class="p">):</span>
+        <span class="n">tpb</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">thread_per_block</span>
+        <span class="c1"># Prefer user-specified config</span>
+        <span class="k">if</span> <span class="n">tpb</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">tpb</span>
+        <span class="c1"># Else, ask the driver to give a good config</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">ctx</span> <span class="o">=</span> <span class="n">get_context</span><span class="p">()</span>
+            <span class="c1"># Kernel is specialized, so there&#39;s only one definition - get it so</span>
+            <span class="c1"># we can get the cufunc from the code library</span>
+            <span class="n">defn</span> <span class="o">=</span> <span class="nb">next</span><span class="p">(</span><span class="nb">iter</span><span class="p">(</span><span class="n">kernel</span><span class="o">.</span><span class="n">overloads</span><span class="o">.</span><span class="n">values</span><span class="p">()))</span>
+            <span class="n">kwargs</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span>
+                <span class="n">func</span><span class="o">=</span><span class="n">defn</span><span class="o">.</span><span class="n">_codelibrary</span><span class="o">.</span><span class="n">get_cufunc</span><span class="p">(),</span>
+                <span class="n">b2d_func</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>     <span class="c1"># dynamic-shared memory is constant to blksz</span>
+                <span class="n">memsize</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">sharedmem</span><span class="p">,</span>
+                <span class="n">blocksizelimit</span><span class="o">=</span><span class="mi">1024</span><span class="p">,</span>
+            <span class="p">)</span>
+            <span class="n">_</span><span class="p">,</span> <span class="n">tpb</span> <span class="o">=</span> <span class="n">ctx</span><span class="o">.</span><span class="n">get_max_potential_block_size</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">tpb</span>
+
+
+<span class="k">class</span> <span class="nc">_Kernel</span><span class="p">(</span><span class="n">serialize</span><span class="o">.</span><span class="n">ReduceMixin</span><span class="p">):</span>
+    <span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">    CUDA Kernel specialized for a given set of argument types. When called, this</span>
+<span class="sd">    object launches the kernel on the device.</span>
+<span class="sd">    &#39;&#39;&#39;</span>
+
+    <span class="nd">@global_compiler_lock</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">py_func</span><span class="p">,</span> <span class="n">argtypes</span><span class="p">,</span> <span class="n">link</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">debug</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+                 <span class="n">lineinfo</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">inline</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">fastmath</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">extensions</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                 <span class="n">max_registers</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">opt</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">py_func</span> <span class="o">=</span> <span class="n">py_func</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">argtypes</span> <span class="o">=</span> <span class="n">argtypes</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">debug</span> <span class="o">=</span> <span class="n">debug</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">lineinfo</span> <span class="o">=</span> <span class="n">lineinfo</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">extensions</span> <span class="o">=</span> <span class="n">extensions</span> <span class="ow">or</span> <span class="p">[]</span>
+
+        <span class="n">nvvm_options</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s1">&#39;debug&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">debug</span><span class="p">,</span>
+            <span class="s1">&#39;lineinfo&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">lineinfo</span><span class="p">,</span>
+            <span class="s1">&#39;fastmath&#39;</span><span class="p">:</span> <span class="n">fastmath</span><span class="p">,</span>
+            <span class="s1">&#39;opt&#39;</span><span class="p">:</span> <span class="mi">3</span> <span class="k">if</span> <span class="n">opt</span> <span class="k">else</span> <span class="mi">0</span>
+        <span class="p">}</span>
+
+        <span class="n">cres</span> <span class="o">=</span> <span class="n">compile_cuda</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">py_func</span><span class="p">,</span> <span class="n">types</span><span class="o">.</span><span class="n">void</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">argtypes</span><span class="p">,</span>
+                            <span class="n">debug</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">debug</span><span class="p">,</span>
+                            <span class="n">lineinfo</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">lineinfo</span><span class="p">,</span>
+                            <span class="n">inline</span><span class="o">=</span><span class="n">inline</span><span class="p">,</span>
+                            <span class="n">fastmath</span><span class="o">=</span><span class="n">fastmath</span><span class="p">,</span>
+                            <span class="n">nvvm_options</span><span class="o">=</span><span class="n">nvvm_options</span><span class="p">)</span>
+        <span class="n">fname</span> <span class="o">=</span> <span class="n">cres</span><span class="o">.</span><span class="n">fndesc</span><span class="o">.</span><span class="n">llvm_func_name</span>
+        <span class="n">args</span> <span class="o">=</span> <span class="n">cres</span><span class="o">.</span><span class="n">signature</span><span class="o">.</span><span class="n">args</span>
+
+        <span class="n">tgt_ctx</span> <span class="o">=</span> <span class="n">cres</span><span class="o">.</span><span class="n">target_context</span>
+        <span class="n">code</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">py_func</span><span class="o">.</span><span class="vm">__code__</span>
+        <span class="n">filename</span> <span class="o">=</span> <span class="n">code</span><span class="o">.</span><span class="n">co_filename</span>
+        <span class="n">linenum</span> <span class="o">=</span> <span class="n">code</span><span class="o">.</span><span class="n">co_firstlineno</span>
+        <span class="n">lib</span><span class="p">,</span> <span class="n">kernel</span> <span class="o">=</span> <span class="n">tgt_ctx</span><span class="o">.</span><span class="n">prepare_cuda_kernel</span><span class="p">(</span><span class="n">cres</span><span class="o">.</span><span class="n">library</span><span class="p">,</span> <span class="n">fname</span><span class="p">,</span> <span class="n">args</span><span class="p">,</span>
+                                                  <span class="n">debug</span><span class="p">,</span> <span class="n">nvvm_options</span><span class="p">,</span>
+                                                  <span class="n">filename</span><span class="p">,</span> <span class="n">linenum</span><span class="p">,</span>
+                                                  <span class="n">max_registers</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">link</span><span class="p">:</span>
+            <span class="n">link</span> <span class="o">=</span> <span class="p">[]</span>
+
+        <span class="c1"># A kernel needs cooperative launch if grid_sync is being used.</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">cooperative</span> <span class="o">=</span> <span class="s1">&#39;cudaCGGetIntrinsicHandle&#39;</span> <span class="ow">in</span> <span class="n">lib</span><span class="o">.</span><span class="n">get_asm_str</span><span class="p">()</span>
+        <span class="c1"># We need to link against cudadevrt if grid sync is being used.</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">cooperative</span><span class="p">:</span>
+            <span class="n">link</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">get_cudalib</span><span class="p">(</span><span class="s1">&#39;cudadevrt&#39;</span><span class="p">,</span> <span class="n">static</span><span class="o">=</span><span class="kc">True</span><span class="p">))</span>
+
+        <span class="k">for</span> <span class="n">filepath</span> <span class="ow">in</span> <span class="n">link</span><span class="p">:</span>
+            <span class="n">lib</span><span class="o">.</span><span class="n">add_linking_file</span><span class="p">(</span><span class="n">filepath</span><span class="p">)</span>
+
+        <span class="c1"># populate members</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">entry_name</span> <span class="o">=</span> <span class="n">kernel</span><span class="o">.</span><span class="n">name</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">signature</span> <span class="o">=</span> <span class="n">cres</span><span class="o">.</span><span class="n">signature</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_type_annotation</span> <span class="o">=</span> <span class="n">cres</span><span class="o">.</span><span class="n">type_annotation</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_codelibrary</span> <span class="o">=</span> <span class="n">lib</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">call_helper</span> <span class="o">=</span> <span class="n">cres</span><span class="o">.</span><span class="n">call_helper</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">argument_types</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="nb">tuple</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">signature</span><span class="o">.</span><span class="n">args</span><span class="p">)</span>
+
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">_rebuild</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">cooperative</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">argtypes</span><span class="p">,</span> <span class="n">codelibrary</span><span class="p">,</span> <span class="n">link</span><span class="p">,</span> <span class="n">debug</span><span class="p">,</span>
+                 <span class="n">lineinfo</span><span class="p">,</span> <span class="n">call_helper</span><span class="p">,</span> <span class="n">extensions</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Rebuild an instance.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">instance</span> <span class="o">=</span> <span class="bp">cls</span><span class="o">.</span><span class="fm">__new__</span><span class="p">(</span><span class="bp">cls</span><span class="p">)</span>
+        <span class="c1"># invoke parent constructor</span>
+        <span class="nb">super</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">instance</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
+        <span class="c1"># populate members</span>
+        <span class="n">instance</span><span class="o">.</span><span class="n">cooperative</span> <span class="o">=</span> <span class="n">cooperative</span>
+        <span class="n">instance</span><span class="o">.</span><span class="n">entry_name</span> <span class="o">=</span> <span class="n">name</span>
+        <span class="n">instance</span><span class="o">.</span><span class="n">argument_types</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">argtypes</span><span class="p">)</span>
+        <span class="n">instance</span><span class="o">.</span><span class="n">_type_annotation</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="n">instance</span><span class="o">.</span><span class="n">_codelibrary</span> <span class="o">=</span> <span class="n">codelibrary</span>
+        <span class="n">instance</span><span class="o">.</span><span class="n">debug</span> <span class="o">=</span> <span class="n">debug</span>
+        <span class="n">instance</span><span class="o">.</span><span class="n">lineinfo</span> <span class="o">=</span> <span class="n">lineinfo</span>
+        <span class="n">instance</span><span class="o">.</span><span class="n">call_helper</span> <span class="o">=</span> <span class="n">call_helper</span>
+        <span class="n">instance</span><span class="o">.</span><span class="n">extensions</span> <span class="o">=</span> <span class="n">extensions</span>
+        <span class="k">return</span> <span class="n">instance</span>
+
+    <span class="k">def</span> <span class="nf">_reduce_states</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Reduce the instance for serialization.</span>
+<span class="sd">        Compiled definitions are serialized in PTX form.</span>
+<span class="sd">        Type annotation are discarded.</span>
+<span class="sd">        Thread, block and shared memory configuration are serialized.</span>
+<span class="sd">        Stream information is discarded.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="nb">dict</span><span class="p">(</span><span class="n">cooperative</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">cooperative</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">entry_name</span><span class="p">,</span>
+                    <span class="n">argtypes</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">argtypes</span><span class="p">,</span> <span class="n">codelibrary</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">codelibrary</span><span class="p">,</span>
+                    <span class="n">debug</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">debug</span><span class="p">,</span> <span class="n">lineinfo</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">lineinfo</span><span class="p">,</span>
+                    <span class="n">call_helper</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">call_helper</span><span class="p">,</span> <span class="n">extensions</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">extensions</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">bind</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Force binding to current CUDA context</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_codelibrary</span><span class="o">.</span><span class="n">get_cufunc</span><span class="p">()</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">ptx</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">        PTX code for this kernel.</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_codelibrary</span><span class="o">.</span><span class="n">get_asm_str</span><span class="p">()</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">device</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get current active context</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">get_current_device</span><span class="p">()</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">regs_per_thread</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">        The number of registers used by each thread for this kernel.</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_codelibrary</span><span class="o">.</span><span class="n">get_cufunc</span><span class="p">()</span><span class="o">.</span><span class="n">attrs</span><span class="o">.</span><span class="n">regs</span>
+
+    <span class="k">def</span> <span class="nf">inspect_llvm</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">        Returns the LLVM IR for this kernel.</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_codelibrary</span><span class="o">.</span><span class="n">get_llvm_str</span><span class="p">()</span>
+
+    <span class="k">def</span> <span class="nf">inspect_asm</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">cc</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">        Returns the PTX code for this kernel.</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_codelibrary</span><span class="o">.</span><span class="n">get_asm_str</span><span class="p">(</span><span class="n">cc</span><span class="o">=</span><span class="n">cc</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">inspect_sass</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">        Returns the SASS code for this kernel.</span>
+
+<span class="sd">        Requires nvdisasm to be available on the PATH.</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_codelibrary</span><span class="o">.</span><span class="n">get_sass</span><span class="p">()</span>
+
+    <span class="k">def</span> <span class="nf">inspect_types</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">file</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">        Produce a dump of the Python source of this function annotated with the</span>
+<span class="sd">        corresponding Numba IR and type information. The dump is written to</span>
+<span class="sd">        *file*, or *sys.stdout* if *file* is *None*.</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_type_annotation</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Type annotation is not available&quot;</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">file</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">file</span> <span class="o">=</span> <span class="n">sys</span><span class="o">.</span><span class="n">stdout</span>
+
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;</span><span class="si">%s</span><span class="s2"> </span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">entry_name</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">argument_types</span><span class="p">),</span> <span class="n">file</span><span class="o">=</span><span class="n">file</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;-&#39;</span> <span class="o">*</span> <span class="mi">80</span><span class="p">,</span> <span class="n">file</span><span class="o">=</span><span class="n">file</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_type_annotation</span><span class="p">,</span> <span class="n">file</span><span class="o">=</span><span class="n">file</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;=&#39;</span> <span class="o">*</span> <span class="mi">80</span><span class="p">,</span> <span class="n">file</span><span class="o">=</span><span class="n">file</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">max_cooperative_grid_blocks</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">blockdim</span><span class="p">,</span> <span class="n">dynsmemsize</span><span class="o">=</span><span class="mi">0</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">        Calculates the maximum number of blocks that can be launched for this</span>
+<span class="sd">        kernel in a cooperative grid in the current context, for the given block</span>
+<span class="sd">        and dynamic shared memory sizes.</span>
+
+<span class="sd">        :param blockdim: Block dimensions, either as a scalar for a 1D block, or</span>
+<span class="sd">                         a tuple for 2D or 3D blocks.</span>
+<span class="sd">        :param dynsmemsize: Dynamic shared memory size in bytes.</span>
+<span class="sd">        :return: The maximum number of blocks in the grid.</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="n">ctx</span> <span class="o">=</span> <span class="n">get_context</span><span class="p">()</span>
+        <span class="n">cufunc</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_codelibrary</span><span class="o">.</span><span class="n">get_cufunc</span><span class="p">()</span>
+
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">blockdim</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">):</span>
+            <span class="n">blockdim</span> <span class="o">=</span> <span class="n">functools</span><span class="o">.</span><span class="n">reduce</span><span class="p">(</span><span class="k">lambda</span> <span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">:</span> <span class="n">x</span> <span class="o">*</span> <span class="n">y</span><span class="p">,</span> <span class="n">blockdim</span><span class="p">)</span>
+        <span class="n">active_per_sm</span> <span class="o">=</span> <span class="n">ctx</span><span class="o">.</span><span class="n">get_active_blocks_per_multiprocessor</span><span class="p">(</span><span class="n">cufunc</span><span class="p">,</span>
+                                                                 <span class="n">blockdim</span><span class="p">,</span>
+                                                                 <span class="n">dynsmemsize</span><span class="p">)</span>
+        <span class="n">sm_count</span> <span class="o">=</span> <span class="n">ctx</span><span class="o">.</span><span class="n">device</span><span class="o">.</span><span class="n">MULTIPROCESSOR_COUNT</span>
+        <span class="k">return</span> <span class="n">active_per_sm</span> <span class="o">*</span> <span class="n">sm_count</span>
+
+    <span class="k">def</span> <span class="nf">launch</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">args</span><span class="p">,</span> <span class="n">griddim</span><span class="p">,</span> <span class="n">blockdim</span><span class="p">,</span> <span class="n">stream</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">sharedmem</span><span class="o">=</span><span class="mi">0</span><span class="p">):</span>
+        <span class="c1"># Prepare kernel</span>
+        <span class="n">cufunc</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_codelibrary</span><span class="o">.</span><span class="n">get_cufunc</span><span class="p">()</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">debug</span><span class="p">:</span>
+            <span class="n">excname</span> <span class="o">=</span> <span class="n">cufunc</span><span class="o">.</span><span class="n">name</span> <span class="o">+</span> <span class="s2">&quot;__errcode__&quot;</span>
+            <span class="n">excmem</span><span class="p">,</span> <span class="n">excsz</span> <span class="o">=</span> <span class="n">cufunc</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">get_global_symbol</span><span class="p">(</span><span class="n">excname</span><span class="p">)</span>
+            <span class="k">assert</span> <span class="n">excsz</span> <span class="o">==</span> <span class="n">ctypes</span><span class="o">.</span><span class="n">sizeof</span><span class="p">(</span><span class="n">ctypes</span><span class="o">.</span><span class="n">c_int</span><span class="p">)</span>
+            <span class="n">excval</span> <span class="o">=</span> <span class="n">ctypes</span><span class="o">.</span><span class="n">c_int</span><span class="p">()</span>
+            <span class="n">excmem</span><span class="o">.</span><span class="n">memset</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">stream</span><span class="o">=</span><span class="n">stream</span><span class="p">)</span>
+
+        <span class="c1"># Prepare arguments</span>
+        <span class="n">retr</span> <span class="o">=</span> <span class="p">[]</span>                       <span class="c1"># hold functors for writeback</span>
+
+        <span class="n">kernelargs</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">t</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">argument_types</span><span class="p">,</span> <span class="n">args</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_prepare_args</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">v</span><span class="p">,</span> <span class="n">stream</span><span class="p">,</span> <span class="n">retr</span><span class="p">,</span> <span class="n">kernelargs</span><span class="p">)</span>
+
+        <span class="n">stream_handle</span> <span class="o">=</span> <span class="n">stream</span> <span class="ow">and</span> <span class="n">stream</span><span class="o">.</span><span class="n">handle</span> <span class="ow">or</span> <span class="kc">None</span>
+
+        <span class="c1"># Invoke kernel</span>
+        <span class="n">driver</span><span class="o">.</span><span class="n">launch_kernel</span><span class="p">(</span><span class="n">cufunc</span><span class="o">.</span><span class="n">handle</span><span class="p">,</span>
+                             <span class="o">*</span><span class="n">griddim</span><span class="p">,</span>
+                             <span class="o">*</span><span class="n">blockdim</span><span class="p">,</span>
+                             <span class="n">sharedmem</span><span class="p">,</span>
+                             <span class="n">stream_handle</span><span class="p">,</span>
+                             <span class="n">kernelargs</span><span class="p">,</span>
+                             <span class="n">cooperative</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">cooperative</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">debug</span><span class="p">:</span>
+            <span class="n">driver</span><span class="o">.</span><span class="n">device_to_host</span><span class="p">(</span><span class="n">ctypes</span><span class="o">.</span><span class="n">addressof</span><span class="p">(</span><span class="n">excval</span><span class="p">),</span> <span class="n">excmem</span><span class="p">,</span> <span class="n">excsz</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">excval</span><span class="o">.</span><span class="n">value</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="c1"># An error occurred</span>
+                <span class="k">def</span> <span class="nf">load_symbol</span><span class="p">(</span><span class="n">name</span><span class="p">):</span>
+                    <span class="n">mem</span><span class="p">,</span> <span class="n">sz</span> <span class="o">=</span> <span class="n">cufunc</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">get_global_symbol</span><span class="p">(</span><span class="s2">&quot;</span><span class="si">%s</span><span class="s2">__</span><span class="si">%s</span><span class="s2">__&quot;</span> <span class="o">%</span>
+                                                              <span class="p">(</span><span class="n">cufunc</span><span class="o">.</span><span class="n">name</span><span class="p">,</span>
+                                                               <span class="n">name</span><span class="p">))</span>
+                    <span class="n">val</span> <span class="o">=</span> <span class="n">ctypes</span><span class="o">.</span><span class="n">c_int</span><span class="p">()</span>
+                    <span class="n">driver</span><span class="o">.</span><span class="n">device_to_host</span><span class="p">(</span><span class="n">ctypes</span><span class="o">.</span><span class="n">addressof</span><span class="p">(</span><span class="n">val</span><span class="p">),</span> <span class="n">mem</span><span class="p">,</span> <span class="n">sz</span><span class="p">)</span>
+                    <span class="k">return</span> <span class="n">val</span><span class="o">.</span><span class="n">value</span>
+
+                <span class="n">tid</span> <span class="o">=</span> <span class="p">[</span><span class="n">load_symbol</span><span class="p">(</span><span class="s2">&quot;tid&quot;</span> <span class="o">+</span> <span class="n">i</span><span class="p">)</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="s1">&#39;zyx&#39;</span><span class="p">]</span>
+                <span class="n">ctaid</span> <span class="o">=</span> <span class="p">[</span><span class="n">load_symbol</span><span class="p">(</span><span class="s2">&quot;ctaid&quot;</span> <span class="o">+</span> <span class="n">i</span><span class="p">)</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="s1">&#39;zyx&#39;</span><span class="p">]</span>
+                <span class="n">code</span> <span class="o">=</span> <span class="n">excval</span><span class="o">.</span><span class="n">value</span>
+                <span class="n">exccls</span><span class="p">,</span> <span class="n">exc_args</span><span class="p">,</span> <span class="n">loc</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">call_helper</span><span class="o">.</span><span class="n">get_exception</span><span class="p">(</span><span class="n">code</span><span class="p">)</span>
+                <span class="c1"># Prefix the exception message with the source location</span>
+                <span class="k">if</span> <span class="n">loc</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                    <span class="n">locinfo</span> <span class="o">=</span> <span class="s1">&#39;&#39;</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">sym</span><span class="p">,</span> <span class="n">filepath</span><span class="p">,</span> <span class="n">lineno</span> <span class="o">=</span> <span class="n">loc</span>
+                    <span class="n">filepath</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">abspath</span><span class="p">(</span><span class="n">filepath</span><span class="p">)</span>
+                    <span class="n">locinfo</span> <span class="o">=</span> <span class="s1">&#39;In function </span><span class="si">%r</span><span class="s1">, file </span><span class="si">%s</span><span class="s1">, line </span><span class="si">%s</span><span class="s1">, &#39;</span> <span class="o">%</span> <span class="p">(</span><span class="n">sym</span><span class="p">,</span>
+                                                                      <span class="n">filepath</span><span class="p">,</span>
+                                                                      <span class="n">lineno</span><span class="p">,)</span>
+                <span class="c1"># Prefix the exception message with the thread position</span>
+                <span class="n">prefix</span> <span class="o">=</span> <span class="s2">&quot;</span><span class="si">%s</span><span class="s2">tid=</span><span class="si">%s</span><span class="s2"> ctaid=</span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">locinfo</span><span class="p">,</span> <span class="n">tid</span><span class="p">,</span> <span class="n">ctaid</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">exc_args</span><span class="p">:</span>
+                    <span class="n">exc_args</span> <span class="o">=</span> <span class="p">(</span><span class="s2">&quot;</span><span class="si">%s</span><span class="s2">: </span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">prefix</span><span class="p">,</span> <span class="n">exc_args</span><span class="p">[</span><span class="mi">0</span><span class="p">]),)</span> <span class="o">+</span> \
+                        <span class="n">exc_args</span><span class="p">[</span><span class="mi">1</span><span class="p">:]</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">exc_args</span> <span class="o">=</span> <span class="n">prefix</span><span class="p">,</span>
+                <span class="k">raise</span> <span class="n">exccls</span><span class="p">(</span><span class="o">*</span><span class="n">exc_args</span><span class="p">)</span>
+
+        <span class="c1"># retrieve auto converted arrays</span>
+        <span class="k">for</span> <span class="n">wb</span> <span class="ow">in</span> <span class="n">retr</span><span class="p">:</span>
+            <span class="n">wb</span><span class="p">()</span>
+
+    <span class="k">def</span> <span class="nf">_prepare_args</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ty</span><span class="p">,</span> <span class="n">val</span><span class="p">,</span> <span class="n">stream</span><span class="p">,</span> <span class="n">retr</span><span class="p">,</span> <span class="n">kernelargs</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Convert arguments to ctypes and append to kernelargs</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="c1"># map the arguments using any extension you&#39;ve registered</span>
+        <span class="k">for</span> <span class="n">extension</span> <span class="ow">in</span> <span class="nb">reversed</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">extensions</span><span class="p">):</span>
+            <span class="n">ty</span><span class="p">,</span> <span class="n">val</span> <span class="o">=</span> <span class="n">extension</span><span class="o">.</span><span class="n">prepare_args</span><span class="p">(</span>
+                <span class="n">ty</span><span class="p">,</span>
+                <span class="n">val</span><span class="p">,</span>
+                <span class="n">stream</span><span class="o">=</span><span class="n">stream</span><span class="p">,</span>
+                <span class="n">retr</span><span class="o">=</span><span class="n">retr</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">ty</span><span class="p">,</span> <span class="n">types</span><span class="o">.</span><span class="n">Array</span><span class="p">):</span>
+            <span class="n">devary</span> <span class="o">=</span> <span class="n">wrap_arg</span><span class="p">(</span><span class="n">val</span><span class="p">)</span><span class="o">.</span><span class="n">to_device</span><span class="p">(</span><span class="n">retr</span><span class="p">,</span> <span class="n">stream</span><span class="p">)</span>
+
+            <span class="n">c_intp</span> <span class="o">=</span> <span class="n">ctypes</span><span class="o">.</span><span class="n">c_ssize_t</span>
+
+            <span class="n">meminfo</span> <span class="o">=</span> <span class="n">ctypes</span><span class="o">.</span><span class="n">c_void_p</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+            <span class="n">parent</span> <span class="o">=</span> <span class="n">ctypes</span><span class="o">.</span><span class="n">c_void_p</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+            <span class="n">nitems</span> <span class="o">=</span> <span class="n">c_intp</span><span class="p">(</span><span class="n">devary</span><span class="o">.</span><span class="n">size</span><span class="p">)</span>
+            <span class="n">itemsize</span> <span class="o">=</span> <span class="n">c_intp</span><span class="p">(</span><span class="n">devary</span><span class="o">.</span><span class="n">dtype</span><span class="o">.</span><span class="n">itemsize</span><span class="p">)</span>
+            <span class="n">data</span> <span class="o">=</span> <span class="n">ctypes</span><span class="o">.</span><span class="n">c_void_p</span><span class="p">(</span><span class="n">driver</span><span class="o">.</span><span class="n">device_pointer</span><span class="p">(</span><span class="n">devary</span><span class="p">))</span>
+            <span class="n">kernelargs</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">meminfo</span><span class="p">)</span>
+            <span class="n">kernelargs</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">parent</span><span class="p">)</span>
+            <span class="n">kernelargs</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">nitems</span><span class="p">)</span>
+            <span class="n">kernelargs</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">itemsize</span><span class="p">)</span>
+            <span class="n">kernelargs</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">ax</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">devary</span><span class="o">.</span><span class="n">ndim</span><span class="p">):</span>
+                <span class="n">kernelargs</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">c_intp</span><span class="p">(</span><span class="n">devary</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="n">ax</span><span class="p">]))</span>
+            <span class="k">for</span> <span class="n">ax</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">devary</span><span class="o">.</span><span class="n">ndim</span><span class="p">):</span>
+                <span class="n">kernelargs</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">c_intp</span><span class="p">(</span><span class="n">devary</span><span class="o">.</span><span class="n">strides</span><span class="p">[</span><span class="n">ax</span><span class="p">]))</span>
+
+        <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">ty</span><span class="p">,</span> <span class="n">types</span><span class="o">.</span><span class="n">Integer</span><span class="p">):</span>
+            <span class="n">cval</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">ctypes</span><span class="p">,</span> <span class="s2">&quot;c_</span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="n">ty</span><span class="p">)(</span><span class="n">val</span><span class="p">)</span>
+            <span class="n">kernelargs</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">cval</span><span class="p">)</span>
+
+        <span class="k">elif</span> <span class="n">ty</span> <span class="o">==</span> <span class="n">types</span><span class="o">.</span><span class="n">float64</span><span class="p">:</span>
+            <span class="n">cval</span> <span class="o">=</span> <span class="n">ctypes</span><span class="o">.</span><span class="n">c_double</span><span class="p">(</span><span class="n">val</span><span class="p">)</span>
+            <span class="n">kernelargs</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">cval</span><span class="p">)</span>
+
+        <span class="k">elif</span> <span class="n">ty</span> <span class="o">==</span> <span class="n">types</span><span class="o">.</span><span class="n">float32</span><span class="p">:</span>
+            <span class="n">cval</span> <span class="o">=</span> <span class="n">ctypes</span><span class="o">.</span><span class="n">c_float</span><span class="p">(</span><span class="n">val</span><span class="p">)</span>
+            <span class="n">kernelargs</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">cval</span><span class="p">)</span>
+
+        <span class="k">elif</span> <span class="n">ty</span> <span class="o">==</span> <span class="n">types</span><span class="o">.</span><span class="n">boolean</span><span class="p">:</span>
+            <span class="n">cval</span> <span class="o">=</span> <span class="n">ctypes</span><span class="o">.</span><span class="n">c_uint8</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">val</span><span class="p">))</span>
+            <span class="n">kernelargs</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">cval</span><span class="p">)</span>
+
+        <span class="k">elif</span> <span class="n">ty</span> <span class="o">==</span> <span class="n">types</span><span class="o">.</span><span class="n">complex64</span><span class="p">:</span>
+            <span class="n">kernelargs</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">ctypes</span><span class="o">.</span><span class="n">c_float</span><span class="p">(</span><span class="n">val</span><span class="o">.</span><span class="n">real</span><span class="p">))</span>
+            <span class="n">kernelargs</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">ctypes</span><span class="o">.</span><span class="n">c_float</span><span class="p">(</span><span class="n">val</span><span class="o">.</span><span class="n">imag</span><span class="p">))</span>
+
+        <span class="k">elif</span> <span class="n">ty</span> <span class="o">==</span> <span class="n">types</span><span class="o">.</span><span class="n">complex128</span><span class="p">:</span>
+            <span class="n">kernelargs</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">ctypes</span><span class="o">.</span><span class="n">c_double</span><span class="p">(</span><span class="n">val</span><span class="o">.</span><span class="n">real</span><span class="p">))</span>
+            <span class="n">kernelargs</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">ctypes</span><span class="o">.</span><span class="n">c_double</span><span class="p">(</span><span class="n">val</span><span class="o">.</span><span class="n">imag</span><span class="p">))</span>
+
+        <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">ty</span><span class="p">,</span> <span class="p">(</span><span class="n">types</span><span class="o">.</span><span class="n">NPDatetime</span><span class="p">,</span> <span class="n">types</span><span class="o">.</span><span class="n">NPTimedelta</span><span class="p">)):</span>
+            <span class="n">kernelargs</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">ctypes</span><span class="o">.</span><span class="n">c_int64</span><span class="p">(</span><span class="n">val</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">int64</span><span class="p">)))</span>
+
+        <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">ty</span><span class="p">,</span> <span class="n">types</span><span class="o">.</span><span class="n">Record</span><span class="p">):</span>
+            <span class="n">devrec</span> <span class="o">=</span> <span class="n">wrap_arg</span><span class="p">(</span><span class="n">val</span><span class="p">)</span><span class="o">.</span><span class="n">to_device</span><span class="p">(</span><span class="n">retr</span><span class="p">,</span> <span class="n">stream</span><span class="p">)</span>
+            <span class="n">kernelargs</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">devrec</span><span class="p">)</span>
+
+        <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">ty</span><span class="p">,</span> <span class="n">types</span><span class="o">.</span><span class="n">BaseTuple</span><span class="p">):</span>
+            <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">ty</span><span class="p">)</span> <span class="o">==</span> <span class="nb">len</span><span class="p">(</span><span class="n">val</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">t</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">ty</span><span class="p">,</span> <span class="n">val</span><span class="p">):</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_prepare_args</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">v</span><span class="p">,</span> <span class="n">stream</span><span class="p">,</span> <span class="n">retr</span><span class="p">,</span> <span class="n">kernelargs</span><span class="p">)</span>
+
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span><span class="n">ty</span><span class="p">,</span> <span class="n">val</span><span class="p">)</span>
+
+
+<span class="k">class</span> <span class="nc">_KernelConfiguration</span><span class="p">:</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">dispatcher</span><span class="p">,</span> <span class="n">griddim</span><span class="p">,</span> <span class="n">blockdim</span><span class="p">,</span> <span class="n">stream</span><span class="p">,</span> <span class="n">sharedmem</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">dispatcher</span> <span class="o">=</span> <span class="n">dispatcher</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">griddim</span> <span class="o">=</span> <span class="n">griddim</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">blockdim</span> <span class="o">=</span> <span class="n">blockdim</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">stream</span> <span class="o">=</span> <span class="n">stream</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">sharedmem</span> <span class="o">=</span> <span class="n">sharedmem</span>
+
+        <span class="k">if</span> <span class="n">config</span><span class="o">.</span><span class="n">CUDA_LOW_OCCUPANCY_WARNINGS</span><span class="p">:</span>
+            <span class="n">ctx</span> <span class="o">=</span> <span class="n">get_context</span><span class="p">()</span>
+            <span class="n">smcount</span> <span class="o">=</span> <span class="n">ctx</span><span class="o">.</span><span class="n">device</span><span class="o">.</span><span class="n">MULTIPROCESSOR_COUNT</span>
+            <span class="n">grid_size</span> <span class="o">=</span> <span class="n">griddim</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">*</span> <span class="n">griddim</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">*</span> <span class="n">griddim</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span>
+            <span class="k">if</span> <span class="n">grid_size</span> <span class="o">&lt;</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">smcount</span><span class="p">:</span>
+                <span class="n">msg</span> <span class="o">=</span> <span class="p">(</span><span class="s2">&quot;Grid size (</span><span class="si">{grid}</span><span class="s2">) &lt; 2 * SM count (</span><span class="si">{sm}</span><span class="s2">) &quot;</span>
+                       <span class="s2">&quot;will likely result in GPU under utilization due &quot;</span>
+                       <span class="s2">&quot;to low occupancy.&quot;</span><span class="p">)</span>
+                <span class="n">msg</span> <span class="o">=</span> <span class="n">msg</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">grid</span><span class="o">=</span><span class="n">grid_size</span><span class="p">,</span> <span class="n">sm</span><span class="o">=</span><span class="mi">2</span> <span class="o">*</span> <span class="n">smcount</span><span class="p">)</span>
+                <span class="n">warn</span><span class="p">(</span><span class="n">NumbaPerformanceWarning</span><span class="p">(</span><span class="n">msg</span><span class="p">))</span>
+
+    <span class="k">def</span> <span class="fm">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">dispatcher</span><span class="o">.</span><span class="n">call</span><span class="p">(</span><span class="n">args</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">griddim</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">blockdim</span><span class="p">,</span>
+                                    <span class="bp">self</span><span class="o">.</span><span class="n">stream</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">sharedmem</span><span class="p">)</span>
+
+
+<span class="k">class</span> <span class="nc">Dispatcher</span><span class="p">(</span><span class="n">_dispatcher</span><span class="o">.</span><span class="n">Dispatcher</span><span class="p">,</span> <span class="n">serialize</span><span class="o">.</span><span class="n">ReduceMixin</span><span class="p">):</span>
+    <span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">    CUDA Dispatcher object. When configured and called, the dispatcher will</span>
+<span class="sd">    specialize itself for the given arguments (if no suitable specialized</span>
+<span class="sd">    version already exists) &amp; compute capability, and launch on the device</span>
+<span class="sd">    associated with the current context.</span>
+
+<span class="sd">    Dispatcher objects are not to be constructed by the user, but instead are</span>
+<span class="sd">    created using the :func:`numba.cuda.jit` decorator.</span>
+<span class="sd">    &#39;&#39;&#39;</span>
+
+    <span class="c1"># Whether to fold named arguments and default values. Default values are</span>
+    <span class="c1"># presently unsupported on CUDA, so we can leave this as False in all</span>
+    <span class="c1"># cases.</span>
+    <span class="n">_fold_args</span> <span class="o">=</span> <span class="kc">False</span>
+
+    <span class="n">targetdescr</span> <span class="o">=</span> <span class="n">cuda_target</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">py_func</span><span class="p">,</span> <span class="n">sigs</span><span class="p">,</span> <span class="n">targetoptions</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">py_func</span> <span class="o">=</span> <span class="n">py_func</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">sigs</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">link</span> <span class="o">=</span> <span class="n">targetoptions</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s1">&#39;link&#39;</span><span class="p">,</span> <span class="p">(),)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_can_compile</span> <span class="o">=</span> <span class="kc">True</span>
+
+        <span class="c1"># Specializations for given sets of argument types</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">specializations</span> <span class="o">=</span> <span class="p">{}</span>
+
+        <span class="c1"># A mapping of signatures to compile results</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">overloads</span> <span class="o">=</span> <span class="n">collections</span><span class="o">.</span><span class="n">OrderedDict</span><span class="p">()</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">targetoptions</span> <span class="o">=</span> <span class="n">targetoptions</span>
+
+        <span class="c1"># defensive copy</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">targetoptions</span><span class="p">[</span><span class="s1">&#39;extensions&#39;</span><span class="p">]</span> <span class="o">=</span> \
+            <span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">targetoptions</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;extensions&#39;</span><span class="p">,</span> <span class="p">[]))</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">typingctx</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">targetdescr</span><span class="o">.</span><span class="n">typing_context</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_tm</span> <span class="o">=</span> <span class="n">default_type_manager</span>
+
+        <span class="n">pysig</span> <span class="o">=</span> <span class="n">utils</span><span class="o">.</span><span class="n">pysignature</span><span class="p">(</span><span class="n">py_func</span><span class="p">)</span>
+        <span class="n">arg_count</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">pysig</span><span class="o">.</span><span class="n">parameters</span><span class="p">)</span>
+        <span class="n">argnames</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">pysig</span><span class="o">.</span><span class="n">parameters</span><span class="p">)</span>
+        <span class="n">default_values</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">py_func</span><span class="o">.</span><span class="vm">__defaults__</span> <span class="ow">or</span> <span class="p">()</span>
+        <span class="n">defargs</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">OmittedArg</span><span class="p">(</span><span class="n">val</span><span class="p">)</span> <span class="k">for</span> <span class="n">val</span> <span class="ow">in</span> <span class="n">default_values</span><span class="p">)</span>
+        <span class="n">can_fallback</span> <span class="o">=</span> <span class="kc">False</span> <span class="c1"># CUDA cannot fallback to object mode</span>
+
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">lastarg</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">pysig</span><span class="o">.</span><span class="n">parameters</span><span class="o">.</span><span class="n">values</span><span class="p">())[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+        <span class="k">except</span> <span class="ne">IndexError</span><span class="p">:</span>
+            <span class="n">has_stararg</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">has_stararg</span> <span class="o">=</span> <span class="n">lastarg</span><span class="o">.</span><span class="n">kind</span> <span class="o">==</span> <span class="n">lastarg</span><span class="o">.</span><span class="n">VAR_POSITIONAL</span>
+
+        <span class="n">exact_match_required</span> <span class="o">=</span> <span class="kc">False</span>
+
+        <span class="n">_dispatcher</span><span class="o">.</span><span class="n">Dispatcher</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_tm</span><span class="o">.</span><span class="n">get_pointer</span><span class="p">(),</span>
+                                        <span class="n">arg_count</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_fold_args</span><span class="p">,</span> <span class="n">argnames</span><span class="p">,</span>
+                                        <span class="n">defargs</span><span class="p">,</span> <span class="n">can_fallback</span><span class="p">,</span> <span class="n">has_stararg</span><span class="p">,</span>
+                                        <span class="n">exact_match_required</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">sigs</span><span class="p">:</span>
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">sigs</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s2">&quot;Only one signature supported at present&quot;</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span><span class="n">sigs</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_can_compile</span> <span class="o">=</span> <span class="kc">False</span>
+
+    <span class="k">def</span> <span class="nf">configure</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">griddim</span><span class="p">,</span> <span class="n">blockdim</span><span class="p">,</span> <span class="n">stream</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">sharedmem</span><span class="o">=</span><span class="mi">0</span><span class="p">):</span>
+        <span class="n">griddim</span><span class="p">,</span> <span class="n">blockdim</span> <span class="o">=</span> <span class="n">normalize_kernel_dimensions</span><span class="p">(</span><span class="n">griddim</span><span class="p">,</span> <span class="n">blockdim</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">_KernelConfiguration</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">griddim</span><span class="p">,</span> <span class="n">blockdim</span><span class="p">,</span> <span class="n">stream</span><span class="p">,</span> <span class="n">sharedmem</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="fm">__getitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">args</span><span class="p">):</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">args</span><span class="p">)</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">[</span><span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">4</span><span class="p">]:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;must specify at least the griddim and blockdim&#39;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">configure</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">forall</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ntasks</span><span class="p">,</span> <span class="n">tpb</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">stream</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">sharedmem</span><span class="o">=</span><span class="mi">0</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Returns a 1D-configured kernel for a given number of tasks.</span>
+
+<span class="sd">        This assumes that:</span>
+
+<span class="sd">        - the kernel maps the Global Thread ID ``cuda.grid(1)`` to tasks on a</span>
+<span class="sd">          1-1 basis.</span>
+<span class="sd">        - the kernel checks that the Global Thread ID is upper-bounded by</span>
+<span class="sd">          ``ntasks``, and does nothing if it is not.</span>
+
+<span class="sd">        :param ntasks: The number of tasks.</span>
+<span class="sd">        :param tpb: The size of a block. An appropriate value is chosen if this</span>
+<span class="sd">                    parameter is not supplied.</span>
+<span class="sd">        :param stream: The stream on which the configured kernel will be</span>
+<span class="sd">                       launched.</span>
+<span class="sd">        :param sharedmem: The number of bytes of dynamic shared memory required</span>
+<span class="sd">                          by the kernel.</span>
+<span class="sd">        :return: A configured kernel, ready to launch on a set of arguments.&quot;&quot;&quot;</span>
+
+        <span class="k">return</span> <span class="n">ForAll</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ntasks</span><span class="p">,</span> <span class="n">tpb</span><span class="o">=</span><span class="n">tpb</span><span class="p">,</span> <span class="n">stream</span><span class="o">=</span><span class="n">stream</span><span class="p">,</span> <span class="n">sharedmem</span><span class="o">=</span><span class="n">sharedmem</span><span class="p">)</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">extensions</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">        A list of objects that must have a `prepare_args` function. When a</span>
+<span class="sd">        specialized kernel is called, each argument will be passed through</span>
+<span class="sd">        to the `prepare_args` (from the last object in this list to the</span>
+<span class="sd">        first). The arguments to `prepare_args` are:</span>
+
+<span class="sd">        - `ty` the numba type of the argument</span>
+<span class="sd">        - `val` the argument value itself</span>
+<span class="sd">        - `stream` the CUDA stream used for the current call to the kernel</span>
+<span class="sd">        - `retr` a list of zero-arg functions that you may want to append</span>
+<span class="sd">          post-call cleanup work to.</span>
+
+<span class="sd">        The `prepare_args` function must return a tuple `(ty, val)`, which</span>
+<span class="sd">        will be passed in turn to the next right-most `extension`. After all</span>
+<span class="sd">        the extensions have been called, the resulting `(ty, val)` will be</span>
+<span class="sd">        passed into Numba&#39;s default argument marshalling logic.</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">targetoptions</span><span class="p">[</span><span class="s1">&#39;extensions&#39;</span><span class="p">]</span>
+
+    <span class="k">def</span> <span class="fm">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="c1"># An attempt to launch an unconfigured kernel</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="n">missing_launch_config_msg</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">call</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">args</span><span class="p">,</span> <span class="n">griddim</span><span class="p">,</span> <span class="n">blockdim</span><span class="p">,</span> <span class="n">stream</span><span class="p">,</span> <span class="n">sharedmem</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">        Compile if necessary and invoke this kernel with *args*.</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">specialized</span><span class="p">:</span>
+            <span class="n">kernel</span> <span class="o">=</span> <span class="nb">next</span><span class="p">(</span><span class="nb">iter</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">overloads</span><span class="o">.</span><span class="n">values</span><span class="p">()))</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">kernel</span> <span class="o">=</span> <span class="n">_dispatcher</span><span class="o">.</span><span class="n">Dispatcher</span><span class="o">.</span><span class="n">_cuda_call</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">)</span>
+
+        <span class="n">kernel</span><span class="o">.</span><span class="n">launch</span><span class="p">(</span><span class="n">args</span><span class="p">,</span> <span class="n">griddim</span><span class="p">,</span> <span class="n">blockdim</span><span class="p">,</span> <span class="n">stream</span><span class="p">,</span> <span class="n">sharedmem</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_compile_for_args</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kws</span><span class="p">):</span>
+        <span class="c1"># Based on _DispatcherBase._compile_for_args.</span>
+        <span class="k">assert</span> <span class="ow">not</span> <span class="n">kws</span>
+        <span class="n">argtypes</span> <span class="o">=</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">typeof_pyval</span><span class="p">(</span><span class="n">a</span><span class="p">)</span> <span class="k">for</span> <span class="n">a</span> <span class="ow">in</span> <span class="n">args</span><span class="p">]</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span><span class="nb">tuple</span><span class="p">(</span><span class="n">argtypes</span><span class="p">))</span>
+
+    <span class="k">def</span> <span class="nf">_search_new_conversions</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kws</span><span class="p">):</span>
+        <span class="c1"># Based on _DispatcherBase._search_new_conversions</span>
+        <span class="k">assert</span> <span class="ow">not</span> <span class="n">kws</span>
+        <span class="n">args</span> <span class="o">=</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">typeof_pyval</span><span class="p">(</span><span class="n">a</span><span class="p">)</span> <span class="k">for</span> <span class="n">a</span> <span class="ow">in</span> <span class="n">args</span><span class="p">]</span>
+        <span class="n">found</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="k">for</span> <span class="n">sig</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">nopython_signatures</span><span class="p">:</span>
+            <span class="n">conv</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">typingctx</span><span class="o">.</span><span class="n">install_possible_conversions</span><span class="p">(</span><span class="n">args</span><span class="p">,</span> <span class="n">sig</span><span class="o">.</span><span class="n">args</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">conv</span><span class="p">:</span>
+                <span class="n">found</span> <span class="o">=</span> <span class="kc">True</span>
+        <span class="k">return</span> <span class="n">found</span>
+
+    <span class="k">def</span> <span class="nf">typeof_pyval</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">val</span><span class="p">):</span>
+        <span class="c1"># Based on _DispatcherBase.typeof_pyval, but differs from it to support</span>
+        <span class="c1"># the CUDA Array Interface.</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">typeof</span><span class="p">(</span><span class="n">val</span><span class="p">,</span> <span class="n">Purpose</span><span class="o">.</span><span class="n">argument</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">ValueError</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">numba</span><span class="o">.</span><span class="n">cuda</span><span class="o">.</span><span class="n">is_cuda_array</span><span class="p">(</span><span class="n">val</span><span class="p">):</span>
+                <span class="c1"># When typing, we don&#39;t need to synchronize on the array&#39;s</span>
+                <span class="c1"># stream - this is done when the kernel is launched.</span>
+                <span class="k">return</span> <span class="n">typeof</span><span class="p">(</span><span class="n">numba</span><span class="o">.</span><span class="n">cuda</span><span class="o">.</span><span class="n">as_cuda_array</span><span class="p">(</span><span class="n">val</span><span class="p">,</span> <span class="n">sync</span><span class="o">=</span><span class="kc">False</span><span class="p">),</span>
+                              <span class="n">Purpose</span><span class="o">.</span><span class="n">argument</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">raise</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">nopython_signatures</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="c1"># Based on _DispatcherBase.nopython_signatures</span>
+        <span class="k">return</span> <span class="p">[</span><span class="n">kernel</span><span class="o">.</span><span class="n">signature</span> <span class="k">for</span> <span class="n">kernel</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">overloads</span><span class="o">.</span><span class="n">values</span><span class="p">()]</span>
+
+    <span class="k">def</span> <span class="nf">specialize</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">        Create a new instance of this dispatcher specialized for the given</span>
+<span class="sd">        *args*.</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="n">cc</span> <span class="o">=</span> <span class="n">get_current_device</span><span class="p">()</span><span class="o">.</span><span class="n">compute_capability</span>
+        <span class="n">argtypes</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span>
+            <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">typingctx</span><span class="o">.</span><span class="n">resolve_argument_type</span><span class="p">(</span><span class="n">a</span><span class="p">)</span> <span class="k">for</span> <span class="n">a</span> <span class="ow">in</span> <span class="n">args</span><span class="p">])</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">specialized</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s1">&#39;Dispatcher already specialized&#39;</span><span class="p">)</span>
+
+        <span class="n">specialization</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">specializations</span><span class="o">.</span><span class="n">get</span><span class="p">((</span><span class="n">cc</span><span class="p">,</span> <span class="n">argtypes</span><span class="p">))</span>
+        <span class="k">if</span> <span class="n">specialization</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">specialization</span>
+
+        <span class="n">targetoptions</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">targetoptions</span>
+        <span class="n">targetoptions</span><span class="p">[</span><span class="s1">&#39;link&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">link</span>
+        <span class="n">specialization</span> <span class="o">=</span> <span class="n">Dispatcher</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">py_func</span><span class="p">,</span> <span class="p">[</span><span class="n">types</span><span class="o">.</span><span class="n">void</span><span class="p">(</span><span class="o">*</span><span class="n">argtypes</span><span class="p">)],</span>
+                                    <span class="n">targetoptions</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">specializations</span><span class="p">[</span><span class="n">cc</span><span class="p">,</span> <span class="n">argtypes</span><span class="p">]</span> <span class="o">=</span> <span class="n">specialization</span>
+        <span class="k">return</span> <span class="n">specialization</span>
+
+    <span class="k">def</span> <span class="nf">disable_compile</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">val</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_can_compile</span> <span class="o">=</span> <span class="ow">not</span> <span class="n">val</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">specialized</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        True if the Dispatcher has been specialized.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">sigs</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span> <span class="ow">and</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_can_compile</span>
+
+    <span class="k">def</span> <span class="nf">get_regs_per_thread</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">signature</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">        Returns the number of registers used by each thread in this kernel for</span>
+<span class="sd">        the device in the current context.</span>
+
+<span class="sd">        :param signature: The signature of the compiled kernel to get register</span>
+<span class="sd">                          usage for. This may be omitted for a specialized</span>
+<span class="sd">                          kernel.</span>
+<span class="sd">        :return: The number of registers used by the compiled variant of the</span>
+<span class="sd">                 kernel for the given signature and current device.</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="k">if</span> <span class="n">signature</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">overloads</span><span class="p">[</span><span class="n">signature</span><span class="o">.</span><span class="n">args</span><span class="p">]</span><span class="o">.</span><span class="n">regs_per_thread</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">specialized</span><span class="p">:</span>
+            <span class="k">return</span> <span class="nb">next</span><span class="p">(</span><span class="nb">iter</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">overloads</span><span class="o">.</span><span class="n">values</span><span class="p">()))</span><span class="o">.</span><span class="n">regs_per_thread</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="p">{</span><span class="n">sig</span><span class="p">:</span> <span class="n">overload</span><span class="o">.</span><span class="n">regs_per_thread</span>
+                    <span class="k">for</span> <span class="n">sig</span><span class="p">,</span> <span class="n">overload</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">overloads</span><span class="o">.</span><span class="n">items</span><span class="p">()}</span>
+
+    <span class="k">def</span> <span class="nf">compile</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">sig</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">        Compile and bind to the current context a version of this kernel</span>
+<span class="sd">        specialized for the given signature.</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="n">argtypes</span><span class="p">,</span> <span class="n">return_type</span> <span class="o">=</span> <span class="n">sigutils</span><span class="o">.</span><span class="n">normalize_signature</span><span class="p">(</span><span class="n">sig</span><span class="p">)</span>
+        <span class="k">assert</span> <span class="n">return_type</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="n">return_type</span> <span class="o">==</span> <span class="n">types</span><span class="o">.</span><span class="n">none</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">specialized</span><span class="p">:</span>
+            <span class="k">return</span> <span class="nb">next</span><span class="p">(</span><span class="nb">iter</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">overloads</span><span class="o">.</span><span class="n">values</span><span class="p">()))</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">kernel</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">overloads</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">argtypes</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">kernel</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_can_compile</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s2">&quot;Compilation disabled&quot;</span><span class="p">)</span>
+            <span class="n">kernel</span> <span class="o">=</span> <span class="n">_Kernel</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">py_func</span><span class="p">,</span> <span class="n">argtypes</span><span class="p">,</span> <span class="n">link</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">link</span><span class="p">,</span>
+                             <span class="o">**</span><span class="bp">self</span><span class="o">.</span><span class="n">targetoptions</span><span class="p">)</span>
+            <span class="c1"># Inspired by _DispatcherBase.add_overload, but differs slightly</span>
+            <span class="c1"># because we&#39;re inserting a _Kernel object instead of a compiled</span>
+            <span class="c1"># function.</span>
+            <span class="n">c_sig</span> <span class="o">=</span> <span class="p">[</span><span class="n">a</span><span class="o">.</span><span class="n">_code</span> <span class="k">for</span> <span class="n">a</span> <span class="ow">in</span> <span class="n">argtypes</span><span class="p">]</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_insert</span><span class="p">(</span><span class="n">c_sig</span><span class="p">,</span> <span class="n">kernel</span><span class="p">,</span> <span class="n">cuda</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">overloads</span><span class="p">[</span><span class="n">argtypes</span><span class="p">]</span> <span class="o">=</span> <span class="n">kernel</span>
+
+            <span class="n">kernel</span><span class="o">.</span><span class="n">bind</span><span class="p">()</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">sigs</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">sig</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">kernel</span>
+
+    <span class="k">def</span> <span class="nf">inspect_llvm</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">signature</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">        Return the LLVM IR for this kernel.</span>
+
+<span class="sd">        :param signature: A tuple of argument types.</span>
+<span class="sd">        :return: The LLVM IR for the given signature, or a dict of LLVM IR</span>
+<span class="sd">                 for all previously-encountered signatures.</span>
+
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="k">if</span> <span class="n">signature</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">overloads</span><span class="p">[</span><span class="n">signature</span><span class="p">]</span><span class="o">.</span><span class="n">inspect_llvm</span><span class="p">()</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="p">{</span><span class="n">sig</span><span class="p">:</span> <span class="n">overload</span><span class="o">.</span><span class="n">inspect_llvm</span><span class="p">()</span>
+                    <span class="k">for</span> <span class="n">sig</span><span class="p">,</span> <span class="n">overload</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">overloads</span><span class="o">.</span><span class="n">items</span><span class="p">()}</span>
+
+    <span class="k">def</span> <span class="nf">inspect_asm</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">signature</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">        Return this kernel&#39;s PTX assembly code for for the device in the</span>
+<span class="sd">        current context.</span>
+
+<span class="sd">        :param signature: A tuple of argument types.</span>
+<span class="sd">        :return: The PTX code for the given signature, or a dict of PTX codes</span>
+<span class="sd">                 for all previously-encountered signatures.</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="n">cc</span> <span class="o">=</span> <span class="n">get_current_device</span><span class="p">()</span><span class="o">.</span><span class="n">compute_capability</span>
+        <span class="k">if</span> <span class="n">signature</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">overloads</span><span class="p">[</span><span class="n">signature</span><span class="p">]</span><span class="o">.</span><span class="n">inspect_asm</span><span class="p">(</span><span class="n">cc</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="p">{</span><span class="n">sig</span><span class="p">:</span> <span class="n">overload</span><span class="o">.</span><span class="n">inspect_asm</span><span class="p">(</span><span class="n">cc</span><span class="p">)</span>
+                    <span class="k">for</span> <span class="n">sig</span><span class="p">,</span> <span class="n">overload</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">overloads</span><span class="o">.</span><span class="n">items</span><span class="p">()}</span>
+
+    <span class="k">def</span> <span class="nf">inspect_sass</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">signature</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">        Return this kernel&#39;s SASS assembly code for for the device in the</span>
+<span class="sd">        current context.</span>
+
+<span class="sd">        :param signature: A tuple of argument types.</span>
+<span class="sd">        :return: The SASS code for the given signature, or a dict of SASS codes</span>
+<span class="sd">                 for all previously-encountered signatures.</span>
+
+<span class="sd">        SASS for the device in the current context is returned.</span>
+
+<span class="sd">        Requires nvdisasm to be available on the PATH.</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="k">if</span> <span class="n">signature</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">overloads</span><span class="p">[</span><span class="n">signature</span><span class="p">]</span><span class="o">.</span><span class="n">inspect_sass</span><span class="p">()</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="p">{</span><span class="n">sig</span><span class="p">:</span> <span class="n">defn</span><span class="o">.</span><span class="n">inspect_sass</span><span class="p">()</span>
+                    <span class="k">for</span> <span class="n">sig</span><span class="p">,</span> <span class="n">defn</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">overloads</span><span class="o">.</span><span class="n">items</span><span class="p">()}</span>
+
+    <span class="k">def</span> <span class="nf">inspect_types</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">file</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">        Produce a dump of the Python source of this function annotated with the</span>
+<span class="sd">        corresponding Numba IR and type information. The dump is written to</span>
+<span class="sd">        *file*, or *sys.stdout* if *file* is *None*.</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="k">if</span> <span class="n">file</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">file</span> <span class="o">=</span> <span class="n">sys</span><span class="o">.</span><span class="n">stdout</span>
+
+        <span class="k">for</span> <span class="n">_</span><span class="p">,</span> <span class="n">defn</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">overloads</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="n">defn</span><span class="o">.</span><span class="n">inspect_types</span><span class="p">(</span><span class="n">file</span><span class="o">=</span><span class="n">file</span><span class="p">)</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">ptx</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="p">{</span><span class="n">sig</span><span class="p">:</span> <span class="n">overload</span><span class="o">.</span><span class="n">ptx</span> <span class="k">for</span> <span class="n">sig</span><span class="p">,</span> <span class="n">overload</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">overloads</span><span class="o">.</span><span class="n">items</span><span class="p">()}</span>
+
+    <span class="k">def</span> <span class="nf">bind</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">defn</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">overloads</span><span class="o">.</span><span class="n">values</span><span class="p">():</span>
+            <span class="n">defn</span><span class="o">.</span><span class="n">bind</span><span class="p">()</span>
+
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">_rebuild</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">py_func</span><span class="p">,</span> <span class="n">sigs</span><span class="p">,</span> <span class="n">targetoptions</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Rebuild an instance.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">instance</span> <span class="o">=</span> <span class="bp">cls</span><span class="p">(</span><span class="n">py_func</span><span class="p">,</span> <span class="n">sigs</span><span class="p">,</span> <span class="n">targetoptions</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">instance</span>
+
+    <span class="k">def</span> <span class="nf">_reduce_states</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Reduce the instance for serialization.</span>
+<span class="sd">        Compiled definitions are discarded.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="nb">dict</span><span class="p">(</span><span class="n">py_func</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">py_func</span><span class="p">,</span> <span class="n">sigs</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">sigs</span><span class="p">,</span>
+                    <span class="n">targetoptions</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">targetoptions</span><span class="p">)</span>
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2023, Przemysław Klęsk.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

@@ -114,13 +114,13 @@
 <span class="n">DEMO_DETECT_IN_VIDEO_MULTIPLE_CLFS</span> <span class="o">=</span> <span class="kc">True</span>
 
 <span class="c1"># cv2 camera settings</span>
-<span class="n">CV2_VIDEO_CAPTURE_CAMERA_INDEX</span> <span class="o">=</span> <span class="mi">2</span>
+<span class="n">CV2_VIDEO_CAPTURE_CAMERA_INDEX</span> <span class="o">=</span> <span class="mi">0</span>
 <span class="n">CV2_VIDEO_CAPTURE_IS_IT_MSWINDOWS</span> <span class="o">=</span> <span class="kc">False</span>
 
 <span class="c1"># detection procedure settings</span>
-<span class="n">DETECTION_SCALES</span> <span class="o">=</span> <span class="mi">12</span> <span class="c1"># 9 (lighter), 12 (heavier)</span>
-<span class="n">DETECTION_WINDOW_HEIGHT_MIN</span> <span class="o">=</span> <span class="mi">64</span> <span class="c1"># 96 (lighter), 64 (heavier) </span>
-<span class="n">DETECTION_WINDOW_WIDTH_MIN</span> <span class="o">=</span> <span class="mi">64</span> <span class="c1"># 96 (lighter), 64 (heavier)</span>
+<span class="n">DETECTION_SCALES</span> <span class="o">=</span> <span class="mi">9</span> <span class="c1"># 9 (lighter), 12 (heavier)</span>
+<span class="n">DETECTION_WINDOW_HEIGHT_MIN</span> <span class="o">=</span> <span class="mi">96</span> <span class="c1"># 96 (lighter), 64 (heavier) </span>
+<span class="n">DETECTION_WINDOW_WIDTH_MIN</span> <span class="o">=</span> <span class="mi">96</span> <span class="c1"># 96 (lighter), 64 (heavier)</span>
 <span class="n">DETECTION_WINDOW_GROWTH</span> <span class="o">=</span> <span class="mf">1.2</span>
 <span class="n">DETECTION_WINDOW_JUMP</span> <span class="o">=</span> <span class="mf">0.05</span>
 <span class="n">DETECTION_DECISION_THRESHOLD</span> <span class="o">=</span> <span class="kc">None</span> <span class="c1"># can be set to None (then classfier&#39;s internal threshold is used)</span>
@@ -134,9 +134,6 @@
 <span class="n">FOLDER_DATA</span> <span class="o">=</span> <span class="s2">&quot;../data/&quot;</span>
 <span class="n">FOLDER_CLFS</span> <span class="o">=</span> <span class="s2">&quot;../models/&quot;</span>
 <span class="n">FOLDER_EXTRAS</span> <span class="o">=</span> <span class="s2">&quot;../extras/&quot;</span>
-  
-<span class="c1"># colorama-related</span>
-<span class="n">SILVER</span> <span class="o">=</span> <span class="s2">&quot;</span><span class="se">\x1b</span><span class="s2">[48;5;250m&quot;</span>
                             
 <div class="viewcode-block" id="pickle_objects"><a class="viewcode-back" href="../main_detector.html#main_detector.pickle_objects">[docs]</a><span class="k">def</span> <span class="nf">pickle_objects</span><span class="p">(</span><span class="n">fname</span><span class="p">,</span> <span class="n">some_list</span><span class="p">):</span>
     <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;PICKLE OBJECTS... [to file: </span><span class="si">{</span><span class="n">fname</span><span class="si">}</span><span class="s2">]&quot;</span><span class="p">)</span>
@@ -659,7 +656,9 @@
     <span class="n">gpu_name</span> <span class="o">=</span> <span class="n">gpu_props</span><span class="p">()[</span><span class="s2">&quot;name&quot;</span><span class="p">]</span>
     <span class="n">cpu_name</span> <span class="o">=</span> <span class="n">short_cpu_name</span><span class="p">(</span><span class="n">cpu_and_system_props</span><span class="p">()[</span><span class="s2">&quot;cpu_name&quot;</span><span class="p">])</span>
     <span class="n">features_indexes</span> <span class="o">=</span> <span class="n">clf</span><span class="o">.</span><span class="n">features_selected_</span>
-    <span class="n">video</span> <span class="o">=</span> <span class="n">cv2</span><span class="o">.</span><span class="n">VideoCapture</span><span class="p">(</span><span class="n">CV2_VIDEO_CAPTURE_CAMERA_INDEX</span> <span class="o">+</span> <span class="p">(</span><span class="n">cv2</span><span class="o">.</span><span class="n">CAP_DSHOW</span> <span class="k">if</span> <span class="n">CV2_VIDEO_CAPTURE_IS_IT_MSWINDOWS</span> <span class="k">else</span> <span class="mi">0</span><span class="p">))</span>
+    <span class="n">camera_index</span> <span class="o">=</span> <span class="n">CV2_VIDEO_CAPTURE_CAMERA_INDEX</span> <span class="o">+</span> <span class="p">(</span><span class="n">cv2</span><span class="o">.</span><span class="n">CAP_DSHOW</span> <span class="k">if</span> <span class="n">CV2_VIDEO_CAPTURE_IS_IT_MSWINDOWS</span> <span class="k">else</span> <span class="mi">0</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;[about to start video camera with index </span><span class="si">{</span><span class="n">camera_index</span><span class="si">}</span><span class="s2">]&quot;</span><span class="p">)</span>
+    <span class="n">video</span> <span class="o">=</span> <span class="n">cv2</span><span class="o">.</span><span class="n">VideoCapture</span><span class="p">(</span><span class="n">camera_index</span><span class="p">)</span>
     <span class="n">video</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="n">cv2</span><span class="o">.</span><span class="n">CAP_PROP_FRAME_WIDTH</span><span class="p">,</span> <span class="mi">640</span><span class="p">)</span>
     <span class="n">video</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="n">cv2</span><span class="o">.</span><span class="n">CAP_PROP_FRAME_HEIGHT</span><span class="p">,</span> <span class="mi">480</span><span class="p">)</span>
     <span class="n">video</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="n">cv2</span><span class="o">.</span><span class="n">CAP_PROP_FPS</span><span class="p">,</span> <span class="mi">30</span><span class="p">)</span>    
@@ -675,7 +674,7 @@
     <span class="k">if</span> <span class="n">decision_threshold</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span> 
         <span class="n">decision_threshold</span> <span class="o">=</span> <span class="n">clf</span><span class="o">.</span><span class="n">decision_threshold_</span>
     <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;[decision threshold: </span><span class="si">{</span><span class="n">decision_threshold</span><span class="si">}</span><span class="s2">, source: </span><span class="si">{</span><span class="n">decision_threshold_source</span><span class="si">}</span><span class="s2">]&quot;</span><span class="p">)</span>    
-    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;[about to start video camera...]&quot;</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;[video camera starting...]&quot;</span><span class="p">)</span>
     <span class="n">h_scale</span> <span class="o">=</span> <span class="n">frame_h</span> <span class="o">/</span> <span class="n">resized_height</span>
     <span class="n">w_scale</span> <span class="o">=</span> <span class="n">frame_w</span> <span class="o">/</span> <span class="n">resized_width</span>
     <span class="n">n_frames</span> <span class="o">=</span> <span class="mi">0</span>
@@ -807,7 +806,9 @@
     <span class="n">font_size</span> <span class="o">=</span> <span class="mf">1.0</span>
     <span class="n">text_shift</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">font_size</span> <span class="o">*</span> <span class="mi">16</span><span class="p">)</span>        
     <span class="n">gpu_name</span> <span class="o">=</span> <span class="n">gpu_props</span><span class="p">()[</span><span class="s2">&quot;name&quot;</span><span class="p">]</span>
-    <span class="n">video</span> <span class="o">=</span> <span class="n">cv2</span><span class="o">.</span><span class="n">VideoCapture</span><span class="p">(</span><span class="n">CV2_VIDEO_CAPTURE_CAMERA_INDEX</span> <span class="o">+</span> <span class="p">(</span><span class="n">cv2</span><span class="o">.</span><span class="n">CAP_DSHOW</span> <span class="k">if</span> <span class="n">CV2_VIDEO_CAPTURE_IS_IT_MSWINDOWS</span> <span class="k">else</span> <span class="mi">0</span><span class="p">))</span>
+    <span class="n">camera_index</span> <span class="o">=</span> <span class="n">CV2_VIDEO_CAPTURE_CAMERA_INDEX</span> <span class="o">+</span> <span class="p">(</span><span class="n">cv2</span><span class="o">.</span><span class="n">CAP_DSHOW</span> <span class="k">if</span> <span class="n">CV2_VIDEO_CAPTURE_IS_IT_MSWINDOWS</span> <span class="k">else</span> <span class="mi">0</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;[about to start video camera with index </span><span class="si">{</span><span class="n">camera_index</span><span class="si">}</span><span class="s2">]&quot;</span><span class="p">)</span>
+    <span class="n">video</span> <span class="o">=</span> <span class="n">cv2</span><span class="o">.</span><span class="n">VideoCapture</span><span class="p">(</span><span class="n">camera_index</span><span class="p">)</span>
     <span class="n">video</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="n">cv2</span><span class="o">.</span><span class="n">CAP_PROP_FRAME_WIDTH</span><span class="p">,</span> <span class="mi">640</span><span class="p">)</span>
     <span class="n">video</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="n">cv2</span><span class="o">.</span><span class="n">CAP_PROP_FRAME_HEIGHT</span><span class="p">,</span> <span class="mi">480</span><span class="p">)</span>
     <span class="n">video</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="n">cv2</span><span class="o">.</span><span class="n">CAP_PROP_FPS</span><span class="p">,</span> <span class="mi">30</span><span class="p">)</span>    
@@ -826,7 +827,7 @@
     <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;[terms per window per clfs: </span><span class="si">{</span><span class="p">[</span><span class="n">clf</span><span class="o">.</span><span class="n">T</span> <span class="k">for</span> <span class="n">clf</span> <span class="ow">in</span> <span class="n">clfs</span><span class="p">]</span><span class="si">}</span><span class="s2">]&quot;</span><span class="p">)</span>        
     <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;[decision thresholds within clfs (internal): </span><span class="si">{</span><span class="p">[</span><span class="n">clf</span><span class="o">.</span><span class="n">decision_threshold_</span> <span class="k">for</span> <span class="n">clf</span> <span class="ow">in</span> <span class="n">clfs</span><span class="p">]</span><span class="si">}</span><span class="s2">]&quot;</span><span class="p">)</span>    
     <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;[decision thresholds (external overriding argument): </span><span class="si">{</span><span class="n">decision_thresholds</span><span class="si">}</span><span class="s2">]&quot;</span><span class="p">)</span>        
-    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;[about to start video camera...]&quot;</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;[video camera starting...]&quot;</span><span class="p">)</span>
     <span class="n">h_scale</span> <span class="o">=</span> <span class="n">frame_h</span> <span class="o">/</span> <span class="n">resized_height</span>
     <span class="n">w_scale</span> <span class="o">=</span> <span class="n">frame_w</span> <span class="o">/</span> <span class="n">resized_width</span> 
     <span class="n">n_frames</span> <span class="o">=</span> <span class="mi">0</span>
