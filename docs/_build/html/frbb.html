@@ -4,7 +4,7 @@
   <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>frbb module &mdash; fast_rboost_bins 0.9.0 documentation</title>
+  <title>frbb module &mdash; fast_rboost_bins 0.9.4 documentation</title>
       <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
       <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
   <!--[if lt IE 9]>
@@ -34,7 +34,7 @@
             fast_rboost_bins
           </a>
               <div class="version">
-                0.9.0
+                0.9.4
               </div>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
@@ -98,8 +98,9 @@ The module includes:</p>
 <p>In <code class="docutils literal notranslate"><span class="pre">FastRealBoostBins</span></code> class, attributes estimated by the <code class="docutils literal notranslate"><span class="pre">fit</span></code> function are named with trailing underscores (e.g. <code class="docutils literal notranslate"><span class="pre">features_selected_</span></code>, <code class="docutils literal notranslate"><span class="pre">logits_</span></code>, etc.)
 as indicated in the scikit-learn guidelines. Private functions are named with single leading underscores and some of them are additionally described by 
 <code class="docutils literal notranslate"><span class="pre">&#64;jit</span></code> or <code class="docutils literal notranslate"><span class="pre">&#64;cuda.jit</span></code> decorators coming from <code class="docutils literal notranslate"><span class="pre">numba</span></code> module (intended to be compiled by <cite>Numba</cite>).</p>
-<p>Documentation note: this documentation was built with <cite>Sphinx</cite> tool, which does not generate correctly the documentation for CUDA kernel functions,
-i.e. functions decorated with <code class="docutils literal notranslate"><span class="pre">&#64;cuda.jit</span></code> that produce <code class="docutils literal notranslate"><span class="pre">numba.cuda.compiler.Dispatcher</span></code> objects. For actual docstrings associated with those functions see the source code.</p>
+<p>Documentation note: this documentation was built with <cite>Sphinx</cite> tool, which does not correctly process docstrings for CUDA kernel functions,
+i.e. functions decorated with <code class="docutils literal notranslate"><span class="pre">&#64;cuda.jit</span></code> that produce <code class="docutils literal notranslate"><span class="pre">numba.cuda.compiler.Dispatcher</span></code> objects as outcomes. 
+For actual docstrings associated with those functions see the source code.</p>
 <section id="installation">
 <h2>Installation<a class="headerlink" href="#installation" title="Permalink to this headline"></a></h2>
 <div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="go">pip install frbb</span>
@@ -118,8 +119,8 @@ i.e. functions decorated with <code class="docutils literal notranslate"><span c
     <span class="n">clf</span> <span class="o">=</span> <span class="n">FastRealBoostBins</span><span class="p">()</span>
     <span class="n">clf</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">X_train</span><span class="p">,</span> <span class="n">y_train</span><span class="p">)</span>
     <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;CLF: </span><span class="si">{</span><span class="n">clf</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
-    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;TRAIN ACC: </span><span class="si">{</span><span class="n">clf</span><span class="o">.</span><span class="n">score</span><span class="p">(</span><span class="n">X_train</span><span class="p">,</span> <span class="n">y_train</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
-    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;TEST ACC: </span><span class="si">{</span><span class="n">clf</span><span class="o">.</span><span class="n">score</span><span class="p">(</span><span class="n">X_test</span><span class="p">,</span> <span class="n">y_test</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;TRAIN ACC: </span><span class="si">{</span><span class="n">clf</span><span class="o">.</span><span class="n">score</span><span class="p">(</span><span class="n">X_train</span><span class="p">,</span><span class="w"> </span><span class="n">y_train</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;TEST ACC: </span><span class="si">{</span><span class="n">clf</span><span class="o">.</span><span class="n">score</span><span class="p">(</span><span class="n">X_test</span><span class="p">,</span><span class="w"> </span><span class="n">y_test</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
 </pre></div>
 </div>
 <p>Running the script above produces the following output:</p>
@@ -133,9 +134,8 @@ i.e. functions decorated with <code class="docutils literal notranslate"><span c
 <h2>Dependencies<a class="headerlink" href="#dependencies" title="Permalink to this headline"></a></h2>
 <ul class="simple">
 <li><p><code class="docutils literal notranslate"><span class="pre">numpy</span></code>, <code class="docutils literal notranslate"><span class="pre">math</span></code>: required for mathematical computations.</p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">numba</span></code>: required for just-in-time compilation of crucial computational functions and CUDA kernels (decorated by <code class="docutils literal notranslate"><span class="pre">&#64;jit</span></code> and <code class="docutils literal notranslate"><span class="pre">&#64;cuda.jit</span></code> imported from <code class="docutils literal notranslate"><span class="pre">numba</span></code>)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">numba</span></code>: required for just-in-time compilation of crucial computational functions and CUDA kernels (decorated by <code class="docutils literal notranslate"><span class="pre">&#64;jit</span></code> and <code class="docutils literal notranslate"><span class="pre">&#64;cuda.jit</span></code> imported from <code class="docutils literal notranslate"><span class="pre">numba</span></code>).</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">sklearn</span></code>: required for inheritence and other sklearn API purposes.</p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">json</span></code>: required for load / dump methods pertaining to json files</p></li>
 </ul>
 <dl class="py class">
 <dt class="sig sig-object py" id="frbb.FastRealBoostBins">
@@ -501,7 +501,7 @@ Depending on the mode, delegates actual computations to one of the following fun
 <dd><p>Performs the actual decision function with computations carried out in <code class="docutils literal notranslate"><span class="pre">&quot;numba_cuda&quot;</span></code> mode.
 Depending on the type of input data array, delegates actual computations to one of the following kernel functions: 
 <code class="docutils literal notranslate"><span class="pre">_decision_function_numba_cuda_job_int8</span></code>, <code class="docutils literal notranslate"><span class="pre">_decision_function_numba_cuda_job_uint8</span></code>, …, <code class="docutils literal notranslate"><span class="pre">_decision_function_numba_cuda_job_int64</span></code>, <code class="docutils literal notranslate"><span class="pre">_decision_function_numba_cuda_job_uint64</span></code>,
-or <code class="docutils literal notranslate"><span class="pre">_decision_function_numba_cuda_job_float32</span></code>, <code class="docutils literal notranslate"><span class="pre">_decision_function_numba_cuda_job_int64</span></code>.</p>
+or <code class="docutils literal notranslate"><span class="pre">_decision_function_numba_cuda_job_float32</span></code>, <code class="docutils literal notranslate"><span class="pre">_decision_function_numba_cuda_job_float64</span></code>.</p>
 </dd></dl>
 
 <dl class="py attribute">
