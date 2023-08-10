@@ -587,7 +587,7 @@ def demo_detect_in_video(clf, hcoords, decision_threshold, computations="gpu_cud
     cpu_name = short_cpu_name(cpu_and_system_props()["cpu_name"])
     features_indexes = clf.features_selected_
     camera_index = CV2_VIDEO_CAPTURE_CAMERA_INDEX + (cv2.CAP_DSHOW if CV2_VIDEO_CAPTURE_IS_IT_MSWINDOWS else 0)
-    print(f"[about to start video camera with index {camera_index}]")
+    print(f"[about to start video camera with index {camera_index}]...")
     video = cv2.VideoCapture(camera_index)
     video.set(cv2.CAP_PROP_FRAME_WIDTH, 640)
     video.set(cv2.CAP_PROP_FRAME_HEIGHT, 480)
@@ -604,7 +604,7 @@ def demo_detect_in_video(clf, hcoords, decision_threshold, computations="gpu_cud
     if decision_threshold is None: 
         decision_threshold = clf.decision_threshold_
     print(f"[decision threshold: {decision_threshold}, source: {decision_threshold_source}]")    
-    print(f"[video camera starting...]")
+    print(f"[video camera started]")
     h_scale = frame_h / resized_height
     w_scale = frame_w / resized_width
     n_frames = 0
@@ -737,7 +737,7 @@ def demo_detect_in_video_multiple_clfs(clfs, hcoords, decision_thresholds, postp
     text_shift = int(font_size * 16)        
     gpu_name = gpu_props()["name"]
     camera_index = CV2_VIDEO_CAPTURE_CAMERA_INDEX + (cv2.CAP_DSHOW if CV2_VIDEO_CAPTURE_IS_IT_MSWINDOWS else 0)
-    print(f"[about to start video camera with index {camera_index}]")
+    print(f"[about to start video camera with index {camera_index}...]")
     video = cv2.VideoCapture(camera_index)
     video.set(cv2.CAP_PROP_FRAME_WIDTH, 640)
     video.set(cv2.CAP_PROP_FRAME_HEIGHT, 480)
@@ -757,7 +757,7 @@ def demo_detect_in_video_multiple_clfs(clfs, hcoords, decision_thresholds, postp
     print(f"[terms per window per clfs: {[clf.T for clf in clfs]}]")        
     print(f"[decision thresholds within clfs (internal): {[clf.decision_threshold_ for clf in clfs]}]")    
     print(f"[decision thresholds (external overriding argument): {decision_thresholds}]")        
-    print(f"[video camera starting...]")
+    print(f"[video camera started]")
     h_scale = frame_h / resized_height
     w_scale = frame_w / resized_width 
     n_frames = 0

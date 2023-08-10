@@ -10,8 +10,9 @@ In ``FastRealBoostBins`` class, attributes estimated by the ``fit`` function are
 as indicated in the scikit-learn guidelines. Private functions are named with single leading underscores and some of them are additionally described by 
 ``@jit`` or ``@cuda.jit`` decorators coming from ``numba`` module (intended to be compiled by `Numba`). 
 
-Documentation note: this documentation was built with `Sphinx` tool, which does not generate correctly the documentation for CUDA kernel functions,
-i.e. functions decorated with ``@cuda.jit`` that produce ``numba.cuda.compiler.Dispatcher`` objects. For actual docstrings associated with those functions see the source code. 
+Documentation note: this documentation was built with `Sphinx` tool, which does not correctly process docstrings for CUDA kernel functions,
+i.e. functions decorated with ``@cuda.jit`` that produce ``numba.cuda.compiler.Dispatcher`` objects as outcomes. 
+For actual docstrings associated with those functions see the source code. 
 
 Installation
 ------------
@@ -50,11 +51,9 @@ Dependencies
 ------------
 - ``numpy``, ``math``: required for mathematical computations.
 
-- ``numba``: required for just-in-time compilation of crucial computational functions and CUDA kernels (decorated by ``@jit`` and ``@cuda.jit`` imported from ``numba``) 
+- ``numba``: required for just-in-time compilation of crucial computational functions and CUDA kernels (decorated by ``@jit`` and ``@cuda.jit`` imported from ``numba``). 
 
 - ``sklearn``: required for inheritence and other sklearn API purposes.
-
-- ``json``: required for load / dump methods pertaining to json files 
 """
 
 import numpy as np
@@ -73,7 +72,7 @@ from sklearn.utils import check_array, check_X_y
 from sklearn.utils.validation import column_or_1d, check_is_fitted
 from sklearn.utils.multiclass import check_classification_targets
         
-__version__ = "0.9.0"
+__version__ = "0.9.4"
 __author__ = "Przemysław Klęsk"
 __email__ = "pklesk@zut.edu.pl"   
         
@@ -945,7 +944,7 @@ class FastRealBoostBins(BaseEstimator, ClassifierMixin):
         Performs the actual decision function with computations carried out in ``"numba_cuda"`` mode.
         Depending on the type of input data array, delegates actual computations to one of the following kernel functions: 
         ``_decision_function_numba_cuda_job_int8``, ``_decision_function_numba_cuda_job_uint8``, ..., ``_decision_function_numba_cuda_job_int64``, ``_decision_function_numba_cuda_job_uint64``,
-        or ``_decision_function_numba_cuda_job_float32``, ``_decision_function_numba_cuda_job_int64``.
+        or ``_decision_function_numba_cuda_job_float32``, ``_decision_function_numba_cuda_job_float64``.
         """
         X_selected = X[:, self.features_selected_]
         m = X_selected.shape[0]

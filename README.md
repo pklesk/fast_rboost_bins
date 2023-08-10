@@ -1,4 +1,3 @@
-[under developement]
 # FastRealBoostBins: An ensemble classifier for fast predictions implemented in Python using numba.jit and numba.cuda
 <table>
    <tr>
