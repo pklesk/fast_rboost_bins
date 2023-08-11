@@ -272,8 +272,8 @@ GPUs: 1. GeForce RTX 3090 (contemporary, high-performance), 2. Quadro M4000M (ol
 
 <table>    
     <tr>
-        <td align="center">environment 1 with NVIDIA GeForce RTX 3090</td>
-        <td align="center">environment 2 with NVIDIA Quadro M4000M</td>
+        <td align="center">environment 1 with NVIDIA GeForce RTX 3090<br/>64k windows, 2 detectors (each with T=1024)(</td>
+        <td align="center">environment 2 with NVIDIA Quadro M4000M<br/>22k windows, 2 detectors (each with T=1024)</td>
     </tr>
     <tr>
         <td><br/><a href="https://github.com/pklesk/fast_rboost_bins/assets/23095311/bbcd05d0-24f6-49cf-be5e-210a71d2595c"><img src="/extras/screenshot_video_1_geforce_rtx_3090__1280_960.jpg"/></td>
