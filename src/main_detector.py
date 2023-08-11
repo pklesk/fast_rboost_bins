@@ -45,7 +45,8 @@ DEMO_DETECT_IN_VIDEO_MULTIPLE_CLFS = True
 
 # cv2 camera settings
 CV2_VIDEO_CAPTURE_CAMERA_INDEX = 0
-CV2_VIDEO_CAPTURE_IS_IT_MSWINDOWS = False
+CV2_VIDEO_CAPTURE_OS_IS_MSWINDOWS = False
+CV2_VIDEO_CAPTURE_NO_FLIP = False
 
 # detection procedure settings
 DETECTION_SCALES = 9 # 9 (lighter), 12 (heavier)
@@ -586,7 +587,7 @@ def demo_detect_in_video(clf, hcoords, decision_threshold, computations="gpu_cud
     gpu_name = gpu_props()["name"]
     cpu_name = short_cpu_name(cpu_and_system_props()["cpu_name"])
     features_indexes = clf.features_selected_
-    camera_index = CV2_VIDEO_CAPTURE_CAMERA_INDEX + (cv2.CAP_DSHOW if CV2_VIDEO_CAPTURE_IS_IT_MSWINDOWS else 0)
+    camera_index = CV2_VIDEO_CAPTURE_CAMERA_INDEX + (cv2.CAP_DSHOW if CV2_VIDEO_CAPTURE_OS_IS_MSWINDOWS else 0)
     print(f"[about to start video camera with index {camera_index}]...")
     video = cv2.VideoCapture(camera_index)
     video.set(cv2.CAP_PROP_FRAME_WIDTH, 640)
@@ -645,7 +646,8 @@ def demo_detect_in_video(clf, hcoords, decision_threshold, computations="gpu_cud
         _, frame = video.read()
         t2_read = time.time()
         t1_flip = time.time()
-        frame = cv2.flip(frame, 1)
+        if not CV2_VIDEO_CAPTURE_NO_FLIP:
+            frame = cv2.flip(frame, 1)
         t2_flip = time.time()
         if verbose_loop:
             print(f"[read time: {t2_read - t1_read} s]")
@@ -736,7 +738,7 @@ def demo_detect_in_video_multiple_clfs(clfs, hcoords, decision_thresholds, postp
     font_size = 1.0
     text_shift = int(font_size * 16)        
     gpu_name = gpu_props()["name"]
-    camera_index = CV2_VIDEO_CAPTURE_CAMERA_INDEX + (cv2.CAP_DSHOW if CV2_VIDEO_CAPTURE_IS_IT_MSWINDOWS else 0)
+    camera_index = CV2_VIDEO_CAPTURE_CAMERA_INDEX + (cv2.CAP_DSHOW if CV2_VIDEO_CAPTURE_OS_IS_MSWINDOWS else 0)
     print(f"[about to start video camera with index {camera_index}...]")
     video = cv2.VideoCapture(camera_index)
     video.set(cv2.CAP_PROP_FRAME_WIDTH, 640)
@@ -797,7 +799,8 @@ def demo_detect_in_video_multiple_clfs(clfs, hcoords, decision_thresholds, postp
         _, frame = video.read()
         t2_read = time.time()
         t1_flip = time.time()
-        frame = cv2.flip(frame, 1)
+        if not CV2_VIDEO_CAPTURE_NO_FLIP:
+            frame = cv2.flip(frame, 1)
         t2_flip = time.time()        
         tpf_comps = 0.0
         tpf_post = 0.0
@@ -949,7 +952,8 @@ def parse_args():
     parser.add_argument("-ddivf", "--DEMO_DETECT_IN_VIDEO_FRAMES", type=str_to_float_or_none, default=DEMO_DETECT_IN_VIDEO_FRAMES, help="limit overall detection in video to given number of frames")
     parser.add_argument("-ddivmc", "--DEMO_DETECT_IN_VIDEO_MULTIPLE_CLFS", action="store_true", help="turn on demo of detection in video with multiple classifiers (currently: face and hand detectors)")
     parser.add_argument("-cv2vcci", "--CV2_VIDEO_CAPTURE_CAMERA_INDEX", type=int, default=CV2_VIDEO_CAPTURE_CAMERA_INDEX, help=f"video camera index (default: {CV2_VIDEO_CAPTURE_CAMERA_INDEX})")
-    parser.add_argument("-cv2iim", "--CV2_VIDEO_CAPTURE_IS_IT_MSWINDOWS", action="store_true", help="specify if OS is MS Windows (for cv2 and directx purposes)")
+    parser.add_argument("-cv2oim", "--CV2_VIDEO_CAPTURE_OS_IS_MSWINDOWS", action="store_true", help="indicates that OS is MS Windows (for cv2 and directx purposes)")
+    parser.add_argument("-cv2nf", "--CV2_VIDEO_CAPTURE_NO_FLIP", action="store_true", help="indicates that no frame flipping is wanted")    
     parser.add_argument("-ds", "--DETECTION_SCALES", type=int, default=DETECTION_SCALES, help=f"number of detection scales (default: {DETECTION_SCALES})")
     parser.add_argument("-dwhm", "--DETECTION_WINDOW_HEIGHT_MIN", type=int, default=DETECTION_WINDOW_HEIGHT_MIN, help=f"minimum height of detection window (default: {DETECTION_WINDOW_HEIGHT_MIN})")
     parser.add_argument("-dwwm", "--DETECTION_WINDOW_WIDTH_MIN", type=int, default=DETECTION_WINDOW_WIDTH_MIN, help=f"minimum width of detection window (default: {DETECTION_WINDOW_WIDTH_MIN})")
