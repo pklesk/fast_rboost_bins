@@ -272,19 +272,23 @@ GPUs: 1. GeForce RTX 3090 (contemporary, high-performance), 2. Quadro M4000M (ol
 
 <table>    
     <tr>
-        <td align="center">environment 1 with NVIDIA GeForce RTX 3090<br/>64k windows, 2 detectors with T=1024 each(</td>
+        <td align="center">environment 1 with NVIDIA GeForce RTX 3090<br/>64k windows, 2 detectors with T=1024 each</td>
         <td align="center">environment 2 with NVIDIA Quadro M4000M<br/>22k windows, 2 detectors with T=1024 each</td>
+       <td align="center">environment 1 with NVIDIA GeForce RTX 3090<br/>64k windows, 2 detectors with T=2048 each</td>
     </tr>
     <tr>
         <td><br/><a href="https://github.com/pklesk/fast_rboost_bins/assets/23095311/bbcd05d0-24f6-49cf-be5e-210a71d2595c"><img src="/extras/screenshot_video_1_geforce_rtx_3090__1280_960.jpg"/></td>
         <td><br/><a href="https://github.com/pklesk/fast_rboost_bins/assets/23095311/df08ca75-2cc2-4608-bcbd-e7019134030c"><img src="/extras/screenshot_video_2_quadro_m4000m__1280_960.jpg"/></td>
-    </tr>
-    <tr>
-        <td align="center">environment 1 with NVIDIA GeForce RTX 3090<br/>64k windows, 2 detectors with T=2048 each(</td>
-        <td align="center">environment 1 with NVIDIA GeForce RTX 3090<br/>64k windows, 1 detector with T=1024</td>
-    </tr>
-    <tr>
         <td><br/><a href="https://github.com/pklesk/fast_rboost_bins/assets/23095311/efa212a5-88c7-4aa0-bc43-934d74410a1a"><img src="/extras/screenshot_video_3_geforce_rtx_3090__1280_960.jpg"/></td>
+    </tr>
+    <tr>
+        <td align="center">environment 1 with NVIDIA GeForce RTX 3090<br/>64k windows, 1 detector with T=1024</td>
+       <td align="center">environment 1 with NVIDIA GeForce RTX 3090<br/>64k windows, 1 detector with T=1024</td>
+       <td align="center">environment 1 with NVIDIA GeForce RTX 3090<br/>64k windows, 1 detector with T=1024</td>
+    </tr>
+    <tr>
+        <td><br/><a href="https://github.com/pklesk/fast_rboost_bins/assets/23095311/a7fb77a8-0ed4-456e-9f0f-ed6aebd0e5ba"><img src="/extras/screenshot_video_4_geforce_rtx_3090__1280_960.jpg"/></td>
+        <td><br/><a href="https://github.com/pklesk/fast_rboost_bins/assets/23095311/a7fb77a8-0ed4-456e-9f0f-ed6aebd0e5ba"><img src="/extras/screenshot_video_4_geforce_rtx_3090__1280_960.jpg"/></td>
         <td><br/><a href="https://github.com/pklesk/fast_rboost_bins/assets/23095311/a7fb77a8-0ed4-456e-9f0f-ed6aebd0e5ba"><img src="/extras/screenshot_video_4_geforce_rtx_3090__1280_960.jpg"/></td>
     </tr>           
 </table>
