@@ -2,8 +2,8 @@
 <table>
    <tr>
         <td><img src="/extras/fig_experiment_real_1903270360_20230625_fddb-patches_time_predict_test.png"/></td>
-        <td><br/><a href="https://github.com/pklesk/fast_rboost_bins/assets/23095311/101f9a76-43f3-4b24-af4a-b5420116673e"><img src="/extras/video_geforce_rtx_3090_screenshot.jpg"/></td>
-        <td><br/><a href="https://github.com/pklesk/fast_rboost_bins/assets/23095311/df08ca75-2cc2-4608-bcbd-e7019134030c"><img src="/extras/video_quadro_m4000m_screenshot.jpg"/></td>
+        <td><br/><a href="https://github.com/pklesk/fast_rboost_bins/assets/23095311/bbcd05d0-24f6-49cf-be5e-210a71d2595c"><img src="/extras/screenshot_video_1_geforce_rtx_3090__1280_960.jpg"/></td>
+        <td><br/><a href="https://github.com/pklesk/fast_rboost_bins/assets/23095311/df08ca75-2cc2-4608-bcbd-e7019134030c"><img src="/extras/screenshot_video_2_quadro_m4000m__1280_960.jpg"/></td>
     </tr>
 </table>
 
@@ -276,8 +276,8 @@ GPUs: 1. GeForce RTX 3090 (contemporary, high-performance), 2. Quadro M4000M (ol
         <td align="center">environment 2 with NVIDIA Quadro M4000M</td>
     </tr>
     <tr>
-        <td><br/><a href="https://github.com/pklesk/fast_rboost_bins/assets/23095311/101f9a76-43f3-4b24-af4a-b5420116673e"><img src="/extras/video_geforce_rtx_3090_screenshot.jpg"/></td>
-        <td><br/><a href="https://github.com/pklesk/fast_rboost_bins/assets/23095311/df08ca75-2cc2-4608-bcbd-e7019134030c"><img src="/extras/video_quadro_m4000m_screenshot.jpg"/></td>           
+        <td><br/><a href="https://github.com/pklesk/fast_rboost_bins/assets/23095311/bbcd05d0-24f6-49cf-be5e-210a71d2595c"><img src="/extras/screenshot_video_1_geforce_rtx_3090__1280_960.jpg"/></td>
+        <td><br/><a href="https://github.com/pklesk/fast_rboost_bins/assets/23095311/df08ca75-2cc2-4608-bcbd-e7019134030c"><img src="/extras/screenshot_video_2_quadro_m4000m__1280_960.jpg"/></td>
     </tr>
 </table>
 
