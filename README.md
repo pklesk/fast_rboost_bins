@@ -270,32 +270,34 @@ and *palm gestures*, respectively. To reduce memory transfers between host and d
 once and placed in device-side arrays prior to an actual video sequence. Below we present example snapshots (click them for videos) and obtained efficiency measurements for two environments with different 
 GPUs: 1. GeForce RTX 3090 (contemporary, high-performance), 2. Quadro M4000M (older generation).
 
-<table>    
-    <tr>
-        <td align="center">environment 1 with NVIDIA GeForce RTX 3090<br/>64k windows, 2 detectors with T=1024 each</td>
-        <td align="center">environment 2 with NVIDIA Quadro M4000M<br/>22k windows, 2 detectors with T=1024 each</td>
-       <td align="center">environment 1 with NVIDIA GeForce RTX 3090<br/>64k windows, 2 detectors with T=2048 each</td>
-    </tr>
-    <tr>
-        <td><br/><a href="https://github.com/pklesk/fast_rboost_bins/assets/23095311/bbcd05d0-24f6-49cf-be5e-210a71d2595c"><img src="/extras/screenshot_video_1_geforce_rtx_3090__1280_960.jpg"/></td>
-        <td><br/><a href="https://github.com/pklesk/fast_rboost_bins/assets/23095311/df08ca75-2cc2-4608-bcbd-e7019134030c"><img src="/extras/screenshot_video_2_quadro_m4000m__1280_960.jpg"/></td>
-        <td><br/><a href="https://github.com/pklesk/fast_rboost_bins/assets/23095311/efa212a5-88c7-4aa0-bc43-934d74410a1a"><img src="/extras/screenshot_video_3_geforce_rtx_3090__1280_960.jpg"/></td>
-    </tr>
-    <tr>
-        <td align="center">environment 1 with NVIDIA GeForce RTX 3090<br/>64k windows, 1 detector with T=1024</td>
-       <td align="center">environment 1 with NVIDIA GeForce RTX 3090<br/>64k windows, 1 detector with T=1024</td>
-       <td align="center">environment 1 with NVIDIA GeForce RTX 3090<br/>64k windows, 1 detector with T=1024</td>
-    </tr>
-    <tr>
-        <td><br/><a href="https://github.com/pklesk/fast_rboost_bins/assets/23095311/a7fb77a8-0ed4-456e-9f0f-ed6aebd0e5ba"><img src="/extras/screenshot_video_4_geforce_rtx_3090__1280_960.jpg"/></td>
-        <td><br/><a href="https://github.com/pklesk/fast_rboost_bins/assets/23095311/a7fb77a8-0ed4-456e-9f0f-ed6aebd0e5ba"><img src="/extras/screenshot_video_4_geforce_rtx_3090__1280_960.jpg"/></td>
-        <td><br/><a href="https://github.com/pklesk/fast_rboost_bins/assets/23095311/a7fb77a8-0ed4-456e-9f0f-ed6aebd0e5ba"><img src="/extras/screenshot_video_4_geforce_rtx_3090__1280_960.jpg"/></td>
-    </tr>           
-</table>
-
-Details of environment 1 in a former section. Details of environment 2 given below. <br/>
+Details of environment 1 in a former section. 
+Details of environment 2:
 Hardware environment (2): Intel(R) Xeon(R) CPU E3-1505M v5 @ 2.80GHz, 63.9 GB RAM, Quadro M4000M GPU. <br/>
 Software environment (2): Windows 10, Python 3.9.7 [MSC v.1916 64 bit (AMD64)], numpy 1.20.0, numba 0.54.1, sklearn 1.0.2, cv2 4.5.5-dev, nvcc 11.6.
+
+
+<table>    
+   <tr>
+      <td align="center">environment 1 (NVIDIA GeForce RTX 3090)<br/>64k windows, 2 detectors with T=1024 each</td>
+      <td align="center">environment 2 (NVIDIA Quadro M4000M)<br/>22k windows, 2 detectors with T=1024 each</td>
+      <td align="center">environment 1 (NVIDIA GeForce RTX 3090)<br/>64k windows, 2 detectors with T=2048 each</td>
+   </tr>
+   <tr>
+      <td><br/><a href="https://github.com/pklesk/fast_rboost_bins/assets/23095311/bbcd05d0-24f6-49cf-be5e-210a71d2595c"><img src="/extras/screenshot_video_1_geforce_rtx_3090__1280_960.jpg"/></td>
+      <td><br/><a href="https://github.com/pklesk/fast_rboost_bins/assets/23095311/df08ca75-2cc2-4608-bcbd-e7019134030c"><img src="/extras/screenshot_video_2_quadro_m4000m__1280_960.jpg"/></td>
+      <td><br/><a href="https://github.com/pklesk/fast_rboost_bins/assets/23095311/efa212a5-88c7-4aa0-bc43-934d74410a1a"><img src="/extras/screenshot_video_3_geforce_rtx_3090__1280_960.jpg"/></td>
+   </tr>
+   <tr>
+      <td align="center">environment 1 (NVIDIA GeForce RTX 3090)<br/>64k windows, 1 detector with T=1024</td>
+      <td align="center">environment 1 (NVIDIA GeForce RTX 3090)<br/>22k windows, 2 detectors with T=1024 each</td>
+      <td align="center">environment 1 (NVIDIA GeForce RTX 3090)<br/>22k windows, 2 detectors with T=512 each</td>
+   </tr>
+   <tr>
+      <td><br/><a href="https://github.com/pklesk/fast_rboost_bins/assets/23095311/a7fb77a8-0ed4-456e-9f0f-ed6aebd0e5ba"><img src="/extras/screenshot_video_4_geforce_rtx_3090__1280_960.jpg"/></td>
+      <td><br/><a href="https://github.com/pklesk/fast_rboost_bins/assets/23095311/f61d494c-73b8-4565-bbf7-505fa49f20a7"><img src="/extras/screenshot_video_5_geforce_rtx_3090__1280_960.jpg"/></td>
+      <td><br/><a href="https://github.com/pklesk/fast_rboost_bins/assets/23095311/39da2aed-c9c6-49ec-abfe-ca89787c5d85"><img src="/extras/screenshot_video_6_geforce_rtx_3090__1280_960.jpg"/></td>
+   </tr>           
+</table>
 
 ### Script for object detection: `main_detector` 
 By executing `python main_detector.py -h` (or `--help`) one obtains help on script arguments:
