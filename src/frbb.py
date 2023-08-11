@@ -20,6 +20,8 @@ Installation
 .. code-block:: console
     
     pip install frbb
+    
+Note: for further usage, NVIDIA CUDA drivers must be present in the operating system.
 
 Example Usage
 -------------
