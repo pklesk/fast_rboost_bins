@@ -27,6 +27,7 @@ classifiers operate as object detectors under heavy computational load (over 60k
 ```bash
 pip install frbb
 ```
+Note: for further usage, NVIDIA CUDA drivers must be present in the operating system.
 
 ## Example usage
 With `frbb` module installed, one can write e.g.:
