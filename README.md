@@ -289,10 +289,12 @@ By executing `python main_detector.py -h` (or `--help`) one obtains help on scri
 ```bash
 "FAST-REAL-BOOST-BINS": AN ENSEMBLE CLASSIFIER FOR FAST PREDICTIONS IMPLEMENTED IN PYTHON VIA NUMBA.JIT AND NUMBA.CUDA. [main_detector]
 [for help use -h or --help switch]
-usage: main_detector.py [-h] [-k {face,hand}] [-s S] [-p P] [-npi NPI] [-t T] [-b B] [-seed SEED] [-dhfsa] [-dhfss] [-rd] [-form] [-maom] [-adtom] [-ddiv] [-ddivc {gpu_cuda,cpu_simple,cpu_parallel}]
-                        [-ddivpj DEMO_DETECT_IN_VIDEO_PARALLEL_JOBS] [-ddivvl] [-ddivvd] [-ddivf DEMO_DETECT_IN_VIDEO_FRAMES] [-ddivmc] [-cv2vcci CV2_VIDEO_CAPTURE_CAMERA_INDEX] [-cv2iim] [-ds DETECTION_SCALES]
-                        [-dwhm DETECTION_WINDOW_HEIGHT_MIN] [-dwwm DETECTION_WINDOW_WIDTH_MIN] [-dwg DETECTION_WINDOW_GROWTH] [-dwj DETECTION_WINDOW_JUMP] [-ddt DETECTION_DECISION_THRESHOLD] [-dp {None,avg,nms}]
-                        [-mccn MC_CLFS_NAMES [MC_CLFS_NAMES ...]] [-mcdt MC_DECISION_THRESHOLDS [MC_DECISION_THRESHOLDS ...]]
+usage: main_detector.py [-h] [-k {face,hand}] [-s S] [-p P] [-npi NPI] [-t T] [-b B] [-seed SEED] [-dhfsa] [-dhfss] [-rd] [-form] [-maom] [-adtom] [-ddiv]
+                        [-ddivc {gpu_cuda,cpu_simple,cpu_parallel}] [-ddivpj DEMO_DETECT_IN_VIDEO_PARALLEL_JOBS] [-ddivvl] [-ddivvd]
+                        [-ddivf DEMO_DETECT_IN_VIDEO_FRAMES] [-ddivmc] [-cv2vcci CV2_VIDEO_CAPTURE_CAMERA_INDEX] [-cv2oim] [-cv2nf] [-ds DETECTION_SCALES]
+                        [-dwhm DETECTION_WINDOW_HEIGHT_MIN] [-dwwm DETECTION_WINDOW_WIDTH_MIN] [-dwg DETECTION_WINDOW_GROWTH] [-dwj DETECTION_WINDOW_JUMP]
+                        [-ddt DETECTION_DECISION_THRESHOLD] [-dp {None,avg,nms}] [-mccn MC_CLFS_NAMES [MC_CLFS_NAMES ...]]
+                        [-mcdt MC_DECISION_THRESHOLDS [MC_DECISION_THRESHOLDS ...]]
 
 optional arguments:
   -h, --help            show this help message and exit
@@ -332,15 +334,17 @@ optional arguments:
   -ddivmc, --DEMO_DETECT_IN_VIDEO_MULTIPLE_CLFS
                         turn on demo of detection in video with multiple classifiers (currently: face and hand detectors)
   -cv2vcci CV2_VIDEO_CAPTURE_CAMERA_INDEX, --CV2_VIDEO_CAPTURE_CAMERA_INDEX CV2_VIDEO_CAPTURE_CAMERA_INDEX
-                        video camera index (default: 2)
-  -cv2iim, --CV2_VIDEO_CAPTURE_IS_IT_MSWINDOWS
-                        specify if OS is MS Windows (for cv2 and directx purposes)
+                        video camera index (default: 0)
+  -cv2oim, --CV2_VIDEO_CAPTURE_OS_IS_MSWINDOWS
+                        indicates that OS is MS Windows (for cv2 and directx purposes)
+  -cv2nf, --CV2_VIDEO_CAPTURE_NO_FLIP
+                        indicates that no frame flipping is wanted
   -ds DETECTION_SCALES, --DETECTION_SCALES DETECTION_SCALES
-                        number of detection scales (default: 12)
+                        number of detection scales (default: 9)
   -dwhm DETECTION_WINDOW_HEIGHT_MIN, --DETECTION_WINDOW_HEIGHT_MIN DETECTION_WINDOW_HEIGHT_MIN
-                        minimum height of detection window (default: 64)
+                        minimum height of detection window (default: 96)
   -dwwm DETECTION_WINDOW_WIDTH_MIN, --DETECTION_WINDOW_WIDTH_MIN DETECTION_WINDOW_WIDTH_MIN
-                        minimum width of detection window (default: 64)
+                        minimum width of detection window (default: 96)
   -dwg DETECTION_WINDOW_GROWTH, --DETECTION_WINDOW_GROWTH DETECTION_WINDOW_GROWTH
                         growth factor of detection window (default: 1.2)
   -dwj DETECTION_WINDOW_JUMP, --DETECTION_WINDOW_JUMP DETECTION_WINDOW_JUMP
@@ -350,10 +354,11 @@ optional arguments:
   -dp {None,avg,nms}, --DETECTION_POSTPROCESS {None,avg,nms}
                         type of detection postprocessing (default: avg)
   -mccn MC_CLFS_NAMES [MC_CLFS_NAMES ...], --MC_CLFS_NAMES MC_CLFS_NAMES [MC_CLFS_NAMES ...]
-                        classifiers names (list) for detection with multiple classifiers (default: ['clf_frbb_face_n_18225_S_5_P_5_NPI_300_SEED_0_T_1024_B_8.bin', 'clf_frbb_hand_n_18225_S_5_P_5_NPI_30_SEED_0_T_1024_B_8.bin'])
-                        (attention: type them using spaces as separators)
+                        classifiers names (list) for detection with multiple classifiers (default: ['clf_frbb_face_n_18225_S_5_P_5_NPI_300_SEED_0_T_1024_B_8.bin',
+                        'clf_frbb_hand_n_18225_S_5_P_5_NPI_30_SEED_0_T_1024_B_8.bin']) (attention: type them using spaces as separators)
   -mcdt MC_DECISION_THRESHOLDS [MC_DECISION_THRESHOLDS ...], --MC_DECISION_THRESHOLDS MC_DECISION_THRESHOLDS [MC_DECISION_THRESHOLDS ...]
-                        decision thresholds (list) for detection with multiple classifiers, any can be set to None (default: [None, None]) (attention: type them using spaces as separators)
+                        decision thresholds (list) for detection with multiple classifiers, any can be set to None (default: [None, None]) (attention: type them using
+                        spaces as separators)
 ```
 
 ## License
