@@ -298,6 +298,19 @@ Software environment 2: Windows 10, Python 3.9.7 [MSC v.1916 64 bit (AMD64)], nu
    </tr>           
 </table>
 
+#### Efficiency of object detectors (averages for 1000 frames) for environment 1 (GeForce RTX 3090)
+
+| windows per frame | detectors | T     | HFs avg. time [ms] | FRBB avg. time [ms] | computations FPS | display FPS |
+|------------------:|----------:|------:|-------------------:|--------------------:|-----------------:|------------:|
+|             22 278|         1 |   512 |               3.51 |                1.29 |            122.50|       30.09 |
+|             22 278|         1 |  1024 |               3.73 |                1.38 |            118.82|       30.09 |
+|             22 278|         1 |  2048 |               4.42 |                1.62 |            106.99|       30.09 |
+|             22 278|         2 |   512 |               5.64 |                2.40 |            115.30|       30.06 |
+|             22 278|         2 |  1024 |               6.07 |                2.60 |            107.03|       30.09 |
+|             22 278|         2 |  2048 |               6.91 |                2.97 |             95.49|       30.09 |
+
+#### Efficiency of object detectors (averages for 1000 frames) for environment 1 (Quadro M4000M)
+
 | windows per frame | detectors | T     | HFs avg. time [ms] | FRBB avg. time [ms] | computations FPS | display FPS |
 |------------------:|----------:|------:|-------------------:|--------------------:|-----------------:|------------:|
 |             22 278|         1 |   512 |               3.51 |                1.29 |            122.50|       30.09 |
