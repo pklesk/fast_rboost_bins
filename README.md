@@ -287,7 +287,7 @@ Software environment 2: Windows 10, Python 3.9.7 [MSC v.1916 64 bit (AMD64)], nu
       <td><br/><a href="https://github.com/pklesk/fast_rboost_bins/assets/23095311/efa212a5-88c7-4aa0-bc43-934d74410a1a"><img src="/extras/screenshot_video_3_geforce_rtx_3090__1280_960.jpg"/></td>
    </tr>
    <tr>
-      <td align="center">environment 1 (GeForce RTX 3090)<br/>64k windows, 1 detector,T=1024</td>
+      <td align="center">environment 1 (GeForce RTX 3090)<br/>64k windows, 1 detector, T=1024</td>
       <td align="center">environment 1 (GeForce RTX 3090)<br/>22k windows, 2 detectors, T=1024 each</td>
       <td align="center">environment 1 (GeForce RTX 3090)<br/>22k windows, 2 detectors, T=512 each</td>
    </tr>
@@ -301,7 +301,11 @@ Software environment 2: Windows 10, Python 3.9.7 [MSC v.1916 64 bit (AMD64)], nu
 | windows per frame | detectors | T     | HFs avg. time [ms] | FRBB avg. time [ms] | computations FPS | display FPS |
 |------------------:|----------:|------:|-------------------:|--------------------:|-----------------:|------------:|
 |             22 278|         1 |   512 |               3.51 |                1.29 |            122.50|       30.09 |
-|             22 278|         1 |   512 |               3.51 |                1.29 |            122.50|       30.09 |
+|             22 278|         1 |  1024 |               3.73 |                1.38 |            118.82|       30.09 |
+|             22 278|         1 |  2048 |               4.42 |                1.62 |            106.99|       30.09 |
+|             22 278|         2 |   512 |               5.64 |                2.40 |            115.30|       30.06 |
+|             22 278|         2 |  1024 |               6.07 |                2.60 |            107.03|       30.09 |
+|             22 278|         2 |  2048 |               6.91 |                2.97 |             95.49|       30.09 |
 
 ### Script for object detection: `main_detector` 
 By executing `python main_detector.py -h` (or `--help`) one obtains help on script arguments:
