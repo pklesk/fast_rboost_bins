@@ -298,6 +298,11 @@ Software environment 2: Windows 10, Python 3.9.7 [MSC v.1916 64 bit (AMD64)], nu
    </tr>           
 </table>
 
+| windows per frame | detectors | T     | HFs avg. time [ms] | FRBB avg. time [ms] | computations FPS | display FPS |
+|------------------:|----------:|------:|-------------------:|--------------------:|-----------------:|------------:|
+|             22 278|         1 |   512 |               3.51 |                1.29 |            122.50|       30.09 |
+|             22 278|         1 |   512 |               3.51 |                1.29 |            122.50|       30.09 |
+
 ### Script for object detection: `main_detector` 
 By executing `python main_detector.py -h` (or `--help`) one obtains help on script arguments:
 ```bash
