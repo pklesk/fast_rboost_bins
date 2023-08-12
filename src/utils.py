@@ -1,16 +1,25 @@
-"""This is a fake documentation for utils.py file."""
+"""
+Auxiliary module with simple utility and informative functions. 
+"""
 
 import cpuinfo
 import platform
 import psutil
 from numba import cuda
  
-#__author__ = "Przemysław Klęsk"
-#__email__ = "pklesk@zut.edu.pl"
+__author__ = "Przemysław Klęsk"
+__email__ = "pklesk@zut.edu.pl"
 
+def dict_to_str(d):
+    """Returns a vertically formatted string representation of a dictionary."""
+    dict_str = "{"
+    for i, key in enumerate(d):
+        dict_str += "\n  "  + str(key) + ": " + str(d[key]) + ("," if i < len(d) - 1 else "")    
+    dict_str += "\n}"
+    return dict_str
 
 def cpu_and_system_props():
-    """Returns a dictionary with info on CPU and OS."""
+    """Returns a dictionary with properties of CPU and OS."""
     props = {}    
     info = cpuinfo.get_cpu_info()
     un = platform.uname()
@@ -22,6 +31,7 @@ def cpu_and_system_props():
     return props    
 
 def gpu_props():
+    """Returns a dictionary with properties of GPU device."""
     gpu = cuda.get_current_device()
     props = {}
     props["name"] = gpu.name.decode("ASCII")

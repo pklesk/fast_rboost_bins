@@ -6,11 +6,10 @@ The module includes:
 
 - `_lock`, `_unlock`: utility functions (placed outside the class, related to mutex mechanisms in case of numba.cuda-based fit).
 
-In ``FastRealBoostBins`` class, attributes estimated by the ``fit`` function are named with trailing underscores (e.g. ``features_selected_``, ``logits_``, etc.)
-as indicated in the scikit-learn guidelines. Private functions are named with single leading underscores and some of them are additionally described by 
-``@jit`` or ``@cuda.jit`` decorators coming from ``numba`` module (intended to be compiled by `Numba`). 
+In ``FastRealBoostBins`` class, attributes estimated by the ``fit`` function are named with trailing underscores (e.g. ``features_selected_``, ``logits_``, etc.) as indicated in the scikit-learn guidelines. 
+Private functions are named with single leading underscores and some of them are additionally described by ``@jit`` or ``@cuda.jit`` decorators coming from ``numba`` module (intended to be compiled by `Numba`).
 
-Documentation note: this documentation was built with `Sphinx` tool, which does not correctly process docstrings for CUDA kernel functions,
+Documentation note: this documentation was built with `Sphinx` tool, which does not correctly process docstrings for CUDA kernel functions, 
 i.e. functions decorated with ``@cuda.jit`` that produce ``numba.cuda.compiler.Dispatcher`` objects as outcomes. 
 For actual docstrings associated with those functions see the source code. 
 
@@ -76,7 +75,7 @@ from sklearn.utils.multiclass import check_classification_targets
         
 __version__ = "0.9.4"
 __author__ = "Przemysław Klęsk"
-__email__ = "pklesk@zut.edu.pl"   
+__email__ = "pklesk@zut.edu.pl" 
         
 warnings.simplefilter("ignore", category=NumbaPerformanceWarning)
 np.set_printoptions(linewidth=512)
@@ -94,7 +93,6 @@ def _unlock(mutex):
     """Device-side function that unlocks the wanted critical section (mutex mechanism). Unlocking means setting the value of variable or array cell (passed by reference) from 1 to 0."""
     cuda.threadfence()
     cuda.atomic.exch(mutex, 0, 0)
-
 
 # the class
 class FastRealBoostBins(BaseEstimator, ClassifierMixin):
