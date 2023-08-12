@@ -7,7 +7,7 @@ Welcome to fast_rboost_bins's documentation!
 ============================================
 
 The core machine learning functionalities of this project are embodied by the class `FastRealBoostBins` (compliant with `scikit-learn`)
-present in :doc:`frbb`. Other modules play the role of auxiliary tools or demonstrators. For additional information on the project 
+present in :doc:`frbb`. Other modules play the role of auxiliary utilities or demonstrators. For additional information on the project 
 (and for more examples) please see also the README.md file in project's repository (`<https://github.com/pklesk/fast_rboost_bins>`_).
 
 .. toctree::

@@ -1,0 +1,150 @@
+"FAST-REAL-BOOST-BINS": AN ENSEMBLE CLASSIFIER FOR FAST PREDICTIONS IMPLEMENTED IN PYTHON VIA NUMBA.JIT AND NUMBA.CUDA. [main_experimenter]
+[for help use -h or --help switch]
+CLASSIFIERS DEFINITIONS:
+[(<class 'sklearn.ensemble._weight_boosting.AdaBoostClassifier'>, {'algorithm': 'SAMME.R'}, {'color': 'black'}),
+ (<class 'sklearn.ensemble._gb.GradientBoostingClassifier'>, {'max_depth': 1}, {'color': 'green'}),
+ (<class 'sklearn.ensemble._hist_gradient_boosting.gradient_boosting.HistGradientBoostingClassifier'>, {'max_depth': 1, 'early_stopping': False}, {'color': 'orange'}),
+ (<class 'frbb.FastRealBoostBins'>, {'fit_mode': 'numba_jit', 'decision_function_mode': 'numba_jit'}, {'color': 'blue'}),
+ (<class 'frbb.FastRealBoostBins'>, {'fit_mode': 'numba_cuda', 'decision_function_mode': 'numba_cuda'}, {'color': 'red'})]
+REAL DATA DEFINITIONS:
+[('fddb-patches', 'read_data_fddb_patches', 'FDDB-PATCHES (3NPI)'),
+ ('cifar-10', 'read_data_cifar_10', 'CIFAR-10 (AIRPLANE)'),
+ ('mnist-b', 'read_data_mnist_b', 'MNIST-B (DIGIT 0)'),
+ ('fddb-hfs-100', 'read_data_fddb_haar_npi_100', 'FDDB-HFs (100NPI)'),
+ ('fddb-hfs-300', 'read_data_fddb_haar_npi_300', 'FDDB-HFs (300NPI)'),
+ ('hagrid-hfs-10', 'read_data_hagrid_haar_npi_10', 'HaGRID-HFs (PALM, 10NPI)'),
+ ('hagrid-hfs-30', 'read_data_hagrid_haar_npi_30', 'HaGRID-HFs (PALM, 30NPI)')]
+RANDOM DATA SIZES DEFINABLE VIA -nmm (--NMM_MAGN_ORDERS) OPTION.
+MAIN-EXPERIMENTER STARTING...
+CPU AND SYSTEM PROPS: {'cpu_name': 'Intel(R) Xeon(R) CPU E3-1505M v5 @ 2.80GHz', 'ram_size': '63.9 GB', 'os_name': 'Windows 10', 'os_version': '10.0.19045', 'os_machine': 'AMD64'}
+GPU PROPS: {'name': 'Quadro M4000M', 'max_threads_per_block': 1024, 'max_block_dim_x': 1024, 'max_block_dim_y': 1024, 'max_block_dim_z': 64, 'max_grid_dim_x': 2147483647, 'max_grid_dim_y': 65535, 'max_grid_dim_z': 65535, 'max_shared_memory_per_block': 49152, 'async_engine_count': 5, 'can_map_host_memory': 1, 'multiprocessor_count': 10, 'warp_size': 32, 'unified_addressing': 1, 'pci_bus_id': 1, 'pci_device_id': 0, 'compute_capability': (5, 2), 'cores_per_SM': 128, 'cores_total': 1280}
+ARGUMENTS:
+{
+  CLFS_FLAGS: [True, False, False, True, True],
+  DATA_KIND: random,
+  REAL_DATA_FLAGS: [True, False, False, False, False, False, False],
+  RANDOM_DTYPE: <class 'numpy.int8'>,
+  NMM_MAGN_ORDERS: [(3, 4, 4)],
+  TS: [16, 32, 64],
+  BS: [8],
+  SEED: 0,
+  PLOTS: False,
+  PLOTS_ARG_NAME: T,
+  PLOTS_VALUES_NAMES: ['acc_test', 'acc_train', 'time_fit', 'time_predict_train', 'time_predict_test']
+}
+EXPERIMENTER FOR RANDOM DATA...
+[experiment hash string: random_1752355477_20230812]
+[clfs definitions:]
+[clf def 0 (active: True): AdaBoostClassifier({'algorithm': 'SAMME.R'})]
+[clf def 1 (active: False): GradientBoostingClassifier({'max_depth': 1})]
+[clf def 2 (active: False): HistGradientBoostingClassifier({'max_depth': 1, 'early_stopping': False})]
+[clf def 3 (active: True): FastRealBoostBins({'fit_mode': 'numba_jit', 'decision_function_mode': 'numba_jit'})]
+[clf def 4 (active: True): FastRealBoostBins({'fit_mode': 'numba_cuda', 'decision_function_mode': 'numba_cuda'})]
+[other settings -> dtype: int8, nmm_magn_orders: [(3, 4, 4)], Ts: [16, 32, 64], Bs: [8], seed: 0]
+====================================================================================================================================================================================================
+[experiment: 1/3, params: ((3, 4, 4), 16, 8)]
+[description: {'T': 16, 'B': 8, 'n': 1000, 'm_train': 10000, 'm_test': 10000}]
+====================================================================================================================================================================================================
+[clf: AdaBoostClassifier(n_estimators=16)]
+[fit...]
+[fit done; time: 7.890984773635864 s]
+[predict train...]
+[predict train done; time: 0.37802648544311523 s, acc: 0.5647]
+[predict test...]
+[predict test done; time: 0.3690006732940674 s, acc: 0.4907]
+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+[clf: FastRealBoostBins(T=16, B=8, outliers_ratio=0.05, logit_max: 2.0, fit_mode='numba_jit', decision_function_mode='numba_jit')]
+[fit...]
+[fit done; time: 5.786991357803345 s]
+[predict train...]
+[predict train done; time: 0.00401759147644043 s, acc: 0.5688]
+[predict test...]
+[predict test done; time: 0.004015207290649414 s, acc: 0.4932]
+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+[clf: FastRealBoostBins(T=16, B=8, outliers_ratio=0.05, logit_max: 2.0, fit_mode='numba_cuda', decision_function_mode='numba_cuda')]
+[fit...]
+[fit done; time: 2.633019208908081 s]
+[predict train...]
+[predict train done; time: 0.006969451904296875 s, acc: 0.5695]
+[predict test...]
+[predict test done; time: 0.006979227066040039 s, acc: 0.4934]
+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+[results summary for experiment 1/3 ({'T': 16, 'B': 8, 'n': 1000, 'm_train': 10000, 'm_test': 10000}):]
+[0: AdaBoostClassifier(n_estimators=16)]
+[0: {'time_fit': [7.890984773635864, 1.0], 'time_predict_train': [0.37802648544311523, 1.0], 'time_predict_test': [0.3690006732940674, 1.0], 'acc_train': [0.5647, 1.008500088542589], 'acc_test': [0.4907, 1.0055023435907886]}]
+[1: FastRealBoostBins(T=16, B=8, outliers_ratio=0.05, logit_max: 2.0, fit_mode='numba_jit', decision_function_mode='numba_jit')]
+[1: {'time_fit': [5.786991357803345, 1.3635729320721093], 'time_predict_train': [0.00401759147644043, 94.09281348287935], 'time_predict_test': [0.004015207290649414, 91.90077786354729], 'acc_train': [0.5688, 1.0012306610407877], 'acc_test': [0.4932, 1.0004055150040552]}]
+[2: FastRealBoostBins(T=16, B=8, outliers_ratio=0.05, logit_max: 2.0, fit_mode='numba_cuda', decision_function_mode='numba_cuda')]
+[2: {'time_fit': [2.633019208908081, 2.9969339938496966], 'time_predict_train': [0.006969451904296875, 54.240489874110565], 'time_predict_test': [0.006979227066040039, 52.87128070235371], 'acc_train': [0.5695, 1.0], 'acc_test': [0.4934, 1.0]}]
+====================================================================================================================================================================================================
+[experiment: 2/3, params: ((3, 4, 4), 32, 8)]
+[description: {'T': 32, 'B': 8, 'n': 1000, 'm_train': 10000, 'm_test': 10000}]
+====================================================================================================================================================================================================
+[clf: AdaBoostClassifier(n_estimators=32)]
+[fit...]
+[fit done; time: 16.120967388153076 s]
+[predict train...]
+[predict train done; time: 0.7310874462127686 s, acc: 0.5848]
+[predict test...]
+[predict test done; time: 0.7759597301483154 s, acc: 0.4977]
+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+[clf: FastRealBoostBins(T=32, B=8, outliers_ratio=0.05, logit_max: 2.0, fit_mode='numba_jit', decision_function_mode='numba_jit')]
+[fit...]
+[fit done; time: 11.102951765060425 s]
+[predict train...]
+[predict train done; time: 0.00800013542175293 s, acc: 0.5917]
+[predict test...]
+[predict test done; time: 0.005023002624511719 s, acc: 0.5093]
+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+[clf: FastRealBoostBins(T=32, B=8, outliers_ratio=0.05, logit_max: 2.0, fit_mode='numba_cuda', decision_function_mode='numba_cuda')]
+[fit...]
+[fit done; time: 4.508392810821533 s]
+[predict train...]
+[predict train done; time: 0.008995532989501953 s, acc: 0.5917]
+[predict test...]
+[predict test done; time: 0.00896596908569336 s, acc: 0.5092]
+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+[results summary for experiment 2/3 ({'T': 32, 'B': 8, 'n': 1000, 'm_train': 10000, 'm_test': 10000}):]
+[0: AdaBoostClassifier(n_estimators=32)]
+[0: {'time_fit': [16.120967388153076, 1.0], 'time_predict_train': [0.7310874462127686, 1.0], 'time_predict_test': [0.7759597301483154, 1.0], 'acc_train': [0.5848, 1.011798905608755], 'acc_test': [0.4977, 1.023307213180631]}]
+[1: FastRealBoostBins(T=32, B=8, outliers_ratio=0.05, logit_max: 2.0, fit_mode='numba_jit', decision_function_mode='numba_jit')]
+[1: {'time_fit': [11.102951765060425, 1.4519532939775266], 'time_predict_train': [0.00800013542175293, 91.3843838474147], 'time_predict_test': [0.005023002624511719, 154.48125118663376], 'acc_train': [0.5917, 1.0], 'acc_test': [0.5093, 1.0]}]
+[2: FastRealBoostBins(T=32, B=8, outliers_ratio=0.05, logit_max: 2.0, fit_mode='numba_cuda', decision_function_mode='numba_cuda')]
+[2: {'time_fit': [4.508392810821533, 3.5757681427975356], 'time_predict_train': [0.008995532989501953, 81.27227670288895], 'time_predict_test': [0.00896596908569336, 86.54499282029464], 'acc_train': [0.5917, 1.0], 'acc_test': [0.5092, 1.0001963864886096]}]
+====================================================================================================================================================================================================
+[experiment: 3/3, params: ((3, 4, 4), 64, 8)]
+[description: {'T': 64, 'B': 8, 'n': 1000, 'm_train': 10000, 'm_test': 10000}]
+====================================================================================================================================================================================================
+[clf: AdaBoostClassifier(n_estimators=64)]
+[fit...]
+[fit done; time: 32.11942100524902 s]
+[predict train...]
+[predict train done; time: 1.5319030284881592 s, acc: 0.6018]
+[predict test...]
+[predict test done; time: 1.48307466506958 s, acc: 0.5064]
+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+[clf: FastRealBoostBins(T=64, B=8, outliers_ratio=0.05, logit_max: 2.0, fit_mode='numba_jit', decision_function_mode='numba_jit')]
+[fit...]
+[fit done; time: 21.936129808425903 s]
+[predict train...]
+[predict train done; time: 0.011970043182373047 s, acc: 0.6306]
+[predict test...]
+[predict test done; time: 0.01296854019165039 s, acc: 0.4962]
+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+[clf: FastRealBoostBins(T=64, B=8, outliers_ratio=0.05, logit_max: 2.0, fit_mode='numba_cuda', decision_function_mode='numba_cuda')]
+[fit...]
+[fit done; time: 8.860725402832031 s]
+[predict train...]
+[predict train done; time: 0.008974313735961914 s, acc: 0.6303]
+[predict test...]
+[predict test done; time: 0.008974790573120117 s, acc: 0.4977]
+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+[results summary for experiment 3/3 ({'T': 64, 'B': 8, 'n': 1000, 'm_train': 10000, 'm_test': 10000}):]
+[0: AdaBoostClassifier(n_estimators=64)]
+[0: {'time_fit': [32.11942100524902, 1.0], 'time_predict_train': [1.5319030284881592, 1.0], 'time_predict_test': [1.48307466506958, 1.0], 'acc_train': [0.6018, 1.0478564307078764], 'acc_test': [0.5064, 1.0]}]
+[1: FastRealBoostBins(T=64, B=8, outliers_ratio=0.05, logit_max: 2.0, fit_mode='numba_jit', decision_function_mode='numba_jit')]
+[1: {'time_fit': [21.936129808425903, 1.4642246050582546], 'time_predict_train': [0.011970043182373047, 127.97807035015735], 'time_predict_test': [0.01296854019165039, 114.35941464132074], 'acc_train': [0.6306, 1.0], 'acc_test': [0.4962, 1.0205562273276905]}]
+[2: FastRealBoostBins(T=64, B=8, outliers_ratio=0.05, logit_max: 2.0, fit_mode='numba_cuda', decision_function_mode='numba_cuda')]
+[2: {'time_fit': [8.860725402832031, 3.6249200313761145], 'time_predict_train': [0.008974313735961914, 170.69862649770198], 'time_predict_test': [0.008974790573120117, 165.24894402677788], 'acc_train': [0.6303, 1.0004759638267493], 'acc_test': [0.4977, 1.017480409885473]}]
+EXPERIMENT FOR RANDOM DATA DONE. [time: 117.24470567703247 s, hash string: random_1752355477_20230812]
+MAIN-EXPERIMENTER DONE.
