@@ -256,7 +256,6 @@ optional arguments:
 ```
 
 ### Applying `FastRealBoostBins` as an object detector
-
 Owing to efficiency of `FastRealBoostBins`'s decision function, it can be applied even as an object detector working under the expensive regime of a traditional sliding window-based detection procedure.
 By that we mean a procedure that scans densly a video frame (at multiple positions and scales) and requests a great number of predictions from a classifier - target or non-target? 
 This number depends on frame resolution and other settings, but usually ranges from 10<sup>4</sup> to 10<sup>5</sup>.
@@ -269,21 +268,61 @@ Using [FDDB](http://vis-www.cs.umass.edu/fddb) and [HaGRID](https://github.com/h
 and *palm gestures*, respectively. To reduce memory transfers between host and device, constant pieces of information (e.g. coordinates of all windows to be checked, HFs related information) were prepared just
 once and placed in device-side arrays prior to an actual video sequence. Below we present example snapshots (click them for videos) and obtained efficiency measurements for two environments with different 
 GPUs: 1. GeForce RTX 3090 (contemporary, high-performance), 2. Quadro M4000M (older generation).
+Full details of environment 1 in a former section. Full details of environment 2 given below.
 
+Hardware environment 2: Intel(R) Xeon(R) CPU E3-1505M v5 @ 2.80GHz, 63.9 GB RAM, NVIDIA Quadro M4000M GPU. <br/>
+Software environment 2: Windows 10, Python 3.9.7 [MSC v.1916 64 bit (AMD64)], numpy 1.20.0, numba 0.54.1, sklearn 1.0.2, cv2 4.5.5-dev, nvcc 11.6.
+
+#### Sample videos
 <table>    
-    <tr>
-        <td align="center">environment 1 with NVIDIA GeForce RTX 3090</td>
-        <td align="center">environment 2 with NVIDIA Quadro M4000M</td>
-    </tr>
-    <tr>
-        <td><br/><a href="https://github.com/pklesk/fast_rboost_bins/assets/23095311/bbcd05d0-24f6-49cf-be5e-210a71d2595c"><img src="/extras/screenshot_video_1_geforce_rtx_3090__1280_960.jpg"/></td>
-        <td><br/><a href="https://github.com/pklesk/fast_rboost_bins/assets/23095311/df08ca75-2cc2-4608-bcbd-e7019134030c"><img src="/extras/screenshot_video_2_quadro_m4000m__1280_960.jpg"/></td>
-    </tr>
+   <tr>
+      <td align="center">environment 1 (GeForce RTX 3090)<br/>64k windows, 2 detectors, T=1024 each</td>
+      <td align="center">environment 2 (Quadro M4000M)<br/>22k windows, 2 detectors, T=1024 each</td>
+      <td align="center">environment 1 (GeForce RTX 3090)<br/>64k windows, 2 detectors, T=2048 each</td>
+   </tr>
+   <tr>
+      <td><br/><a href="https://github.com/pklesk/fast_rboost_bins/assets/23095311/bbcd05d0-24f6-49cf-be5e-210a71d2595c"><img src="/extras/screenshot_video_1_geforce_rtx_3090__1280_960.jpg"/></td>
+      <td><br/><a href="https://github.com/pklesk/fast_rboost_bins/assets/23095311/df08ca75-2cc2-4608-bcbd-e7019134030c"><img src="/extras/screenshot_video_2_quadro_m4000m__1280_960.jpg"/></td>
+      <td><br/><a href="https://github.com/pklesk/fast_rboost_bins/assets/23095311/efa212a5-88c7-4aa0-bc43-934d74410a1a"><img src="/extras/screenshot_video_3_geforce_rtx_3090__1280_960.jpg"/></td>
+   </tr>
+   <tr>
+      <td align="center">environment 1 (GeForce RTX 3090)<br/>64k windows, 1 detector, T=1024</td>
+      <td align="center">environment 1 (GeForce RTX 3090)<br/>22k windows, 2 detectors, T=1024 each</td>
+      <td align="center">environment 1 (GeForce RTX 3090)<br/>22k windows, 2 detectors, T=512 each</td>
+   </tr>
+   <tr>
+      <td><br/><a href="https://github.com/pklesk/fast_rboost_bins/assets/23095311/a7fb77a8-0ed4-456e-9f0f-ed6aebd0e5ba"><img src="/extras/screenshot_video_4_geforce_rtx_3090__1280_960.jpg"/></td>
+      <td><br/><a href="https://github.com/pklesk/fast_rboost_bins/assets/23095311/f61d494c-73b8-4565-bbf7-505fa49f20a7"><img src="/extras/screenshot_video_5_geforce_rtx_3090__1280_960.jpg"/></td>
+      <td><br/><a href="https://github.com/pklesk/fast_rboost_bins/assets/23095311/39da2aed-c9c6-49ec-abfe-ca89787c5d85"><img src="/extras/screenshot_video_6_geforce_rtx_3090__1280_960.jpg"/></td>
+   </tr>           
 </table>
 
-Details of environment 1 in a former section. Details of environment 2 given below. <br/>
-Hardware environment (2): Intel(R) Xeon(R) CPU E3-1505M v5 @ 2.80GHz, 63.9 GB RAM, Quadro M4000M GPU. <br/>
-Software environment (2): Windows 10, Python 3.9.7 [MSC v.1916 64 bit (AMD64)], numpy 1.20.0, numba 0.54.1, sklearn 1.0.2, cv2 4.5.5-dev, nvcc 11.6.
+#### Environment 1 (GeForce RTX 3090): efficiency of object detectors (averages for 1000 frames)
+| windows per frame | detectors | T     | HFs avg. time [ms] | FRBB avg. time [ms] | computations FPS | display FPS |
+|------------------:|----------:|------:|-------------------:|--------------------:|-----------------:|------------:|
+|            22 278 |         1 |   512 |               3.51 |                1.29 |           122.50 |       30.09 |
+|            22 278 |         1 |  1024 |               3.73 |                1.38 |           118.82 |       30.09 |
+|            22 278 |         1 |  2048 |               4.42 |                1.62 |           106.99 |       30.09 |
+|            22 278 |         2 |   512 |               5.64 |                2.40 |           115.30 |       30.06 |
+|            22 278 |         2 |  1024 |               6.07 |                2.60 |           107.03 |       30.09 |
+|            22 278 |         2 |  2048 |               6.91 |                2.97 |            95.49 |       30.09 |
+|            64 173 |         1 |   512 |               4.72 |                2.71 |            93.66 |       30.12 |
+|            64 173 |         1 |  1024 |               5.44 |                2.99 |            87.18 |       30.12 |
+|            64 173 |         1 |  2048 |               6.47 |                3.56 |            80.48 |       30.12 |
+|            64 173 |         2 |   512 |               7.20 |                5.03 |            78.05 |       30.12 |
+|            64 173 |         2 |  1024 |               8.39 |                5.50 |            68.89 |       30.12 |
+|            64 173 |         2 |  2048 |              10.14 |                6.20 |            59.22 |       30.12 |
+
+
+#### Environment 2 (Quadro M4000M): efficiency of object detectors (averages for 1000 frames)
+| windows per frame | detectors | T     | HFs avg. time [ms] | FRBB avg. time [ms] | computations FPS | display FPS |
+|------------------:|----------:|------:|-------------------:|--------------------:|-----------------:|------------:|
+|            22 278 |         1 |   512 |              17.54 |                9.88 |            34.25 |       23.83 |
+|            22 278 |         1 |  1024 |              31.79 |               11.36 |            22.11 |       16.86 |
+|            22 278 |         1 |  2048 |              61.96 |               15.99 |            12.48 |       10.88 |
+|            22 278 |         2 |   512 |              35.27 |               19.37 |            18.07 |       13.11 |
+|            22 278 |         2 |  1024 |              63.84 |               23.17 |            11.40 |        9.28 |
+|            22 278 |         2 |  2048 |             124.00 |               33.67 |             6.31 |        5.71 |
 
 ### Script for object detection: `main_detector` 
 By executing `python main_detector.py -h` (or `--help`) one obtains help on script arguments:
