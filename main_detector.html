@@ -50,7 +50,10 @@
 <li class="toctree-l2"><a class="reference internal" href="datagenerator.html">datagenerator module</a></li>
 <li class="toctree-l2"><a class="reference internal" href="frbb.html">frbb module</a></li>
 <li class="toctree-l2"><a class="reference internal" href="haar.html">haar module</a></li>
-<li class="toctree-l2 current"><a class="current reference internal" href="#">main_detector module</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">main_detector module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#dependencies">Dependencies</a></li>
+</ul>
+</li>
 <li class="toctree-l2"><a class="reference internal" href="main_experimenter.html">main_experimenter module</a></li>
 <li class="toctree-l2"><a class="reference internal" href="utils.html">utils module</a></li>
 </ul>
@@ -84,7 +87,22 @@
              
   <section id="module-main_detector">
 <span id="main-detector-module"></span><h1>main_detector module<a class="headerlink" href="#module-main_detector" title="Permalink to this headline"></a></h1>
-<p>This is a fake documentation for main_detector.py file</p>
+<p>Auxiliary script with command-line user interface for training and testing object detectors based on <code class="docutils literal notranslate"><span class="pre">FastRealBoostBins</span></code> classifier.</p>
+<p>For help on the script arguments execute:</p>
+<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="go">python main_detector.py -h </span>
+</pre></div>
+</div>
+<p>For usage examples, see the README.md file in project’s repository (<a class="reference external" href="https://github.com/pklesk/fast_rboost_bins">https://github.com/pklesk/fast_rboost_bins</a>).</p>
+<section id="dependencies">
+<h2>Dependencies<a class="headerlink" href="#dependencies" title="Permalink to this headline"></a></h2>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">numpy</span></code>, <code class="docutils literal notranslate"><span class="pre">math</span></code>: required for mathematical computations.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">numba</span></code>: required for just-in-time compilation of crucial computational functions and CUDA kernels (decorated by <code class="docutils literal notranslate"><span class="pre">&#64;jit</span></code> and <code class="docutils literal notranslate"><span class="pre">&#64;cuda.jit</span></code> imported from <code class="docutils literal notranslate"><span class="pre">numba</span></code>).</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">sklearn</span></code>: required for inheritence and other sklearn API purposes,</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">colorama</span></code>: required CLI purposes,</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">cv2</span></code>: required for video capturing,</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">joblib</span></code>: required for comparisons: CPU with parallelization vs GPU.</p></li>
+</ul>
 <dl class="py function">
 <dt class="sig sig-object py" id="main_detector.pickle_objects">
 <span class="sig-prename descclassname"><span class="pre">main_detector.</span></span><span class="sig-name descname"><span class="pre">pickle_objects</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">fname</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">some_list</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/main_detector.html#pickle_objects"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#main_detector.pickle_objects" title="Permalink to this definition"></a></dt>
@@ -205,6 +223,7 @@
 <span class="sig-prename descclassname"><span class="pre">main_detector.</span></span><span class="sig-name descname"><span class="pre">parse_args</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/main_detector.html#parse_args"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#main_detector.parse_args" title="Permalink to this definition"></a></dt>
 <dd></dd></dl>
 
+</section>
 </section>
 
 
