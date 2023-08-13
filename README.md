@@ -279,7 +279,7 @@ python main_experimenter.py -dk real -cf 1 1 1 1 1 -rdf 1 0 0 0 0 0 0 -t 16 32 6
 ```
 This execution leads to 6 experiments (because of 6 ensemble sizes) where all classifiers are trained and tested on a real data set named 'FDDB-PATCHES (3NPI)'.
 The `-p True` switch asks for plots to be produced (as the ones presented earlier), once the experiments are done. The plots shall be saved in the `/extras` folder, both as eps and pdf files.
-Example full output: [/extras/log_experiment_random_2426086665_20230813.txt](/extras/log_experiment_random_2426086665_20230813.txt).
+Example full output: [/extras/log_experiment_real_1903270360_20230625_fddb-patches.txt](/extras/log_experiment_real_1903270360_20230625_fddb-patches.txt).
 
 ### Applying `FastRealBoostBins` as an object detector
 Owing to efficiency of `FastRealBoostBins`'s decision function, it can be applied even as an object detector working under the expensive regime of a traditional sliding window-based detection procedure.
