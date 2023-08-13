@@ -7,7 +7,19 @@ By executing
 .. code-block:: console
     python main_experimenter.py -h 
 
-one obtains help on script arguments.  
+one obtains help on the script arguments.  
+
+For usage examples, see the README.md file in project's repository (`<https://github.com/pklesk/fast_rboost_bins>`_).
+
+Dependencies
+------------
+- ``numpy``, ``math``: required for mathematical computations.
+
+- ``numba``: required for just-in-time compilation of crucial computational functions and CUDA kernels (decorated by ``@jit`` and ``@cuda.jit`` imported from ``numba``). 
+
+- ``sklearn``: required for inheritence and other sklearn API purposes,
+
+- ``colorama``: required CLI purposes.
 """
 
 import numpy as np
@@ -510,6 +522,7 @@ if __name__ == "__main__":
     print(f"CPU AND SYSTEM PROPS: {cpu_props}")
     print(f"GPU PROPS: {gpu_props}")
     print(f"ARGUMENTS:\n{dict_to_str(args)}") 
+    
     data_kind = DATA_KIND
     clfs_defs = CLFS_DEFS
     clfs_flags = CLFS_FLAGS

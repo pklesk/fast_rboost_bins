@@ -1,4 +1,29 @@
-"""This is a fake documentation for main_detector.py file"""
+"""
+Auxiliary script with command-line user interface for training and testing object detectors based on ``FastRealBoostBins`` classifier.
+
+By executing 
+
+.. code-block:: console
+    python main_detector.py -h 
+
+one obtains help on the script arguments.
+
+For usage examples, see the README.md file in project's repository (`<https://github.com/pklesk/fast_rboost_bins>`_).
+
+Dependencies
+------------
+- ``numpy``, ``math``: required for mathematical computations.
+
+- ``numba``: required for just-in-time compilation of crucial computational functions and CUDA kernels (decorated by ``@jit`` and ``@cuda.jit`` imported from ``numba``). 
+
+- ``sklearn``: required for inheritence and other sklearn API purposes,
+
+- ``colorama``: required CLI purposes,
+
+- ``cv2``: required for video capturing,
+
+- ``joblib``: required for comparisons: CPU with parallelization vs GPU.
+"""
 
 import sys
 import numpy as np
@@ -13,7 +38,7 @@ from joblib import Parallel, delayed
 from functools import reduce
 from sklearn.metrics import roc_curve
 from matplotlib import pyplot as plt
-from utils import cpu_and_system_props, gpu_props
+from utils import cpu_and_system_props, gpu_props, dict_to_str
 import argparse
 import colorama
 
@@ -970,8 +995,8 @@ def parse_args():
     if args.DETECTION_DECISION_THRESHOLD == "None":
         args.DETECTION_DECISION_THRESHOLD = None
     if args.DETECTION_POSTPROCESS == "None":
-        args.DETECTION_POSTPROCESS = None
-    globals().update(vars(args))    
+        args.DETECTION_POSTPROCESS = None    
+    return vars(args)            
 
 # ----------------------------------------------------------------------------------------------------------------------------------------------------------------
 # MAIN
@@ -980,10 +1005,12 @@ if __name__ == "__main__":
     colorama.init()     
     print(colorama.Fore.LIGHTYELLOW_EX + "\"FAST-REAL-BOOST-BINS\": AN ENSEMBLE CLASSIFIER FOR FAST PREDICTIONS IMPLEMENTED IN PYTHON VIA NUMBA.JIT AND NUMBA.CUDA. [main_detector]", flush=True)
     print(colorama.Fore.YELLOW + "[for help use -h or --help switch]" + colorama.Style.RESET_ALL)
-    parse_args()
+    args = parse_args()
+    globals().update(args)
     print("MAIN-DETECTOR STARTING...")  
     print(f"CPU AND SYSTEM PROPS: {cpu_and_system_props()}")
-    print(f"GPU PROPS: {gpu_props()}")    
+    print(f"GPU PROPS: {gpu_props()}")
+    print(f"ARGUMENTS:\n{dict_to_str(args)}")    
 
     n = haar.HAAR_TEMPLATES.shape[0] * S**2 * (2 * P - 1)**2    
     hinds = haar.haar_indexes(S, P)
