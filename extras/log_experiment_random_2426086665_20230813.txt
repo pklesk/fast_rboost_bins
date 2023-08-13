@@ -1,0 +1,255 @@
+"FAST-REAL-BOOST-BINS": AN ENSEMBLE CLASSIFIER FOR FAST PREDICTIONS IMPLEMENTED IN PYTHON VIA NUMBA.JIT AND NUMBA.CUDA. [main_experimenter]
+[for help use -h or --help switch]
+CLASSIFIERS DEFINITIONS:
+[(<class 'sklearn.ensemble._weight_boosting.AdaBoostClassifier'>, {'algorithm': 'SAMME.R'}, {'color': 'black'}),
+ (<class 'sklearn.ensemble._gb.GradientBoostingClassifier'>, {'max_depth': 1}, {'color': 'green'}),
+ (<class 'sklearn.ensemble._hist_gradient_boosting.gradient_boosting.HistGradientBoostingClassifier'>, {'max_depth': 1, 'early_stopping': False}, {'color': 'orange'}),
+ (<class 'frbb.FastRealBoostBins'>, {'fit_mode': 'numba_jit', 'decision_function_mode': 'numba_jit'}, {'color': 'blue'}),
+ (<class 'frbb.FastRealBoostBins'>, {'fit_mode': 'numba_cuda', 'decision_function_mode': 'numba_cuda'}, {'color': 'red'})]
+REAL DATA DEFINITIONS:
+[('fddb-patches', 'read_data_fddb_patches', 'FDDB-PATCHES (3NPI)'),
+ ('cifar-10', 'read_data_cifar_10', 'CIFAR-10 (AIRPLANE)'),
+ ('mnist-b', 'read_data_mnist_b', 'MNIST-B (DIGIT 0)'),
+ ('fddb-hfs-100', 'read_data_fddb_haar_npi_100', 'FDDB-HFs (100NPI)'),
+ ('fddb-hfs-300', 'read_data_fddb_haar_npi_300', 'FDDB-HFs (300NPI)'),
+ ('hagrid-hfs-10', 'read_data_hagrid_haar_npi_10', 'HaGRID-HFs (PALM, 10NPI)'),
+ ('hagrid-hfs-30', 'read_data_hagrid_haar_npi_30', 'HaGRID-HFs (PALM, 30NPI)')]
+RANDOM DATA SIZES DEFINABLE VIA -nmm (--NMM_MAGN_ORDERS) OPTION.
+MAIN-EXPERIMENTER STARTING...
+CPU AND SYSTEM PROPS: {'cpu_name': 'Intel(R) Xeon(R) CPU E3-1505M v5 @ 2.80GHz', 'ram_size': '63.9 GB', 'os_name': 'Windows 10', 'os_version': '10.0.19045', 'os_machine': 'AMD64'}
+GPU PROPS: {'name': 'Quadro M4000M', 'max_threads_per_block': 1024, 'max_block_dim_x': 1024, 'max_block_dim_y': 1024, 'max_block_dim_z': 64, 'max_grid_dim_x': 2147483647, 'max_grid_dim_y': 65535, 'max_grid_dim_z': 65535, 'max_shared_memory_per_block': 49152, 'async_engine_count': 5, 'can_map_host_memory': 1, 'multiprocessor_count': 10, 'warp_size': 32, 'unified_addressing': 1, 'pci_bus_id': 1, 'pci_device_id': 0, 'compute_capability': (5, 2), 'cores_per_SM': 128, 'cores_total': 1280}
+ARGUMENTS:
+{
+  CLFS_FLAGS: [False, True, True, True, False],
+  DATA_KIND: random,
+  REAL_DATA_FLAGS: [True, False, False, False, False, False, False],
+  RANDOM_DTYPE: <class 'numpy.int8'>,
+  NMM_MAGN_ORDERS: [(2, 4, 3), (3, 3, 4)],
+  TS: [32, 64, 128],
+  BS: [16],
+  SEED: 0,
+  PLOTS: False,
+  PLOTS_ARG_NAME: T,
+  PLOTS_VALUES_NAMES: ['acc_test', 'acc_train', 'time_fit', 'time_predict_train', 'time_predict_test']
+}
+EXPERIMENTER FOR RANDOM DATA...
+[experiment hash string: random_2426086665_20230813]
+[clfs definitions:]
+[clf def 0 (active: False): AdaBoostClassifier({'algorithm': 'SAMME.R'})]
+[clf def 1 (active: True): GradientBoostingClassifier({'max_depth': 1})]
+[clf def 2 (active: True): HistGradientBoostingClassifier({'max_depth': 1, 'early_stopping': False})]
+[clf def 3 (active: True): FastRealBoostBins({'fit_mode': 'numba_jit', 'decision_function_mode': 'numba_jit'})]
+[clf def 4 (active: False): FastRealBoostBins({'fit_mode': 'numba_cuda', 'decision_function_mode': 'numba_cuda'})]
+[other settings -> dtype: int8, nmm_magn_orders: [(2, 4, 3), (3, 3, 4)], Ts: [32, 64, 128], Bs: [16], seed: 0]
+====================================================================================================================================================================================================
+[experiment: 1/6, params: ((2, 4, 3), 32, 16)]
+[description: {'T': 32, 'B': 16, 'n': 100, 'm_train': 10000, 'm_test': 1000}]
+====================================================================================================================================================================================================
+[clf: GradientBoostingClassifier(max_depth=1, n_estimators=32)]
+[fit...]
+[fit done; time: 1.276625633239746 s]
+[predict train...]
+[predict train done; time: 0.006011009216308594 s, acc: 0.5373]
+[predict test...]
+[predict test done; time: 0.002018451690673828 s, acc: 0.495]
+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+[clf: HistGradientBoostingClassifier(early_stopping=False, max_bins=16, max_depth=1, max_iter=32)]
+[fit...]
+[fit done; time: 0.15159249305725098 s]
+[predict train...]
+[predict train done; time: 0.009973764419555664 s, acc: 0.5347]
+[predict test...]
+[predict test done; time: 0.001995086669921875 s, acc: 0.494]
+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+[clf: FastRealBoostBins(T=32, B=16, outliers_ratio=0.05, logit_max: 2.0, fit_mode='numba_jit', decision_function_mode='numba_jit')]
+[fit...]
+[fit done; time: 0.7340891361236572 s]
+[predict train...]
+[predict train done; time: 0.005006313323974609 s, acc: 0.6024]
+[predict test...]
+[predict test done; time: 0.0010044574737548828 s, acc: 0.497]
+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+[results summary for experiment 1/6 ({'T': 32, 'B': 16, 'n': 100, 'm_train': 10000, 'm_test': 1000}):]
+[0: GradientBoostingClassifier(max_depth=1, n_estimators=32)]
+[0: {'time_fit': [1.276625633239746, 1.0], 'time_predict_train': [0.006011009216308594, 1.6592495636998255], 'time_predict_test': [0.002018451690673828, 1.0], 'acc_train': [0.5373, 1.1211613623673926], 'acc_test': [0.495, 1.004040404040404]}]
+[1: HistGradientBoostingClassifier(early_stopping=False, max_bins=16, max_depth=1, max_iter=32)]
+[1: {'time_fit': [0.15159249305725098, 8.421430425038336], 'time_predict_train': [0.009973764419555664, 1.0], 'time_predict_test': [0.001995086669921875, 1.0117112810707456], 'acc_train': [0.5347, 1.1266130540489996], 'acc_test': [0.494, 1.0060728744939271]}]
+[2: FastRealBoostBins(T=32, B=16, outliers_ratio=0.05, logit_max: 2.0, fit_mode='numba_jit', decision_function_mode='numba_jit')]
+[2: {'time_fit': [0.7340891361236572, 1.7390607903298254], 'time_predict_train': [0.005006313323974609, 1.9922373559386608], 'time_predict_test': [0.0010044574737548828, 2.009494422027059], 'acc_train': [0.6024, 1.0], 'acc_test': [0.497, 1.0]}]
+====================================================================================================================================================================================================
+[experiment: 2/6, params: ((2, 4, 3), 64, 16)]
+[description: {'T': 64, 'B': 16, 'n': 100, 'm_train': 10000, 'm_test': 1000}]
+====================================================================================================================================================================================================
+[clf: GradientBoostingClassifier(max_depth=1, n_estimators=64)]
+[fit...]
+[fit done; time: 2.420527696609497 s]
+[predict train...]
+[predict train done; time: 0.011006832122802734 s, acc: 0.5541]
+[predict test...]
+[predict test done; time: 0.0010371208190917969 s, acc: 0.499]
+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+[clf: HistGradientBoostingClassifier(early_stopping=False, max_bins=16, max_depth=1, max_iter=64)]
+[fit...]
+[fit done; time: 0.1934800148010254 s]
+[predict train...]
+[predict train done; time: 0.013965368270874023 s, acc: 0.5494]
+[predict test...]
+[predict test done; time: 0.00399017333984375 s, acc: 0.505]
+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+[clf: FastRealBoostBins(T=64, B=16, outliers_ratio=0.05, logit_max: 2.0, fit_mode='numba_jit', decision_function_mode='numba_jit')]
+[fit...]
+[fit done; time: 1.3773181438446045 s]
+[predict train...]
+[predict train done; time: 0.00997614860534668 s, acc: 0.6342]
+[predict test...]
+[predict test done; time: 0.0009970664978027344 s, acc: 0.5]
+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+[results summary for experiment 2/6 ({'T': 64, 'B': 16, 'n': 100, 'm_train': 10000, 'm_test': 1000}):]
+[0: GradientBoostingClassifier(max_depth=1, n_estimators=64)]
+[0: {'time_fit': [2.420527696609497, 1.0], 'time_predict_train': [0.011006832122802734, 1.2687908850669323], 'time_predict_test': [0.0010371208190917969, 3.8473563218390803], 'acc_train': [0.5541, 1.1445587439090417], 'acc_test': [0.499, 1.0120240480961924]}]
+[1: HistGradientBoostingClassifier(early_stopping=False, max_bins=16, max_depth=1, max_iter=64)]
+[1: {'time_fit': [0.1934800148010254, 12.510479178424525], 'time_predict_train': [0.013965368270874023, 1.0], 'time_predict_test': [0.00399017333984375, 1.0], 'acc_train': [0.5494, 1.15435020021842], 'acc_test': [0.505, 1.0]}]
+[2: FastRealBoostBins(T=64, B=16, outliers_ratio=0.05, logit_max: 2.0, fit_mode='numba_jit', decision_function_mode='numba_jit')]
+[2: {'time_fit': [1.3773181438446045, 1.7574209033890376], 'time_predict_train': [0.00997614860534668, 1.3998757259278733], 'time_predict_test': [0.0009970664978027344, 4.001912960306074], 'acc_train': [0.6342, 1.0], 'acc_test': [0.5, 1.01]}]
+====================================================================================================================================================================================================
+[experiment: 3/6, params: ((2, 4, 3), 128, 16)]
+[description: {'T': 128, 'B': 16, 'n': 100, 'm_train': 10000, 'm_test': 1000}]
+====================================================================================================================================================================================================
+[clf: GradientBoostingClassifier(max_depth=1, n_estimators=128)]
+[fit...]
+[fit done; time: 4.934916019439697 s]
+[predict train...]
+[predict train done; time: 0.012003898620605469 s, acc: 0.5634]
+[predict test...]
+[predict test done; time: 0.0019958019256591797 s, acc: 0.479]
+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+[clf: HistGradientBoostingClassifier(early_stopping=False, max_bins=16, max_depth=1, max_iter=128)]
+[fit...]
+[fit done; time: 0.2792551517486572 s]
+[predict train...]
+[predict train done; time: 0.024933815002441406 s, acc: 0.5552]
+[predict test...]
+[predict test done; time: 0.005982875823974609 s, acc: 0.483]
+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+[clf: FastRealBoostBins(T=128, B=16, outliers_ratio=0.05, logit_max: 2.0, fit_mode='numba_jit', decision_function_mode='numba_jit')]
+[fit...]
+[fit done; time: 2.6745896339416504 s]
+[predict train...]
+[predict train done; time: 0.021953344345092773 s, acc: 0.645]
+[predict test...]
+[predict test done; time: 0.0020220279693603516 s, acc: 0.48]
+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+[results summary for experiment 3/6 ({'T': 128, 'B': 16, 'n': 100, 'm_train': 10000, 'm_test': 1000}):]
+[0: GradientBoostingClassifier(max_depth=1, n_estimators=128)]
+[0: {'time_fit': [4.934916019439697, 1.0], 'time_predict_train': [0.012003898620605469, 2.0771430841344243], 'time_predict_test': [0.0019958019256591797, 2.997730259228288], 'acc_train': [0.5634, 1.1448349307774228], 'acc_test': [0.479, 1.0083507306889352]}]
+[1: HistGradientBoostingClassifier(early_stopping=False, max_bins=16, max_depth=1, max_iter=128)]
+[1: {'time_fit': [0.2792551517486572, 17.671709862962004], 'time_predict_train': [0.024933815002441406, 1.0], 'time_predict_test': [0.005982875823974609, 1.0], 'acc_train': [0.5552, 1.1617435158501441], 'acc_test': [0.483, 1.0]}]
+[2: FastRealBoostBins(T=128, B=16, outliers_ratio=0.05, logit_max: 2.0, fit_mode='numba_jit', decision_function_mode='numba_jit')]
+[2: {'time_fit': [2.6745896339416504, 1.845111473107339], 'time_predict_train': [0.021953344345092773, 1.1357638549506401], 'time_predict_test': [0.0020220279693603516, 2.9588491923122273], 'acc_train': [0.645, 1.0], 'acc_test': [0.48, 1.00625]}]
+====================================================================================================================================================================================================
+[experiment: 4/6, params: ((3, 3, 4), 32, 16)]
+[description: {'T': 32, 'B': 16, 'n': 1000, 'm_train': 1000, 'm_test': 10000}]
+====================================================================================================================================================================================================
+[clf: GradientBoostingClassifier(max_depth=1, n_estimators=32)]
+[fit...]
+[fit done; time: 1.4292168617248535 s]
+[predict train...]
+[predict train done; time: 0.00396418571472168 s, acc: 0.684]
+[predict test...]
+[predict test done; time: 0.039931297302246094 s, acc: 0.5022]
+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+[clf: HistGradientBoostingClassifier(early_stopping=False, max_bins=16, max_depth=1, max_iter=32)]
+[fit...]
+[fit done; time: 0.5116350650787354 s]
+[predict train...]
+[predict train done; time: 0.00598454475402832 s, acc: 0.684]
+[predict test...]
+[predict test done; time: 0.04388260841369629 s, acc: 0.5046]
+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+[clf: FastRealBoostBins(T=32, B=16, outliers_ratio=0.05, logit_max: 2.0, fit_mode='numba_jit', decision_function_mode='numba_jit')]
+[fit...]
+[fit done; time: 0.7894582748413086 s]
+[predict train...]
+[predict train done; time: 0.0009968280792236328 s, acc: 0.904]
+[predict test...]
+[predict test done; time: 0.006018638610839844 s, acc: 0.495]
+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+[results summary for experiment 4/6 ({'T': 32, 'B': 16, 'n': 1000, 'm_train': 1000, 'm_test': 10000}):]
+[0: GradientBoostingClassifier(max_depth=1, n_estimators=32)]
+[0: {'time_fit': [1.4292168617248535, 1.0], 'time_predict_train': [0.00396418571472168, 1.5096529740783065], 'time_predict_test': [0.039931297302246094, 1.0989527357837165], 'acc_train': [0.684, 1.3216374269005848], 'acc_test': [0.5022, 1.0047789725209082]}]
+[1: HistGradientBoostingClassifier(early_stopping=False, max_bins=16, max_depth=1, max_iter=32)]
+[1: {'time_fit': [0.5116350650787354, 2.7934302382205014], 'time_predict_train': [0.00598454475402832, 1.0], 'time_predict_test': [0.04388260841369629, 1.0], 'acc_train': [0.684, 1.3216374269005848], 'acc_test': [0.5046, 1.0]}]
+[2: FastRealBoostBins(T=32, B=16, outliers_ratio=0.05, logit_max: 2.0, fit_mode='numba_jit', decision_function_mode='numba_jit')]
+[2: {'time_fit': [0.7894582748413086, 1.8103766940844908], 'time_predict_train': [0.0009968280792236328, 6.003587658454915], 'time_predict_test': [0.006018638610839844, 7.291118681666931], 'acc_train': [0.904, 1.0], 'acc_test': [0.495, 1.0193939393939395]}]
+====================================================================================================================================================================================================
+[experiment: 5/6, params: ((3, 3, 4), 64, 16)]
+[description: {'T': 64, 'B': 16, 'n': 1000, 'm_train': 1000, 'm_test': 10000}]
+====================================================================================================================================================================================================
+[clf: GradientBoostingClassifier(max_depth=1, n_estimators=64)]
+[fit...]
+[fit done; time: 2.800896406173706 s]
+[predict train...]
+[predict train done; time: 0.0050127506256103516 s, acc: 0.761]
+[predict test...]
+[predict test done; time: 0.04900240898132324 s, acc: 0.4944]
+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+[clf: HistGradientBoostingClassifier(early_stopping=False, max_bins=16, max_depth=1, max_iter=64)]
+[fit...]
+[fit done; time: 0.747997522354126 s]
+[predict train...]
+[predict train done; time: 0.007979631423950195 s, acc: 0.732]
+[predict test...]
+[predict test done; time: 0.050862789154052734 s, acc: 0.4945]
+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+[clf: FastRealBoostBins(T=64, B=16, outliers_ratio=0.05, logit_max: 2.0, fit_mode='numba_jit', decision_function_mode='numba_jit')]
+[fit...]
+[fit done; time: 1.417755126953125 s]
+[predict train...]
+[predict train done; time: 0.0019922256469726562 s, acc: 0.999]
+[predict test...]
+[predict test done; time: 0.012924671173095703 s, acc: 0.5122]
+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+[results summary for experiment 5/6 ({'T': 64, 'B': 16, 'n': 1000, 'm_train': 1000, 'm_test': 10000}):]
+[0: GradientBoostingClassifier(max_depth=1, n_estimators=64)]
+[0: {'time_fit': [2.800896406173706, 1.0], 'time_predict_train': [0.0050127506256103516, 1.5918668252080856], 'time_predict_test': [0.04900240898132324, 1.0379650758279773], 'acc_train': [0.761, 1.3127463863337714], 'acc_test': [0.4944, 1.0360032362459546]}]
+[1: HistGradientBoostingClassifier(early_stopping=False, max_bins=16, max_depth=1, max_iter=64)]
+[1: {'time_fit': [0.747997522354126, 3.7445263152190926], 'time_predict_train': [0.007979631423950195, 1.0], 'time_predict_test': [0.050862789154052734, 1.0], 'acc_train': [0.732, 1.3647540983606559], 'acc_test': [0.4945, 1.035793731041456]}]
+[2: FastRealBoostBins(T=64, B=16, outliers_ratio=0.05, logit_max: 2.0, fit_mode='numba_jit', decision_function_mode='numba_jit')]
+[2: {'time_fit': [1.417755126953125, 1.9755854540219988], 'time_predict_train': [0.0019922256469726562, 4.005385351842987], 'time_predict_test': [0.012924671173095703, 3.9353255856852978], 'acc_train': [0.999, 1.0], 'acc_test': [0.5122, 1.0]}]
+====================================================================================================================================================================================================
+[experiment: 6/6, params: ((3, 3, 4), 128, 16)]
+[description: {'T': 128, 'B': 16, 'n': 1000, 'm_train': 1000, 'm_test': 10000}]
+====================================================================================================================================================================================================
+[clf: GradientBoostingClassifier(max_depth=1, n_estimators=128)]
+[fit...]
+[fit done; time: 5.55422306060791 s]
+[predict train...]
+[predict train done; time: 0.006009817123413086 s, acc: 0.818]
+[predict test...]
+[predict test done; time: 0.05086541175842285 s, acc: 0.5028]
+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+[clf: HistGradientBoostingClassifier(early_stopping=False, max_bins=16, max_depth=1, max_iter=128)]
+[fit...]
+[fit done; time: 1.2168900966644287 s]
+[predict train...]
+[predict train done; time: 0.010970115661621094 s, acc: 0.797]
+[predict test...]
+[predict test done; time: 0.06382942199707031 s, acc: 0.5037]
+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+[clf: FastRealBoostBins(T=128, B=16, outliers_ratio=0.05, logit_max: 2.0, fit_mode='numba_jit', decision_function_mode='numba_jit')]
+[fit...]
+[fit done; time: 2.7646312713623047 s]
+[predict train...]
+[predict train done; time: 0.003017425537109375 s, acc: 1.0]
+[predict test...]
+[predict test done; time: 0.023964405059814453 s, acc: 0.499]
+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+[results summary for experiment 6/6 ({'T': 128, 'B': 16, 'n': 1000, 'm_train': 1000, 'm_test': 10000}):]
+[0: GradientBoostingClassifier(max_depth=1, n_estimators=128)]
+[0: {'time_fit': [5.55422306060791, 1.0], 'time_predict_train': [0.006009817123413086, 1.825365969770302], 'time_predict_test': [0.05086541175842285, 1.2548688743584335], 'acc_train': [0.818, 1.2224938875305624], 'acc_test': [0.5028, 1.0017899761336515]}]
+[1: HistGradientBoostingClassifier(early_stopping=False, max_bins=16, max_depth=1, max_iter=128)]
+[1: {'time_fit': [1.2168900966644287, 4.564276655576687], 'time_predict_train': [0.010970115661621094, 1.0], 'time_predict_test': [0.06382942199707031, 1.0], 'acc_train': [0.797, 1.2547051442910915], 'acc_test': [0.5037, 1.0]}]
+[2: FastRealBoostBins(T=128, B=16, outliers_ratio=0.05, logit_max: 2.0, fit_mode='numba_jit', decision_function_mode='numba_jit')]
+[2: {'time_fit': [2.7646312713623047, 2.0090285160780232], 'time_predict_train': [0.003017425537109375, 3.63558786346397], 'time_predict_test': [0.023964405059814453, 2.663509560857194], 'acc_train': [1.0, 1.0], 'acc_test': [0.499, 1.0094188376753508]}]
+EXPERIMENTER FOR RANDOM DATA DONE. [time: 32.603147983551025 s, hash string: random_2426086665_20230813]
+MAIN-EXPERIMENTER DONE.
