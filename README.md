@@ -204,7 +204,7 @@ Software environment: Linux 5.15.0-71-generic, Python 3.8.10, GCC 9.4.0, numpy 1
 More experiments on time performance can be carried out using the script `main_experimenter.py` with command line interface (see next section).
 
 ### Script for experiments: `main_experimenter.py` 
-By executing `python main_experimenter.py -h` (or `--help`) one obtains help on script arguments:
+By executing `python main_experimenter.py -h` (or `--help`) one obtains help on the script arguments:
 ```bash
 "FAST-REAL-BOOST-BINS": AN ENSEMBLE CLASSIFIER FOR FAST PREDICTIONS IMPLEMENTED IN PYTHON VIA NUMBA.JIT AND NUMBA.CUDA. [main_experimenter]
 [for help use -h or --help switch]
@@ -351,7 +351,7 @@ Software environment 2: Windows 10, Python 3.9.7 [MSC v.1916 64 bit (AMD64)], nu
 |            22 278 |         2 |  2048 |             124.00 |               33.67 |             6.31 |        5.71 |
 
 ### Script for object detection: `main_detector` 
-By executing `python main_detector.py -h` (or `--help`) one obtains help on script arguments:
+By executing `python main_detector.py -h` (or `--help`) one obtains help on the script arguments:
 ```bash
 "FAST-REAL-BOOST-BINS": AN ENSEMBLE CLASSIFIER FOR FAST PREDICTIONS IMPLEMENTED IN PYTHON VIA NUMBA.JIT AND NUMBA.CUDA. [main_detector]
 [for help use -h or --help switch]
