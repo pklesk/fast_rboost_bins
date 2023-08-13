@@ -79,11 +79,10 @@
 
 <span class="sd">- `_lock`, `_unlock`: utility functions (placed outside the class, related to mutex mechanisms in case of numba.cuda-based fit).</span>
 
-<span class="sd">In ``FastRealBoostBins`` class, attributes estimated by the ``fit`` function are named with trailing underscores (e.g. ``features_selected_``, ``logits_``, etc.)</span>
-<span class="sd">as indicated in the scikit-learn guidelines. Private functions are named with single leading underscores and some of them are additionally described by </span>
-<span class="sd">``@jit`` or ``@cuda.jit`` decorators coming from ``numba`` module (intended to be compiled by `Numba`). </span>
+<span class="sd">In ``FastRealBoostBins`` class, attributes estimated by the ``fit`` function are named with trailing underscores (e.g. ``features_selected_``, ``logits_``, etc.) as indicated in the scikit-learn guidelines. </span>
+<span class="sd">Private functions are named with single leading underscores and some of them are additionally described by ``@jit`` or ``@cuda.jit`` decorators coming from ``numba`` module (intended to be compiled by `Numba`).</span>
 
-<span class="sd">Documentation note: this documentation was built with `Sphinx` tool, which does not correctly process docstrings for CUDA kernel functions,</span>
+<span class="sd">Documentation note: this documentation was built with `Sphinx` tool, which does not correctly process docstrings for CUDA kernel functions, </span>
 <span class="sd">i.e. functions decorated with ``@cuda.jit`` that produce ``numba.cuda.compiler.Dispatcher`` objects as outcomes. </span>
 <span class="sd">For actual docstrings associated with those functions see the source code. </span>
 
@@ -149,7 +148,7 @@
         
 <span class="n">__version__</span> <span class="o">=</span> <span class="s2">&quot;0.9.4&quot;</span>
 <span class="n">__author__</span> <span class="o">=</span> <span class="s2">&quot;Przemysław Klęsk&quot;</span>
-<span class="n">__email__</span> <span class="o">=</span> <span class="s2">&quot;pklesk@zut.edu.pl&quot;</span>   
+<span class="n">__email__</span> <span class="o">=</span> <span class="s2">&quot;pklesk@zut.edu.pl&quot;</span> 
         
 <span class="n">warnings</span><span class="o">.</span><span class="n">simplefilter</span><span class="p">(</span><span class="s2">&quot;ignore&quot;</span><span class="p">,</span> <span class="n">category</span><span class="o">=</span><span class="n">NumbaPerformanceWarning</span><span class="p">)</span>
 <span class="n">np</span><span class="o">.</span><span class="n">set_printoptions</span><span class="p">(</span><span class="n">linewidth</span><span class="o">=</span><span class="mi">512</span><span class="p">)</span>
@@ -167,7 +166,6 @@
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Device-side function that unlocks the wanted critical section (mutex mechanism). Unlocking means setting the value of variable or array cell (passed by reference) from 1 to 0.&quot;&quot;&quot;</span>
     <span class="n">cuda</span><span class="o">.</span><span class="n">threadfence</span><span class="p">()</span>
     <span class="n">cuda</span><span class="o">.</span><span class="n">atomic</span><span class="o">.</span><span class="n">exch</span><span class="p">(</span><span class="n">mutex</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
-
 
 <span class="c1"># the class</span>
 <div class="viewcode-block" id="FastRealBoostBins"><a class="viewcode-back" href="../frbb.html#frbb.FastRealBoostBins">[docs]</a><span class="k">class</span> <span class="nc">FastRealBoostBins</span><span class="p">(</span><span class="n">BaseEstimator</span><span class="p">,</span> <span class="n">ClassifierMixin</span><span class="p">):</span>

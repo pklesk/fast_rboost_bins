@@ -2,12 +2,11 @@
 Auxiliary script with command-line user interface for conducting experiments on classifiers related to this project: 
 ``FastRealBoostBins`` (two variants) against other ensemble classifiers from ``sklearn.ensemble``.
 
-By executing 
+For help on the script arguments execute: 
 
 .. code-block:: console
-    python main_experimenter.py -h 
 
-one obtains help on the script arguments.  
+    python main_experimenter.py -h   
 
 For usage examples, see the README.md file in project's repository (`<https://github.com/pklesk/fast_rboost_bins>`_).
 

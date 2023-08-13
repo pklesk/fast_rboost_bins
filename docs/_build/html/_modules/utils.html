@@ -71,19 +71,28 @@
            <div itemprop="articleBody">
              
   <h1>Source code for utils</h1><div class="highlight"><pre>
-<span></span><span class="sd">&quot;&quot;&quot;This is a fake documentation for utils.py file.&quot;&quot;&quot;</span>
+<span></span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">Auxiliary module with simple utility and informative functions. </span>
+<span class="sd">&quot;&quot;&quot;</span>
 
 <span class="kn">import</span> <span class="nn">cpuinfo</span>
 <span class="kn">import</span> <span class="nn">platform</span>
 <span class="kn">import</span> <span class="nn">psutil</span>
 <span class="kn">from</span> <span class="nn">numba</span> <span class="kn">import</span> <span class="n">cuda</span>
  
-<span class="c1">#__author__ = &quot;Przemysław Klęsk&quot;</span>
-<span class="c1">#__email__ = &quot;pklesk@zut.edu.pl&quot;</span>
+<span class="n">__author__</span> <span class="o">=</span> <span class="s2">&quot;Przemysław Klęsk&quot;</span>
+<span class="n">__email__</span> <span class="o">=</span> <span class="s2">&quot;pklesk@zut.edu.pl&quot;</span>
 
+<div class="viewcode-block" id="dict_to_str"><a class="viewcode-back" href="../utils.html#utils.dict_to_str">[docs]</a><span class="k">def</span> <span class="nf">dict_to_str</span><span class="p">(</span><span class="n">d</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Returns a vertically formatted string representation of a dictionary.&quot;&quot;&quot;</span>
+    <span class="n">dict_str</span> <span class="o">=</span> <span class="s2">&quot;{&quot;</span>
+    <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">key</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">d</span><span class="p">):</span>
+        <span class="n">dict_str</span> <span class="o">+=</span> <span class="s2">&quot;</span><span class="se">\n</span><span class="s2">  &quot;</span>  <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">key</span><span class="p">)</span> <span class="o">+</span> <span class="s2">&quot;: &quot;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">d</span><span class="p">[</span><span class="n">key</span><span class="p">])</span> <span class="o">+</span> <span class="p">(</span><span class="s2">&quot;,&quot;</span> <span class="k">if</span> <span class="n">i</span> <span class="o">&lt;</span> <span class="nb">len</span><span class="p">(</span><span class="n">d</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span> <span class="k">else</span> <span class="s2">&quot;&quot;</span><span class="p">)</span>    
+    <span class="n">dict_str</span> <span class="o">+=</span> <span class="s2">&quot;</span><span class="se">\n</span><span class="s2">}&quot;</span>
+    <span class="k">return</span> <span class="n">dict_str</span></div>
 
 <div class="viewcode-block" id="cpu_and_system_props"><a class="viewcode-back" href="../utils.html#utils.cpu_and_system_props">[docs]</a><span class="k">def</span> <span class="nf">cpu_and_system_props</span><span class="p">():</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Returns a dictionary with info on CPU and OS.&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Returns a dictionary with properties of CPU and OS.&quot;&quot;&quot;</span>
     <span class="n">props</span> <span class="o">=</span> <span class="p">{}</span>    
     <span class="n">info</span> <span class="o">=</span> <span class="n">cpuinfo</span><span class="o">.</span><span class="n">get_cpu_info</span><span class="p">()</span>
     <span class="n">un</span> <span class="o">=</span> <span class="n">platform</span><span class="o">.</span><span class="n">uname</span><span class="p">()</span>
@@ -95,7 +104,7 @@
     <span class="k">return</span> <span class="n">props</span>    </div>
 
 <div class="viewcode-block" id="gpu_props"><a class="viewcode-back" href="../utils.html#utils.gpu_props">[docs]</a><span class="k">def</span> <span class="nf">gpu_props</span><span class="p">():</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Returns a dictionary with info on GPU.&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Returns a dictionary with properties of GPU device.&quot;&quot;&quot;</span>
     <span class="n">gpu</span> <span class="o">=</span> <span class="n">cuda</span><span class="o">.</span><span class="n">get_current_device</span><span class="p">()</span>
     <span class="n">props</span> <span class="o">=</span> <span class="p">{}</span>
     <span class="n">props</span><span class="p">[</span><span class="s2">&quot;name&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">gpu</span><span class="o">.</span><span class="n">name</span><span class="o">.</span><span class="n">decode</span><span class="p">(</span><span class="s2">&quot;ASCII&quot;</span><span class="p">)</span>
@@ -132,7 +141,7 @@
         <span class="p">}</span>
     <span class="n">props</span><span class="p">[</span><span class="s2">&quot;cores_per_SM&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">CC_CORES_PER_SM_DICT</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">gpu</span><span class="o">.</span><span class="n">compute_capability</span><span class="p">)</span>
     <span class="n">props</span><span class="p">[</span><span class="s2">&quot;cores_total&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">props</span><span class="p">[</span><span class="s2">&quot;cores_per_SM&quot;</span><span class="p">]</span> <span class="o">*</span> <span class="n">gpu</span><span class="o">.</span><span class="n">MULTIPROCESSOR_COUNT</span>
-    <span class="k">return</span> <span class="n">props</span> </div>
+    <span class="k">return</span> <span class="n">props</span></div>
 </pre></div>
 
            </div>

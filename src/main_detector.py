@@ -1,12 +1,11 @@
 """
 Auxiliary script with command-line user interface for training and testing object detectors based on ``FastRealBoostBins`` classifier.
 
-By executing 
+For help on the script arguments execute:
 
 .. code-block:: console
-    python main_detector.py -h 
 
-one obtains help on the script arguments.
+    python main_detector.py -h 
 
 For usage examples, see the README.md file in project's repository (`<https://github.com/pklesk/fast_rboost_bins>`_).
 

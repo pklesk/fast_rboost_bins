@@ -71,7 +71,31 @@
            <div itemprop="articleBody">
              
   <h1>Source code for main_detector</h1><div class="highlight"><pre>
-<span></span><span class="sd">&quot;&quot;&quot;This is a fake documentation for main_detector.py file&quot;&quot;&quot;</span>
+<span></span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">Auxiliary script with command-line user interface for training and testing object detectors based on ``FastRealBoostBins`` classifier.</span>
+
+<span class="sd">For help on the script arguments execute:</span>
+
+<span class="sd">.. code-block:: console</span>
+
+<span class="sd">    python main_detector.py -h </span>
+
+<span class="sd">For usage examples, see the README.md file in project&#39;s repository (`&lt;https://github.com/pklesk/fast_rboost_bins&gt;`_).</span>
+
+<span class="sd">Dependencies</span>
+<span class="sd">------------</span>
+<span class="sd">- ``numpy``, ``math``: required for mathematical computations.</span>
+
+<span class="sd">- ``numba``: required for just-in-time compilation of crucial computational functions and CUDA kernels (decorated by ``@jit`` and ``@cuda.jit`` imported from ``numba``). </span>
+
+<span class="sd">- ``sklearn``: required for inheritence and other sklearn API purposes,</span>
+
+<span class="sd">- ``colorama``: required CLI purposes,</span>
+
+<span class="sd">- ``cv2``: required for video capturing,</span>
+
+<span class="sd">- ``joblib``: required for comparisons: CPU with parallelization vs GPU.</span>
+<span class="sd">&quot;&quot;&quot;</span>
 
 <span class="kn">import</span> <span class="nn">sys</span>
 <span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
@@ -86,7 +110,7 @@
 <span class="kn">from</span> <span class="nn">functools</span> <span class="kn">import</span> <span class="n">reduce</span>
 <span class="kn">from</span> <span class="nn">sklearn.metrics</span> <span class="kn">import</span> <span class="n">roc_curve</span>
 <span class="kn">from</span> <span class="nn">matplotlib</span> <span class="kn">import</span> <span class="n">pyplot</span> <span class="k">as</span> <span class="n">plt</span>
-<span class="kn">from</span> <span class="nn">utils</span> <span class="kn">import</span> <span class="n">cpu_and_system_props</span><span class="p">,</span> <span class="n">gpu_props</span>
+<span class="kn">from</span> <span class="nn">utils</span> <span class="kn">import</span> <span class="n">cpu_and_system_props</span><span class="p">,</span> <span class="n">gpu_props</span><span class="p">,</span> <span class="n">dict_to_str</span>
 <span class="kn">import</span> <span class="nn">argparse</span>
 <span class="kn">import</span> <span class="nn">colorama</span>
 
@@ -1043,8 +1067,8 @@
     <span class="k">if</span> <span class="n">args</span><span class="o">.</span><span class="n">DETECTION_DECISION_THRESHOLD</span> <span class="o">==</span> <span class="s2">&quot;None&quot;</span><span class="p">:</span>
         <span class="n">args</span><span class="o">.</span><span class="n">DETECTION_DECISION_THRESHOLD</span> <span class="o">=</span> <span class="kc">None</span>
     <span class="k">if</span> <span class="n">args</span><span class="o">.</span><span class="n">DETECTION_POSTPROCESS</span> <span class="o">==</span> <span class="s2">&quot;None&quot;</span><span class="p">:</span>
-        <span class="n">args</span><span class="o">.</span><span class="n">DETECTION_POSTPROCESS</span> <span class="o">=</span> <span class="kc">None</span>
-    <span class="nb">globals</span><span class="p">()</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="nb">vars</span><span class="p">(</span><span class="n">args</span><span class="p">))</span>    </div>
+        <span class="n">args</span><span class="o">.</span><span class="n">DETECTION_POSTPROCESS</span> <span class="o">=</span> <span class="kc">None</span>    
+    <span class="k">return</span> <span class="nb">vars</span><span class="p">(</span><span class="n">args</span><span class="p">)</span>            </div>
 
 <span class="c1"># ----------------------------------------------------------------------------------------------------------------------------------------------------------------</span>
 <span class="c1"># MAIN</span>
@@ -1053,10 +1077,12 @@
     <span class="n">colorama</span><span class="o">.</span><span class="n">init</span><span class="p">()</span>     
     <span class="nb">print</span><span class="p">(</span><span class="n">colorama</span><span class="o">.</span><span class="n">Fore</span><span class="o">.</span><span class="n">LIGHTYELLOW_EX</span> <span class="o">+</span> <span class="s2">&quot;</span><span class="se">\&quot;</span><span class="s2">FAST-REAL-BOOST-BINS</span><span class="se">\&quot;</span><span class="s2">: AN ENSEMBLE CLASSIFIER FOR FAST PREDICTIONS IMPLEMENTED IN PYTHON VIA NUMBA.JIT AND NUMBA.CUDA. [main_detector]&quot;</span><span class="p">,</span> <span class="n">flush</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
     <span class="nb">print</span><span class="p">(</span><span class="n">colorama</span><span class="o">.</span><span class="n">Fore</span><span class="o">.</span><span class="n">YELLOW</span> <span class="o">+</span> <span class="s2">&quot;[for help use -h or --help switch]&quot;</span> <span class="o">+</span> <span class="n">colorama</span><span class="o">.</span><span class="n">Style</span><span class="o">.</span><span class="n">RESET_ALL</span><span class="p">)</span>
-    <span class="n">parse_args</span><span class="p">()</span>
+    <span class="n">args</span> <span class="o">=</span> <span class="n">parse_args</span><span class="p">()</span>
+    <span class="nb">globals</span><span class="p">()</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">args</span><span class="p">)</span>
     <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;MAIN-DETECTOR STARTING...&quot;</span><span class="p">)</span>  
     <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;CPU AND SYSTEM PROPS: </span><span class="si">{</span><span class="n">cpu_and_system_props</span><span class="p">()</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
-    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;GPU PROPS: </span><span class="si">{</span><span class="n">gpu_props</span><span class="p">()</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>    
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;GPU PROPS: </span><span class="si">{</span><span class="n">gpu_props</span><span class="p">()</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;ARGUMENTS:</span><span class="se">\n</span><span class="si">{</span><span class="n">dict_to_str</span><span class="p">(</span><span class="n">args</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>    
 
     <span class="n">n</span> <span class="o">=</span> <span class="n">haar</span><span class="o">.</span><span class="n">HAAR_TEMPLATES</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">*</span> <span class="n">S</span><span class="o">**</span><span class="mi">2</span> <span class="o">*</span> <span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="n">P</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span><span class="o">**</span><span class="mi">2</span>    
     <span class="n">hinds</span> <span class="o">=</span> <span class="n">haar</span><span class="o">.</span><span class="n">haar_indexes</span><span class="p">(</span><span class="n">S</span><span class="p">,</span> <span class="n">P</span><span class="p">)</span>
