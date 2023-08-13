@@ -208,6 +208,12 @@ By executing `python main_experimenter.py -h` (or `--help`) one obtains help on 
 ```bash
 "FAST-REAL-BOOST-BINS": AN ENSEMBLE CLASSIFIER FOR FAST PREDICTIONS IMPLEMENTED IN PYTHON VIA NUMBA.JIT AND NUMBA.CUDA. [main_experimenter]
 [for help use -h or --help switch]
+CLASSIFIERS DEFINITIONS:
+[(<class 'sklearn.ensemble._weight_boosting.AdaBoostClassifier'>, {'algorithm': 'SAMME.R'}, {'color': 'black'}),
+ (<class 'sklearn.ensemble._gb.GradientBoostingClassifier'>, {'max_depth': 1}, {'color': 'green'}),
+ (<class 'sklearn.ensemble._hist_gradient_boosting.gradient_boosting.HistGradientBoostingClassifier'>, {'max_depth': 1, 'early_stopping': False}, {'color': 'orange'}),
+ (<class 'frbb.FastRealBoostBins'>, {'fit_mode': 'numba_jit', 'decision_function_mode': 'numba_jit'}, {'color': 'blue'}),
+ (<class 'frbb.FastRealBoostBins'>, {'fit_mode': 'numba_cuda', 'decision_function_mode': 'numba_cuda'}, {'color': 'red'})]
 REAL DATA DEFINITIONS:
 [('fddb-patches', 'read_data_fddb_patches', 'FDDB-PATCHES (3NPI)'),
  ('cifar-10', 'read_data_cifar_10', 'CIFAR-10 (AIRPLANE)'),
@@ -216,34 +222,28 @@ REAL DATA DEFINITIONS:
  ('fddb-hfs-300', 'read_data_fddb_haar_npi_300', 'FDDB-HFs (300NPI)'),
  ('hagrid-hfs-10', 'read_data_hagrid_haar_npi_10', 'HaGRID-HFs (PALM, 10NPI)'),
  ('hagrid-hfs-30', 'read_data_hagrid_haar_npi_30', 'HaGRID-HFs (PALM, 30NPI)')]
-CLASSIFIERS DEFINITIONS:
-[(<class 'sklearn.ensemble._weight_boosting.AdaBoostClassifier'>, {'algorithm': 'SAMME.R'}, {'color': 'black'}),
- (<class 'sklearn.ensemble._gb.GradientBoostingClassifier'>, {'max_depth': 1}, {'color': 'green'}),
- (<class 'sklearn.ensemble._hist_gradient_boosting.gradient_boosting.HistGradientBoostingClassifier'>, {'max_depth': 1, 'early_stopping': False}, {'color': 'orange'}),
- (<class 'frbb.FastRealBoostBins'>, {'fit_mode': 'numba_jit', 'decision_function_mode': 'numba_jit'}, {'color': 'blue'}),
- (<class 'frbb.FastRealBoostBins'>, {'fit_mode': 'numba_cuda', 'decision_function_mode': 'numba_cuda'}, {'color': 'red'})]
-usage: main_experimenter.py [-h] [-dk {real,random}] [-rdf REAL_DATA_FLAGS REAL_DATA_FLAGS REAL_DATA_FLAGS REAL_DATA_FLAGS REAL_DATA_FLAGS REAL_DATA_FLAGS REAL_DATA_FLAGS]
-                            [-cf CLFS_FLAGS CLFS_FLAGS CLFS_FLAGS CLFS_FLAGS CLFS_FLAGS]
+RANDOM DATA SIZES DEFINABLE VIA -nmm (--NMM_MAGN_ORDERS) OPTION.
+usage: main_experimenter.py [-h] [-cf CLFS_FLAGS [CLFS_FLAGS ...]] [-dk {real,random}] [-rdf REAL_DATA_FLAGS [REAL_DATA_FLAGS ...]]
                             [-rd {<class 'numpy.int8'>,<class 'numpy.uint8'>,<class 'numpy.int16'>,<class 'numpy.uint16'>,<class 'numpy.int32'>,<class 'numpy.uint32'>,<class 'numpy.int64'>,<class 'numpy.uint64'>,<class 'numpy.float32'>,<class 'numpy.float64'>}]
                             [-nmm NMM_MAGN_ORDERS [NMM_MAGN_ORDERS ...]] [-ts TS [TS ...]] [-bs BS [BS ...]] [-s SEED] [-p PLOTS] [-pan {T,B,n,m_train,m_test}]
                             [-pvn {acc_test,acc_train,time_fit,time_predict_train,time_predict_test} [{acc_test,acc_train,time_fit,time_predict_train,time_predict_test} ...]]
 
 optional arguments:
   -h, --help            show this help message and exit
+  -cf CLFS_FLAGS [CLFS_FLAGS ...], --CLFS_FLAGS CLFS_FLAGS [CLFS_FLAGS ...]
+                        boolean flags (list) specifying which classifiers from the predefined set will participate in experiments (default: [True, False, False, True, True]) (attention: type them using spaces as separators)
   -dk {real,random}, --DATA_KIND {real,random}
-                        kind of data on which to experiment (default: real)
-  -rdf REAL_DATA_FLAGS REAL_DATA_FLAGS REAL_DATA_FLAGS REAL_DATA_FLAGS REAL_DATA_FLAGS REAL_DATA_FLAGS REAL_DATA_FLAGS, --REAL_DATA_FLAGS REAL_DATA_FLAGS REAL_DATA_FLAGS REAL_DATA_FLAGS REAL_DATA_FLAGS REAL_DATA_FLAGS REAL_DATA_FLAGS REAL_DATA_FLAGS
-                        boolean flags (list) specifying which data sets from the predefined set will participate in experiments on real data (default: [False, False, False, False, False, False, False]) (attention: type them using
-                        spaces as separators)
-  -cf CLFS_FLAGS CLFS_FLAGS CLFS_FLAGS CLFS_FLAGS CLFS_FLAGS, --CLFS_FLAGS CLFS_FLAGS CLFS_FLAGS CLFS_FLAGS CLFS_FLAGS CLFS_FLAGS
-                        boolean flags (list) specifying which classifiers from the predefined set will participate in experiments (default: [True, True, True, True, True]) (attention: type them using spaces as separators)
+                        kind of data on which to experiment (default: random)
+  -rdf REAL_DATA_FLAGS [REAL_DATA_FLAGS ...], --REAL_DATA_FLAGS REAL_DATA_FLAGS [REAL_DATA_FLAGS ...]
+                        boolean flags (list) specifying which data sets from the predefined set will participate in experiments on real data (default: [True, False, False, False, False, False, False]) (attention: type them
+                        using spaces as separators)
   -rd {<class 'numpy.int8'>,<class 'numpy.uint8'>,<class 'numpy.int16'>,<class 'numpy.uint16'>,<class 'numpy.int32'>,<class 'numpy.uint32'>,<class 'numpy.int64'>,<class 'numpy.uint64'>,<class 'numpy.float32'>,<class 'numpy.float64'>}, --RANDOM_DTYPE {<class 'numpy.int8'>,<class 'numpy.uint8'>,<class 'numpy.int16'>,<class 'numpy.uint16'>,<class 'numpy.int32'>,<class 'numpy.uint32'>,<class 'numpy.int64'>,<class 'numpy.uint64'>,<class 'numpy.float32'>,<class 'numpy.float64'>}
                         dtype of input numpy arrays for experiments on random data (default: <class 'numpy.int8'>) (attention: please type it as e.g. 'np.uint8', 'np.float32', etc.)
   -nmm NMM_MAGN_ORDERS [NMM_MAGN_ORDERS ...], --NMM_MAGN_ORDERS NMM_MAGN_ORDERS [NMM_MAGN_ORDERS ...]
-                        list of tuples represented as strings defining orders of magnitude for random input arrays in experiments on random data (default: [(5, 3, 5)]) (attention: type them using spaces as separators and with each
-                        tuple in quotation marks)
+                        list of tuples represented as strings defining orders of magnitude for random input arrays in experiments on random data (default: [(3, 4, 4)]) (attention: type them using spaces as separators and with
+                        each tuple in quotation marks)
   -ts TS [TS ...], --TS TS [TS ...]
-                        ensemble sizes (list) to impose on each type of classifier in experiments (default: [16, 32, 64, 128, 256, 512, 1024]) (attention: type them using spaces as separators)
+                        ensemble sizes (list) to impose on each type of classifier in experiments (default: [16, 32, 64]) (attention: type them using spaces as separators)
   -bs BS [BS ...], --BS BS [BS ...]
                         bins counts (list) to impose on each type of classifier in experiments (default: [8]) (attention: type them using spaces as separators)
   -s SEED, --SEED SEED  randomization seed, (default: 0)
@@ -252,7 +252,8 @@ optional arguments:
   -pan {T,B,n,m_train,m_test}, --PLOTS_ARG_NAME {T,B,n,m_train,m_test}
                         name of argument quantity to be placed on horizontal axis in plots (default: T)
   -pvn {acc_test,acc_train,time_fit,time_predict_train,time_predict_test} [{acc_test,acc_train,time_fit,time_predict_train,time_predict_test} ...], --PLOTS_VALUES_NAMES {acc_test,acc_train,time_fit,time_predict_train,time_predict_test} [{acc_test,acc_train,time_fit,time_predict_train,time_predict_test} ...]
-                        names of value quantities to be placed on vertical axis in plots (default: ['acc_test', 'acc_train', 'time_fit', 'time_predict_train', 'time_predict_test']) (attention: type them using spaces as separators)
+                        names of value quantities to be placed on vertical axis in plots (default: ['acc_test', 'acc_train', 'time_fit', 'time_predict_train', 'time_predict_test']) (attention: type them using spaces as
+                        separators)
 ```
 
 ### Applying `FastRealBoostBins` as an object detector
