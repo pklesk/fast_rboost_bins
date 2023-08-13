@@ -269,7 +269,6 @@ python main_experimenter.py -dk random -cf 0 1 1 1 0 -nmm "(2, 4, 3)" "(3, 3, 4)
 Execution above leads to 6 experiments (2 random data sets times 3 ensemble sizes), where classifiers `GradientBoostingClassifier`, `HistGradientBoostingClassifier` and `FastRealBoostBins("numba_jit")`
 (note the 0/1 flags of classifiers - `-cf` option) are compared. Sizes of random data sets are defined by `-nmm` option. The first one is defined as: 10<sup>2</sup> features with sample sizes 10<sup>4</sup> (train), 
 and 10<sup>3</sup> (test). The second is defined as: 10<sup>3</sup> features with sample sizes 10<sup>3</sup> (train), and 10<sup>4</sup> (test).
-- 10<sup>3</sup> features, train sample: 10<sup>3</sup>, test sample: 10<sup>4</sup>.
 Ensemble sizes are defined by `-t` option and the number of bins by `-b` (it also could have been a sequence of numbers, leading to more experiments).
 Flags of classifiers can also be specified as `False`/`True` strings. We remark that `-dk random` switch (choosing data kind) could have been skipped, as `random` is the default selection.
 Example full output: [log_experiment_random_1752355477_20230812.txt](/extras/log_experiment_random_1752355477_20230812.txt).
