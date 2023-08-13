@@ -272,7 +272,7 @@ Sizes of random data sets are defined by `-nmm` option. The first one is defined
 and 10<sup>3</sup> (test). The second is defined as: 10<sup>3</sup> features with sample sizes 10<sup>3</sup> (train), and 10<sup>4</sup> (test).
 Ensemble sizes are defined by `-t` option and the number of bins by `-b` (it also could have been a sequence of numbers, leading to more experiments).
 Flags of classifiers can also be specified as `False`/`True` strings. We remark that `-dk random` switch (choosing data kind) could have been skipped, as `random` is the default selection. <br/>
-Example full output: [log_experiment_random_1752355477_20230812.txt](/extras/log_experiment_random_1752355477_20230812.txt).
+Example full output: [log_experiment_random_1752355477_20230812.txt](/extras/log_experiment_random_2426086665_20230813.txt).
 
 
 ### Applying `FastRealBoostBins` as an object detector
