@@ -273,7 +273,7 @@ def experimenter_for_random_data(dtype=RANDOM_DTYPE, nmm_magn_orders=NMM_MAGN_OR
     t2 = time.time()
     if plots and plots_arg_name and plots_values_names:
         print("[about to generate wanted plots]")
-    print(f"EXPERIMENT FOR RANDOM DATA DONE. [time: {t2 - t1} s, hash string: {hash_str}]")
+    print(f"EXPERIMENTER FOR RANDOM DATA DONE. [time: {t2 - t1} s, hash string: {hash_str}]")
     if plots and plots_arg_name and plots_values_names:
         value_names_mapper = {"time_fit": "FIT TIME [s]", "time_predict_train": "PREDICT TIME (TRAIN) [s]", "time_predict_test": "PREDICT TIME (TEST) [s]",
                               "acc_train": "ACC (TRAIN)", "acc_test": "ACC (TEST)"}        
@@ -413,7 +413,7 @@ def experimenter_for_real_data(real_data_defs=REAL_DATA_DEFS, real_data_flags=RE
     t2 = time.time()
     if plots and plots_arg_name and plots_values_names:
         print("[about to generate wanted plots]")
-    print(f"EXPERIMENT FOR REAL DATA DONE. [time: {t2 - t1} s, hash string: {hash_str}]")
+    print(f"EXPERIMENTER FOR REAL DATA DONE. [time: {t2 - t1} s, hash string: {hash_str}]")
     if plots and plots_arg_name and plots_values_names:
         value_names_mapper = {"time_fit": "FIT TIME [s]", "time_predict_train": "PREDICT TIME (TRAIN) [s]", "time_predict_test": "PREDICT TIME (TEST) [s]", 
                               "acc_train": "ACC (TRAIN)", "acc_test": "ACC (TEST)"}        
@@ -464,7 +464,7 @@ def str_to_tuple(s):
     return eval(s)
 
 def str_to_bool(s):
-    return eval(s)
+    return bool(eval(s))
             
 def parse_args():
     parser = argparse.ArgumentParser()

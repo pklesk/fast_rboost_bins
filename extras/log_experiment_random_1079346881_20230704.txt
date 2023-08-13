@@ -15,7 +15,7 @@ REAL DATA DEFINITIONS:
  ('hagrid-hfs-10', 'read_data_hagrid_haar_npi_10', 'HaGRID-HFs (PALM, 10NPI)'),
  ('hagrid-hfs-30', 'read_data_hagrid_haar_npi_30', 'HaGRID-HFs (PALM, 30NPI)')]
 RANDOM DATA SIZES DEFINABLE VIA -nmm (--NMM_MAGN_ORDERS) OPTION.
-MAIN-EXPERIMENTER STARTING...]
+MAIN-EXPERIMENTER STARTING...
 CPU AND SYSTEM PROPS: {'cpu_name': 'Intel(R) Core(TM) i7-10700 CPU @ 2.90GHz', 'ram_size': '125.7 GB', 'os_name': 'Linux 5.15.0-71-generic', 'os_version': '#78~20.04.1-Ubuntu SMP Wed Apr 19 11:26:48 UTC 2023', 'os_machine': 'x86_64'}
 GPU PROPS: {'name': 'NVIDIA GeForce RTX 3090', 'max_threads_per_block': 1024, 'max_block_dim_x': 1024, 'max_block_dim_y': 1024, 'max_block_dim_z': 64, 'max_grid_dim_x': 2147483647, 'max_grid_dim_y': 65535, 'max_grid_dim_z': 65535, 'max_shared_memory_per_block': 49152, 'async_engine_count': 2, 'can_map_host_memory': 1, 'multiprocessor_count': 82, 'warp_size': 32, 'unified_addressing': 1, 'pci_bus_id': 1, 'pci_device_id': 0, 'compute_capability': (8, 6), 'cores_per_SM': 128, 'cores_total': 10496}
 ARGUMENTS:
@@ -66,5 +66,5 @@ EXPERIMENTER FOR RANDOM DATA...
 [0: {'time_fit': [93.76943159103394, 3.066950933748875], 'time_predict_train': [0.1347813606262207, 1.0], 'time_predict_test': [12.78682541847229, 1.0], 'acc_train': [1.0, 1.0], 'acc_test': [0.50026, 1.0000799584216207]}]
 [1: FastRealBoostBins(T=2048, B=8, outliers_ratio=0.05, logit_max: 2.0, fit_mode='numba_cuda', decision_function_mode='numba_cuda')]
 [1: {'time_fit': [287.5862457752228, 1.0], 'time_predict_train': [0.01342916488647461, 10.036466285551965], 'time_predict_test': [1.5891475677490234, 8.046342377495137], 'acc_train': [1.0, 1.0], 'acc_test': [0.5003, 1.0]}]
-EXPERIMENT FOR RANDOM DATA DONE. [time: 464.6308832168579 s, hash string: random_1079346881_20230704]
+EXPERIMENTER FOR RANDOM DATA DONE. [time: 464.6308832168579 s, hash string: random_1079346881_20230704]
 MAIN-EXPERIMENTER DONE.

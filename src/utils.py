@@ -27,10 +27,7 @@ def cpu_and_system_props():
     props["ram_size"] = f"{psutil.virtual_memory().total / 1024**3:.1f} GB"
     props["os_name"] = f"{un.system} {un.release}"
     props["os_version"] = f"{un.version}"
-    props["os_machine"] = f"{un.machine}"
-    
-    props['os_name'] = 'Linux 5.15.0-71-generic' 
-    props['os_version'] = '#78~20.04.1-Ubuntu SMP Wed Apr 19 11:26:48 UTC 2023'    
+    props["os_machine"] = f"{un.machine}"    
     return props    
 
 def gpu_props():
@@ -71,4 +68,4 @@ def gpu_props():
         }
     props["cores_per_SM"] = CC_CORES_PER_SM_DICT.get(gpu.compute_capability)
     props["cores_total"] = props["cores_per_SM"] * gpu.MULTIPROCESSOR_COUNT
-    return props 
+    return props
