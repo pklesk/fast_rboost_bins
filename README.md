@@ -150,7 +150,7 @@ Documentation for the `FastRealBoostBins` class is at: [https://pklesk.github.io
 ### Comparison against state-of-the-art classifiers from `sklearn.ensemble`
 
 In tables below we write for shortness `FastRealBoostBins("numba_jit")` which, in fact, stands for `FastRealBoostBins(fit_mode="numba_jit", decision_function_mode="numba_jit")`,
-and `FastRealBoostBins("numba_cuda")` standing for `FastRealBoostBins(fit_mode="numba_cuda", decision_function_mode="numba_cuda")`.
+and `FastRealBoostBins("numba_cuda")` stands for `FastRealBoostBins(fit_mode="numba_cuda", decision_function_mode="numba_cuda")`.
 To have approximately equal conditions for comparison (e.g. same number of weak learners, each learner based on 1 feature) we forced the following settings on classifiers
 from `sklearn.ensemble`:
 ```python
