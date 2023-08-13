@@ -259,8 +259,10 @@ optional arguments:
 ```bash
 python main_experimenter.py
 ```
-Running the script with no arguments defaults to execution of 3 experiments, where three classifiers (`AdaBoostClassifier` and two instances of `FastRealBoostBins`) are compared on one random data set 
-(10<sup>3</sup> features, train sample: 10<sup>4</sup>, test sample: 10<sup>4</sup>). Example full output: [log_experiment_random_1752355477_20230812.txt](/extras/log_experiment_random_1752355477_20230812.txt).
+Running the script with no arguments defaults to execution of three experiments, where three classifiers (`AdaBoostClassifier` and two instances of `FastRealBoostBins`) are compared on one random data set 
+(10<sup>3</sup> features, train sample: 10<sup>4</sup>, test sample: 10<sup>4</sup>). 
+
+Example full output: [log_experiment_random_1752355477_20230812.txt](/extras/log_experiment_random_1752355477_20230812.txt).
 
 ### Applying `FastRealBoostBins` as an object detector
 Owing to efficiency of `FastRealBoostBins`'s decision function, it can be applied even as an object detector working under the expensive regime of a traditional sliding window-based detection procedure.
