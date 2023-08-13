@@ -147,7 +147,7 @@ Documentation for the `FastRealBoostBins` class is at: [https://pklesk.github.io
 
 ## Selected experimental results
 
-### Comparison against state-of-the-art classifier from `sklearn.ensemble`
+### Comparison against state-of-the-art classifiers from `sklearn.ensemble`
 
 In tables below we write for shortness `FastRealBoostBins("numba_jit")` which, in fact, stands for `FastRealBoostBins(fit_mode="numba_jit", decision_function_mode="numba_jit")`,
 and `FastRealBoostBins("numba_cuda")` standing for `FastRealBoostBins(fit_mode="numba_cuda", decision_function_mode="numba_cuda")`.
@@ -259,9 +259,21 @@ optional arguments:
 ```bash
 python main_experimenter.py
 ```
-Running the script with no arguments defaults to execution of three experiments, where three classifiers (`AdaBoostClassifier` and two instances of `FastRealBoostBins`) are compared on one random data set 
+Running the script with no arguments defaults to execution of 3 experiments (for ensembles of sizes 16, 32, 64), where `AdaBoostClassifier` and two instances of `FastRealBoostBins` are compared on one random data set 
 (10<sup>3</sup> features, train sample: 10<sup>4</sup>, test sample: 10<sup>4</sup>). <br/>
 Example full output: [log_experiment_random_1752355477_20230812.txt](/extras/log_experiment_random_1752355477_20230812.txt).
+
+```bash
+python main_experimenter.py -dk random -cf 0 1 1 1 0 -nmm "(2, 4, 3)" "(3, 3, 4)" -t 32 64 128 -b 16
+```
+Execution above leads to 6 experiments (2 random data sets times 3 ensemble sizes), where classifiers `GradientBoostingClassifier`, `HistGradientBoostingClassifier` and `FastRealBoostBins("numba_jit")`
+(note the 0/1 flags of classifiers - `-cf` option) are compared. The successive sizes of random data sets (defined by `-nmm` option) are: 
+- 10<sup>2</sup> features, train sample: 10<sup>4</sup>, test sample: 10<sup>3</sup>,
+- 10<sup>3</sup> features, train sample: 10<sup>3</sup>, test sample: 10<sup>4</sup>.
+Ensemble sizes are defined by `-t` option and the number of bins by `-b` (it also could have been a sequence of numbers, leading to more experiments).
+Note: flags of classifiers can also be specified as `False`/`True` strings.
+Example full output: [log_experiment_random_1752355477_20230812.txt](/extras/log_experiment_random_1752355477_20230812.txt).
+
 
 ### Applying `FastRealBoostBins` as an object detector
 Owing to efficiency of `FastRealBoostBins`'s decision function, it can be applied even as an object detector working under the expensive regime of a traditional sliding window-based detection procedure.
