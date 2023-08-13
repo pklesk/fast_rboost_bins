@@ -255,6 +255,12 @@ optional arguments:
                         names of value quantities to be placed on vertical axis in plots (default: ['acc_test', 'acc_train', 'time_fit', 'time_predict_train', 'time_predict_test']) (attention: type them using spaces as
                         separators)
 ```
+#### Examples of `main_experimenter.py` usage
+```bash
+python main_experimenter.py
+```
+Running the script with no arguments defaults to execution of 3 experiments, where three classifiers (`AdaBoostClassifier` and two instances of `FastRealBoostBins`) are compared on one random data set 
+(10<sup>3</sup> features, train sample: 10<sup>4</sup>, test sample: 10<sup>4</sup>). Example full output: [log_experiment_random_1752355477_20230812.txt](/extras/log_experiment_random_1752355477_20230812.txt).
 
 ### Applying `FastRealBoostBins` as an object detector
 Owing to efficiency of `FastRealBoostBins`'s decision function, it can be applied even as an object detector working under the expensive regime of a traditional sliding window-based detection procedure.
