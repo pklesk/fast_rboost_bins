@@ -278,7 +278,7 @@ Example full output: [/extras/log_experiment_random_2426086665_20230813.txt](/ex
 python main_experimenter.py -dk real -cf 1 1 1 1 1 -rdf 1 0 0 0 0 0 0 -t 16 32 64 128 512 1024 -p True
 ```
 This execution leads to 6 experiments (because of 6 ensemble sizes) where all classifiers are trained and tested on a real data set named 'FDDB-PATCHES (3NPI)'.
-The `-p True` switch asks for plots to be produced (as the ones presented earlier), once the experiments are done. The plots shall be saved in the `/extras` folder, both as eps and pdf files.
+The `-p True` switch asks for plots to be produced (similar to the ones presented earlier), once the experiments are done. The plots shall be saved in the `/extras/` folder, both as eps and pdf files. <br/>
 Example full output: [/extras/log_experiment_real_1903270360_20230625_fddb-patches.txt](/extras/log_experiment_real_1903270360_20230625_fddb-patches.txt).
 
 ### Applying `FastRealBoostBins` as an object detector
