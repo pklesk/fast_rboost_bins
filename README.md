@@ -456,10 +456,11 @@ The above example executes a detection demonstration using two specific classifi
 ```bash
 python main_detector.py -rd -k face -npi 50 -s 4 -p 6
 ```
-As an example of other functionalities, the line above generates or regenerates a data set (option `-rd`) meant for face detection based on FDDB images (see folder `/data_raw/`).
+As an example of other functionalities, the line above generates or regenerates a data set (option `-rd`) meant for face detection based on FDDB images (see folder `/data_raw/fddb/`).
 The switch `-npi` (negatives per image) asks for 50 negative examples to be sampled randomly from each image (positive examples are extracted according to annotations).
 The last fragment `-s 4 -p 6` specifies the parameterization related to Haar-like features, defining the number of scaling variants along each dimension and the size of grid with
-anchoring points (see documentation of `haar.py` module for more details).
+anchoring points (see documentation of `haar.py` module for more details). Remark: currently, other possible selection for the kind of data (option `-k`) is `hand` leading
+to data set generation based on HaGRID database (see folder `/data_raw/hagrid/' for instructions).
  
 ## License
 This work is licensed under <a rel="license" href="http://creativecommons.org/licenses/by-sa/4.0/">Creative Commons Attribution-ShareAlike 4.0 International License</a>.
