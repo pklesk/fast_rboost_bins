@@ -117,7 +117,7 @@ DATA SHAPE (TRAIN AND TEST): 10000 x 1000
 
 ## Documentation
 Complete developer documentation of the project is accessible at: [https://pklesk.github.io/fast_rboost_bins](https://pklesk.github.io/fast_rboost_bins). <br/>
-Documentation for the `FastRealBoostBins` class is at: [https://pklesk.github.io/fast_rboost_bins/frbb.html](https://pklesk.github.io/fast_rboost_bins/frbb.html).
+Documentation for the `FastRealBoostBins` class alone is at: [https://pklesk.github.io/fast_rboost_bins/frbb.html](https://pklesk.github.io/fast_rboost_bins/frbb.html).
 
 ## Constructor parameters
 | parameter                      | description                                                                                                                                       |
@@ -134,8 +134,8 @@ Documentation for the `FastRealBoostBins` class is at: [https://pklesk.github.io
 ## Estimated attributes
 | attribute                                      | description                                                                                                                                           |
 |:-----------------------------------------------|:------------------------------------------------------------------------------------------------------------------------------------------------------|
-| `features_selected_ ndarray[np.int32]`         | indexes of selected features, array of shape `(T,)`                                                                                                   |
-| `dtype_ (np.dtype)`                            | type of input data array, one of {`np.int8`, `np.uint8`, …, `np.int64`,` np.uint64`} or {`np.float32`, `np.float64`} - numeric types are only allowed |                                               
+| `features_selected_ (ndarray[np.int32])`       | indexes of selected features, array of shape `(T,)`                                                                                                   |
+| `dtype_ (np.dtype)`                            | type of input data array, one of {`np.int8`, `np.uint8`, …, `np.int64`,` np.uint64`} or {`np.float32`, `np.float64`} - numeric types  only allowed    | 
 | `mins_selected_ (ndarray[dtype_])`             | left ends of ranges for selected features, array of shape `(T,)`                                                                                      |
 | `maxes_selected_ (ndarray[dtype_])`            | right ends of ranges for selected features, array of shape `(T,)`                                                                                     |
 | `logits_ (ndarray[np.float32])`                | binned logit values for selected features, array of shape `(T, B)`                                                                                    |
@@ -158,6 +158,7 @@ AdaBoostClassifier(algorithm="SAMME.R", max_depth=1, n_estimators=T)
 GradientBoostingClassifier(max_depth=1, n_estimators=T)
 HistGradientBoostingClassifier(early_stopping=False, max_iter=T, max_bins=B)
 ```
+where `T` (ensemble size) and `B` (number of bins) represent the values simultaneously imposed on `FastRealBoostBins` instances.
 
 Hardware environment: Intel(R) Core(TM) i7-10700 CPU @ 2.90GHz, 125.7 GB RAM, NVIDIA GeForce RTX 3090 GPU.<br/>
 Software environment: Linux 5.15.0-71-generic, Python 3.8.10, GCC 9.4.0, numpy 1.22.3, numba 0.57.0, sklearn 1.0.2, cv2 4.6.0, nvcc 11.7.
@@ -311,6 +312,8 @@ Software environment 2: Windows 10, Python 3.9.7 [MSC v.1916 64 bit (AMD64)], nu
       <td><br/><a href="https://github.com/pklesk/fast_rboost_bins/assets/23095311/df08ca75-2cc2-4608-bcbd-e7019134030c"><img src="/extras/screenshot_video_2_quadro_m4000m__1280_960.jpg"/></td>
       <td><br/><a href="https://github.com/pklesk/fast_rboost_bins/assets/23095311/efa212a5-88c7-4aa0-bc43-934d74410a1a"><img src="/extras/screenshot_video_3_geforce_rtx_3090__1280_960.jpg"/></td>
    </tr>
+</table>         
+<table>
    <tr>
       <td align="center">environment 1 (GeForce RTX 3090)<br/>64k windows, 1 detector, T=1024</td>
       <td align="center">environment 1 (GeForce RTX 3090)<br/>22k windows, 2 detectors, T=1024 each</td>
@@ -427,10 +430,63 @@ optional arguments:
                         spaces as separators)
 ```
 
+#### Examples of `main_detector.py` usage
+```bash
+python main_detector.py -ddivmc
+```
+The line above executes a demonstration of detection in a video sequence captured from camera, using two default classifiers (two  instances of `FastRealBoostBins`, each being an ensemble of size 1024) trained to detect faces and palm gestures.
+Default values are used for all other relevant settings (decision thresholds, detection procedure parameters, video camera selection, etc.). To quit the demonstration window, 'esc' key should be pressed.
+
+```bash
+python main_detector.py -ddivmc -mcdt 4.2 5.5
+```
+An an example, the above execution runs the mentioned demonstration, but changes decision thresholds of the two classifiers from their internal defaults to manually imposed.
+
+```bash
+python main_detector.py -ddivmc -ds 12 -dwhm 64 -dwwm 64
+```
+This execution leads to a heavier detection procedure that scans each frame using 12 scales for the sliding window, starting from its minimum size of 64 $\times$ 64.
+This results in approximately 64k windows to be checked per frame (instead the default of 22k: 9 scales, starting from 96 $\times$ 96 window). 
+Other detection procedure related options are ``-dwg`` and ``-dwj``, allowing to change the growth factor and relative jump for the sliding window.
+
+```bash
+python main_detector.py -ddivmc -mccm clf_frbb_face_n_18225_S_5_P_5_NPI_300_SEED_0_T_2048_B_8.bin clf_frbb_hand_n_18225_S_5_P_5_NPI_30_SEED_0_T_2048_B_8.bin
+```
+The above example executes a detection demonstration using two specific classifiers (stored in folder `/models/`), being ensembles of size 2048, instead of the default ones.
+
+```bash
+python main_detector.py -rd -k face -npi 50 -s 4 -p 6
+```
+As an example of other functionalities, the line above generates or regenerates a data set (`-rd` option) meant for face detection based on FDDB images (see folder `/data_raw/fddb/`).
+The switch `-npi` (negatives per image) asks for 50 negative examples to be sampled randomly from each image (note: positive examples of targes are extracted exactly 
+in accordance with annotations).
+The last fragment `-s 4 -p 6` specifies the parameterization related to Haar-like features, defining the number of scaling variants along each dimension and the size of grid with
+anchoring points (see documentation of `haar.py` module for more details). The resulting generated data set (data arrays for training and testing) shall be pickled and stored 
+as binary files in folder `/data/`.<br/>
+
+Remark: currently, other possible selection for the kind of data (option `-k`) is `hand` leading
+to data set generation based on HaGRID database (see folder `/data_raw/hagrid/' for instructions).
+
+```bash
+python main_detector.py -form -k face -npi 50 -s 4 -p 6 -t 512 -b 16
+```
+Once a data set is ready, one can ask to fit, or refit, a model to the data (`-form` option) as in the above example. The last fragment `-t 512 -b 16` indicates the wanted
+parameters to be imposed on an `FastRealBoostBins` instance: 512 as the size of ensemble (equivalently - the number of boosting rounds) and 16 as the number of bins.
+
+```bash
+python main_detector.py -ddiv -k face -npi 50 -s 4 -p 6 -t 512 -b 16
+```
+Subsequently, when the fit is done, one can check how it works as an object detector e.g. with an execution as above.
+The new option `-ddiv` is meant for demonstration of detection in video with a single classifier, in contrast to `-ddivmc` meant for multiple classifiers. <br/>
+Remark: by default, all newly trained classifiers use the value of 0.0 as their decision threshold (attribute `decision_threshold_` in instances of `FastRealBoostBins`).
+To adjust the threshold to a possibly better value, based on ROC analysis and the precision measure, use `-adtom`.
+
+Finally, please note also that in the presence of several connected video cameras, one can use the `-cv2vcci` to pick the camera index.
+
 ## License
 This work is licensed under <a rel="license" href="http://creativecommons.org/licenses/by-sa/4.0/">Creative Commons Attribution-ShareAlike 4.0 International License</a>.
 
 ## Acknowledgments and credits
-- [Numba](https://numba.pydata.org): a high-performance just-in-time Python compiler
-- [FDDB](http://vis-www.cs.umass.edu/fddb): Face Detection Data Set and Benchmark; (Jain and Learned-Miller, 2010): Technical Report UM-CS-2010-009, Dept. of Computer Science, University of Massachusetts, Amherst [[pdf]](http://vis-www.cs.umass.edu/fddb/fddb.pdf)
-- [HaGRID](https://github.com/hukenovs/hagrid): HAnd Gesture Recognition Image Dataset (Kapitanov, Makhlyarchuk, Kvanchiani and Nagaev, 2022): [[arXiv]](https://arxiv.org/abs/2206.08219)
+- [Numba](https://numba.pydata.org): a high-performance just-in-time Python compiler,
+- [FDDB](http://vis-www.cs.umass.edu/fddb): Face Detection Data Set and Benchmark; (Jain and Learned-Miller, 2010): Technical Report UM-CS-2010-009, Dept. of Computer Science, University of Massachusetts, Amherst [[pdf]](http://vis-www.cs.umass.edu/fddb/fddb.pdf),
+- [HaGRID](https://github.com/hukenovs/hagrid): HAnd Gesture Recognition Image Dataset (Kapitanov, Makhlyarchuk, Kvanchiani and Nagaev, 2022) [[arXiv]](https://arxiv.org/abs/2206.08219).
