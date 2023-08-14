@@ -117,7 +117,7 @@ DATA SHAPE (TRAIN AND TEST): 10000 x 1000
 
 ## Documentation
 Complete developer documentation of the project is accessible at: [https://pklesk.github.io/fast_rboost_bins](https://pklesk.github.io/fast_rboost_bins). <br/>
-Documentation for the `FastRealBoostBins` class is at: [https://pklesk.github.io/fast_rboost_bins/frbb.html](https://pklesk.github.io/fast_rboost_bins/frbb.html).
+Documentation for the `FastRealBoostBins` class alone is at: [https://pklesk.github.io/fast_rboost_bins/frbb.html](https://pklesk.github.io/fast_rboost_bins/frbb.html).
 
 ## Constructor parameters
 | parameter                      | description                                                                                                                                       |
