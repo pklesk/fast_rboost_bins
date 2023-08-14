@@ -163,7 +163,7 @@ where `T` (ensemble size) and `B` (number of bins) represent the values simultan
 Hardware environment: Intel(R) Core(TM) i7-10700 CPU @ 2.90GHz, 125.7 GB RAM, NVIDIA GeForce RTX 3090 GPU.<br/>
 Software environment: Linux 5.15.0-71-generic, Python 3.8.10, GCC 9.4.0, numpy 1.22.3, numba 0.57.0, sklearn 1.0.2, cv2 4.6.0, nvcc 11.7.
 
-Results presented below pertain to three selected data sets named: 'FDDB-PATCHES (3NPI)', 'MNIST-B (DIGIT 0)', and 'HaGRID-HFs (PALM, 10NPI)'
+Results presented below pertain to three selected data sets named: 'FDDB-PATCHES (3NPI)', 'MNIST-B (DIGIT 0)', and 'HaGRID-HFs (PALM, 10NPI)';
 generated based on known image databases: [FDDB](http://vis-www.cs.umass.edu/fddb), [MNIST](https://ieeexplore.ieee.org/document/6296535), and [HaGRID](https://github.com/hukenovs/hagrid) respectively.
 More results and more details on these and other data sets can be found in the research paper associated with the project.
 
