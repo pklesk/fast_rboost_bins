@@ -472,10 +472,20 @@ python main_detector.py -form -k face -npi 50 -s 4 -p 6 -t 512 -b 16
 Once a data set is ready, one can ask to fit, or refit, a model to the data (`-form` option) as in the above example. The last fragment `-t 512 -b 16` indicates the wanted
 parameters to be imposed on an `FastRealBoostBins` instance: 512 as the size of ensemble (equivalently - the number of boosting rounds) and 16 as the number of bins.
 
+```bash
+python main_detector.py -ddiv -k face -npi 50 -s 4 -p 6 -t 512 -b 16
+```
+Subsequently, when the fit is done, one can check how it works as an object detector e.g. with an execution as above.
+The new option `-ddiv` is meant for demonstration of detection in video with a single classifier, in contrast to `-ddivmc` meant for multiple classifiers. <br\>
+Remark: by default, all newly trained classifiers use the value of 0.0 as their decision threshold (attribute `decision_threshold_` in instances of `FastRealBoostBins`).
+To adjust the threshold to a possibly better value, based on ROC analysis and the precision measure, use `-adtom`.
+
+Finally, please note also that in the presence of several connected video cameras, one can use the `-cv2vcci` to pick the camera index.
+
 ## License
 This work is licensed under <a rel="license" href="http://creativecommons.org/licenses/by-sa/4.0/">Creative Commons Attribution-ShareAlike 4.0 International License</a>.
 
 ## Acknowledgments and credits
-- [Numba](https://numba.pydata.org): a high-performance just-in-time Python compiler
-- [FDDB](http://vis-www.cs.umass.edu/fddb): Face Detection Data Set and Benchmark; (Jain and Learned-Miller, 2010): Technical Report UM-CS-2010-009, Dept. of Computer Science, University of Massachusetts, Amherst [[pdf]](http://vis-www.cs.umass.edu/fddb/fddb.pdf)
-- [HaGRID](https://github.com/hukenovs/hagrid): HAnd Gesture Recognition Image Dataset (Kapitanov, Makhlyarchuk, Kvanchiani and Nagaev, 2022): [[arXiv]](https://arxiv.org/abs/2206.08219)
+- [Numba](https://numba.pydata.org): a high-performance just-in-time Python compiler,
+- [FDDB](http://vis-www.cs.umass.edu/fddb): Face Detection Data Set and Benchmark; (Jain and Learned-Miller, 2010): Technical Report UM-CS-2010-009, Dept. of Computer Science, University of Massachusetts, Amherst [[pdf]](http://vis-www.cs.umass.edu/fddb/fddb.pdf),
+- [HaGRID](https://github.com/hukenovs/hagrid): HAnd Gesture Recognition Image Dataset (Kapitanov, Makhlyarchuk, Kvanchiani and Nagaev, 2022) [[arXiv]](https://arxiv.org/abs/2206.08219).
