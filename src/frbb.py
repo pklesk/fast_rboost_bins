@@ -1314,7 +1314,7 @@ class FastRealBoostBins(BaseEstimator, ClassifierMixin):
         d["T"] = self.T
         d["B"] = self.B
         d["outliers_ratio"] = self.outliers_ratio
-        d["logit_max"] = self.logit_max
+        d["logit_max"] = float(self.logit_max)
         d["fit_mode"] = self.fit_mode
         d["decision_function_mode"] = self.decision_function_mode
         d["verbose"] = self.verbose
@@ -1360,7 +1360,7 @@ class FastRealBoostBins(BaseEstimator, ClassifierMixin):
             params["T"] = d["T"]
             params["B"] = d["B"]
             params["outliers_ratio"] = d["outliers_ratio"]
-            params["logit_max"] = d["logit_max"]
+            params["logit_max"] = np.float32(d["logit_max"])
             params["fit_mode"] = d["fit_mode"]
             params["decision_function_mode"] = d["decision_function_mode"]
             params["verbose"] = d["verbose"]

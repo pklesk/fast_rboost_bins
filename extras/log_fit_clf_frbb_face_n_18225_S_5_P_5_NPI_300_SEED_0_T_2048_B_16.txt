@@ -1,8 +1,43 @@
 "FAST-REAL-BOOST-BINS": AN ENSEMBLE CLASSIFIER FOR FAST PREDICTIONS IMPLEMENTED IN PYTHON VIA NUMBA.JIT AND NUMBA.CUDA. [main_detector]
 [for help use -h or --help switch]
+MAIN-DETECTOR STARTING...
 CPU AND SYSTEM PROPS: {'cpu_name': 'Intel(R) Core(TM) i7-10700 CPU @ 2.90GHz', 'ram_size': '125.7 GB', 'os_name': 'Linux 5.15.0-71-generic', 'os_version': '#78~20.04.1-Ubuntu SMP Wed Apr 19 11:26:48 UTC 2023', 'os_machine': 'x86_64'}
 GPU PROPS: {'name': 'NVIDIA GeForce RTX 3090', 'max_threads_per_block': 1024, 'max_block_dim_x': 1024, 'max_block_dim_y': 1024, 'max_block_dim_z': 64, 'max_grid_dim_x': 2147483647, 'max_grid_dim_y': 65535, 'max_grid_dim_z': 65535, 'max_shared_memory_per_block': 49152, 'async_engine_count': 2, 'can_map_host_memory': 1, 'multiprocessor_count': 82, 'warp_size': 32, 'unified_addressing': 1, 'pci_bus_id': 1, 'pci_device_id': 0, 'compute_capability': (8, 6), 'cores_per_SM': 128, 'cores_total': 10496}
-MAIN (OBJECT DETECTOR) STARTING...
+ARGUMENTS:
+{
+  KIND: face,
+  S: 5,
+  P: 5,
+  NPI: 300,
+  T: 2048,
+  B: 16,
+  SEED: 0,
+  DEMO_HAAR_FEATURES_ALL: False,
+  DEMO_HAAR_FEATURES_SELECTED: False,
+  REGENERATE_DATA: False,
+  FIT_OR_REFIT_MODEL: True,
+  MEASURE_ACCS_OF_MODEL: True,
+  ADJUST_DECISION_THRESHOLD_OF_MODEL: True,
+  DEMO_DETECT_IN_VIDEO: False,
+  DEMO_DETECT_IN_VIDEO_COMPUTATIONS: gpu_cuda,
+  DEMO_DETECT_IN_VIDEO_PARALLEL_JOBS: 8,
+  DEMO_DETECT_IN_VIDEO_VERBOSE_LOOP: False,
+  DEMO_DETECT_IN_VIDEO_VERBOSE_DETECT: False,
+  DEMO_DETECT_IN_VIDEO_FRAMES: None,
+  DEMO_DETECT_IN_VIDEO_MULTIPLE_CLFS: False,
+  CV2_VIDEO_CAPTURE_CAMERA_INDEX: 0,
+  CV2_VIDEO_CAPTURE_OS_IS_MSWINDOWS: False,
+  CV2_VIDEO_CAPTURE_NO_FLIP: False,
+  DETECTION_SCALES: 9,
+  DETECTION_WINDOW_HEIGHT_MIN: 96,
+  DETECTION_WINDOW_WIDTH_MIN: 96,
+  DETECTION_WINDOW_GROWTH: 1.2,
+  DETECTION_WINDOW_JUMP: 0.05,
+  DETECTION_DECISION_THRESHOLD: None,
+  DETECTION_POSTPROCESS: avg,
+  MC_CLFS_NAMES: ['clf_frbb_face_n_18225_S_5_P_5_NPI_300_SEED_0_T_1024_B_8.bin', 'clf_frbb_hand_n_18225_S_5_P_5_NPI_30_SEED_0_T_1024_B_8.bin'],
+  MC_DECISION_THRESHOLDS: [None, None]
+}
 DATA NAME: data_face_n_18225_S_5_P_5_NPI_300_SEED_0
 CLF NAME: clf_frbb_face_n_18225_S_5_P_5_NPI_300_SEED_0_T_2048_B_16
 UNPICKLE OBJECTS... [from file: ../data/data_face_n_18225_S_5_P_5_NPI_300_SEED_0.bin]
@@ -4132,4 +4167,4 @@ PICKLE OBJECTS... [to file: ../models/clf_frbb_face_n_18225_S_5_P_5_NPI_300_SEED
 PICKLE OBJECTS DONE. [time: 0.0004215240478515625 s]
 JSON DUMP... [to file: ../models/clf_frbb_face_n_18225_S_5_P_5_NPI_300_SEED_0_T_2048_B_16.json]
 JSON DUMP DONE. [time: 0.0373082160949707 s]
-MAIN (OBJECT DETECTOR) DONE.
+MAIN-DETECTOR DONE.

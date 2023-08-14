@@ -12,6 +12,7 @@ import psutil
 from numba import cuda
 import pickle
 import sys
+import time
  
 __author__ = "Przemysław Klęsk"
 __email__ = "pklesk@zut.edu.pl"

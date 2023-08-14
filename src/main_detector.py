@@ -40,7 +40,6 @@ import time
 from joblib import Parallel, delayed
 from functools import reduce
 from sklearn.metrics import roc_curve
-from matplotlib import pyplot as plt
 from utils import cpu_and_system_props, gpu_props, dict_to_str, pickle_objects, unpickle_objects
 import argparse
 import colorama
@@ -69,7 +68,7 @@ DEMO_DETECT_IN_VIDEO_PARALLEL_JOBS = 8
 DEMO_DETECT_IN_VIDEO_VERBOSE_LOOP = False
 DEMO_DETECT_IN_VIDEO_VERBOSE_DETECT = False
 DEMO_DETECT_IN_VIDEO_FRAMES = None # if not None but integer then detection is stopped after seeing given number of frames
-DEMO_DETECT_IN_VIDEO_MULTIPLE_CLFS = True
+DEMO_DETECT_IN_VIDEO_MULTIPLE_CLFS = False
 
 # cv2 camera settings
 CV2_VIDEO_CAPTURE_CAMERA_INDEX = 0
