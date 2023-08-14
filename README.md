@@ -433,7 +433,7 @@ optional arguments:
 ```bash
 python main_detector.py -ddivmc
 ```
-The line above executes a demonstration of detection in video using two default classifiers (two  instances of `FastRealBoostBins`, each being an ensemble of size 1024) trained to detect faces and palm gestures.
+The line above executes a demonstration of detection in a video sequence captured from camera, using two default classifiers (two  instances of `FastRealBoostBins`, each being an ensemble of size 1024) trained to detect faces and palm gestures.
 Default values are used for all other relevant settings (decision thresholds, detection procedure parameters, video camera selection, etc.). To quit the demonstration window, 'esc' key should be pressed.
 
 ```bash
