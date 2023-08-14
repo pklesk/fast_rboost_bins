@@ -158,6 +158,7 @@ AdaBoostClassifier(algorithm="SAMME.R", max_depth=1, n_estimators=T)
 GradientBoostingClassifier(max_depth=1, n_estimators=T)
 HistGradientBoostingClassifier(early_stopping=False, max_iter=T, max_bins=B)
 ```
+where `T` (ensemble size) and `B` (number of bins) were simultaneously imposed on `FastRealBoostBins` instances.
 
 Hardware environment: Intel(R) Core(TM) i7-10700 CPU @ 2.90GHz, 125.7 GB RAM, NVIDIA GeForce RTX 3090 GPU.<br/>
 Software environment: Linux 5.15.0-71-generic, Python 3.8.10, GCC 9.4.0, numpy 1.22.3, numba 0.57.0, sklearn 1.0.2, cv2 4.6.0, nvcc 11.7.
