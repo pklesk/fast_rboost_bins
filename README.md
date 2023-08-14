@@ -290,7 +290,7 @@ Example full output: [/extras/log_experiment_real_1903270360_20230625_fddb-patch
 ### Applying `FastRealBoostBins` as an object detector
 Owing to efficiency of `FastRealBoostBins`'s decision function, it can be applied even as an object detector working under the expensive regime of a traditional sliding window-based detection procedure.
 By that we mean a procedure that scans densly a video frame (at multiple positions and scales) and requests a great number of predictions from a classifier - target or non-target? 
-This number depends on frame resolution and other settings, but usually ranges from 10<sup>4</sup> to 10<sup>5</sup>.
+This number depends on frames resolution and other settings, but usually ranges from 10<sup>4</sup> to 10<sup>5</sup>.
 
 To accomplish such an application, one should also take advantage of the fact that at predict (detection) stage, if suffices to prepare only the *selected* features of multiple objects (windows to be checked)
 for the classifier, once it has been trained. With such a subset of selected features, one can directly call a suitable private function, e.g. `_decision_function_numba_cuda_job_int16` to ask for predictions,
