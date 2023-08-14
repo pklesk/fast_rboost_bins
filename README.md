@@ -451,7 +451,15 @@ Other detection procedure related options are ``-dwg`` and ``-dwj``, allowing to
 ```bash
 python main_detector.py -ddivmc -mccm clf_frbb_face_n_18225_S_5_P_5_NPI_300_SEED_0_T_2048_B_8.bin clf_frbb_hand_n_18225_S_5_P_5_NPI_30_SEED_0_T_2048_B_8.bin
 ```
-The above example executes a similar demonstration using two specific classifiers (stored in folder `/models/`), ensembles of size 2048, instead of the default ones.
+The above example executes a detection demonstration using two specific classifiers (stored in folder `/models/`), being ensembles of size 2048, instead of the default ones.
+
+```bash
+python main_detector.py -rd -k face -npi 50 -s 4 -p 6
+```
+As an example of other functionalities, the line above generates or regenerates a data set (option `-rd`) meant for face detection based on FDDB images (see folder `/data_raw/`).
+The switch `-npi` (negatives per image) asks for 50 negative examples to be sampled randomly from each image (positive examples are extracted according to annotations).
+The last fragment `-s 4 -p 6` specifies the parameterization related to Haar-like features, defining the number of scaling variants along each dimension and the size of grid with
+anchoring points (see documentation of `haar.py` module for more details).
  
 ## License
 This work is licensed under <a rel="license" href="http://creativecommons.org/licenses/by-sa/4.0/">Creative Commons Attribution-ShareAlike 4.0 International License</a>.
