@@ -429,6 +429,18 @@ optional arguments:
                         spaces as separators)
 ```
 
+```
+#### Examples of `main_detector.py` usage
+```bash
+python main_detector.py -ddivmc
+```
+The line above executes a demonstration of detection in video using two default classifiers (two  instances of `FastRealBoostBins`, each being an ensemble of size 1024) trained to detect faces and palm gestures.
+Default values are used for all other relevant settings (decision thresholds, detection procedure parameters, video camera selection, etc.). 
+For example, to change classifiers' decision thresholds from their internal defaults to manually imposed values, one can execute:
+```bash
+python main_detector.py -ddivmc -mcdt 4.2 5.5
+```
+ 
 ## License
 This work is licensed under <a rel="license" href="http://creativecommons.org/licenses/by-sa/4.0/">Creative Commons Attribution-ShareAlike 4.0 International License</a>.
 
