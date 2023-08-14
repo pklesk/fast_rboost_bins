@@ -347,6 +347,8 @@ Software environment 2: Windows 10, Python 3.9.7 [MSC v.1916 64 bit (AMD64)], nu
 |            64 173 |         2 |  1024 |               8.39 |                5.50 |            68.89 |       30.12 |
 |            64 173 |         2 |  2048 |              10.14 |                6.20 |            59.22 |       30.12 |
 
+Please note very short response times of `FastRealBoostBins`. For example, 3.56 ms for 64k windows (query objects) using an ensemble of size 2048 (one detector case).
+Note that this means computation of responses for a data array with the total of entries (sample size $\times$ features count) of order ~ 10<sup>8.1</sup>.
 
 #### Environment 2 (Quadro M4000M): efficiency of object detectors (averages for 1000 frames)
 | windows per frame | detectors | T     | HFs avg. time [ms] | FRBB avg. time [ms] | computations FPS | display FPS |
