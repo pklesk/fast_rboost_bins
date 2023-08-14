@@ -298,7 +298,7 @@ instead of `predict` (the latter expects all features to be passed). Moreover, w
 
 Using [FDDB](http://vis-www.cs.umass.edu/fddb) and [HaGRID](https://github.com/hukenovs/hagrid) data, coupled with Haar-like features (HFs), we trained `FastRealBoostBins` classifiers as detectors of *faces*
 and *palm gestures*, respectively. To reduce memory transfers between host and device, constant pieces of information (e.g. coordinates of all windows to be checked, HFs related information) were prepared just
-once and placed in device-side arrays prior to an actual video sequence. Below we present example snapshots (click them for videos) and obtained efficiency measurements from two environments with different 
+once and placed in device-side arrays prior to an actual video sequence. Below we present example snapshots (click them to see videos) and obtained efficiency measurements from two environments with different 
 GPUs: 1. GeForce RTX 3090 (contemporary, high-performance), 2. Quadro M4000M (older generation).
 Full details of environment 1 in a former section. Full details of environment 2 given below.
 
