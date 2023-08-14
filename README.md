@@ -471,8 +471,7 @@ The last fragment `-s 4 -p 6` specifies the parameterization related to Haar-lik
 anchoring points (see documentation of `haar.py` module for more details). The resulting generated data set (data arrays for training and testing) shall be pickled and stored 
 as binary files in folder `/data/`.<br/>
 
-Remark: currently, other possible selection for the kind of data (option `-k`) is `hand` leading
-to data set generation based on HaGRID database (see folder `/data_raw/hagrid/' for instructions).
+Remark: currently, other possible selection for the kind of data (option `-k`) is `hand`, leading to data set generation based on HaGRID database (see folder `/data_raw/hagrid/' for instructions).
 
 ```bash
 python main_detector.py -form -k face -npi 50 -s 4 -p 6 -t 512 -b 16
