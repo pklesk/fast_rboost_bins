@@ -447,7 +447,7 @@ Default values are used for all other relevant settings (decision thresholds, de
 ```bash
 python main_detector.py -ddivmc -mcdt 4.2 5.5
 ```
-Execution of the line above runs the mentioned demonstration, but changes decision thresholds of the two classifiers from their internal defaults to manually imposed.
+Execution of the line above runs the mentioned demonstration, but changes decision thresholds of the two classifiers from their internal defaults to manually imposed values.
 
 ```bash
 python main_detector.py -ddivmc -ds 12 -dwhm 64 -dwwm 64
