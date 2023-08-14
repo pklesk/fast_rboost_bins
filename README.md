@@ -491,7 +491,7 @@ To adjust the threshold to a possibly better value, based on ROC analysis and th
 This work is licensed under <a rel="license" href="http://creativecommons.org/licenses/by-sa/4.0/">Creative Commons Attribution-ShareAlike 4.0 International License</a>.
 
 ## Acknowledgments and credits
-- [Numba](https://numba.pydata.org): a high-performance just-in-time Python compiler,
-- [FDDB](http://vis-www.cs.umass.edu/fddb): Face Detection Data Set and Benchmark; (Jain and Learned-Miller, 2010): Technical Report UM-CS-2010-009, Dept. of Computer Science, University of Massachusetts, Amherst [[pdf]](http://vis-www.cs.umass.edu/fddb/fddb.pdf),
+- [Numba](https://numba.pydata.org): a high-performance just-in-time Python compiler.
+- [FDDB](http://vis-www.cs.umass.edu/fddb): Face Detection Data Set and Benchmark; (Jain and Learned-Miller, 2010): Technical Report UM-CS-2010-009, Dept. of Computer Science, University of Massachusetts, Amherst [[pdf]](http://vis-www.cs.umass.edu/fddb/fddb.pdf).
 - [MNIST](https://ieeexplore.ieee.org/document/6296535): The MNIST Database of Handwritten Digit Images for Machine Learning Research; (Li, 2012): IEEE Signal Processing Magazine 29 (6).
 - [HaGRID](https://github.com/hukenovs/hagrid): HAnd Gesture Recognition Image Dataset (Kapitanov, Makhlyarchuk, Kvanchiani and Nagaev, 2022) [[arXiv]](https://arxiv.org/abs/2206.08219).
