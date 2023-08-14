@@ -477,7 +477,7 @@ Remark: currently, other possible selection for the kind of data (option `-k`) i
 python main_detector.py -form -k face -npi 50 -s 4 -p 6 -t 512 -b 16
 ```
 Once a data set is ready, one can ask to fit, or refit, a model to the data (`-form` option) as in the above example. The last fragment `-t 512 -b 16` indicates the wanted
-parameters to be imposed on an `FastRealBoostBins` instance: 512 as the size of ensemble (equivalently - the number of boosting rounds) and 16 as the number of bins.
+parameters to be imposed on a `FastRealBoostBins` instance: 512 as the size of ensemble (equivalently - the number of boosting rounds) and 16 as the number of bins.
 
 ```bash
 python main_detector.py -ddiv -k face -npi 50 -s 4 -p 6 -t 512 -b 16
