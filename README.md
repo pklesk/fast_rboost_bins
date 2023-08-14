@@ -442,9 +442,16 @@ python main_detector.py -ddivmc -mcdt 4.2 5.5
 An an example, the above execution runs the mentioned demonstration, but changes decision thresholds of the two classifiers from their internal defaults to manually imposed.
 
 ```bash
+python main_detector.py -ddivmc -ds 12 -dwhm 64 -dwwm 64
+```
+This execution leads to a heavier detection procedure that scans each frame using 12 scales for the sliding window, starting from its minimum size of 64 x 64.
+This results in approximately 64k windows to be checked per frame (instead the default of 22k). 
+Other detection procedure related options are ``-dwg`` and ``-dwj``, allowing to change the growth factor and relative jump for the sliding window.
+
+```bash
 python main_detector.py -ddivmc -mccm clf_frbb_face_n_18225_S_5_P_5_NPI_300_SEED_0_T_2048_B_8.bin clf_frbb_hand_n_18225_S_5_P_5_NPI_30_SEED_0_T_2048_B_8.bin
 ```
-The above example executes a similar demonstration using two specific classifiers (from folder `/models/`), ensembles of size 2048, instead of the default ones.
+The above example executes a similar demonstration using two specific classifiers (stored in folder `/models/`), ensembles of size 2048, instead of the default ones.
  
 ## License
 This work is licensed under <a rel="license" href="http://creativecommons.org/licenses/by-sa/4.0/">Creative Commons Attribution-ShareAlike 4.0 International License</a>.
