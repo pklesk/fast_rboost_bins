@@ -434,11 +434,17 @@ optional arguments:
 python main_detector.py -ddivmc
 ```
 The line above executes a demonstration of detection in video using two default classifiers (two  instances of `FastRealBoostBins`, each being an ensemble of size 1024) trained to detect faces and palm gestures.
-Default values are used for all other relevant settings (decision thresholds, detection procedure parameters, video camera selection, etc.). 
-For example, to change decision thresholds of the two classifiers (from their internal defaults to manually imposed), one can execute:
+Default values are used for all other relevant settings (decision thresholds, detection procedure parameters, video camera selection, etc.). To quit the demonstration window, 'esc' key should be pressed.
+
 ```bash
 python main_detector.py -ddivmc -mcdt 4.2 5.5
 ```
+An an example, the above execution runs the mentioned demonstration, but changes decision thresholds of the two classifiers from their internal defaults to manually imposed.
+
+```bash
+python main_detector.py -ddivmc -mccm clf_frbb_face_n_18225_S_5_P_5_NPI_300_SEED_0_T_2048_B_8.bin clf_frbb_hand_n_18225_S_5_P_5_NPI_30_SEED_0_T_2048_B_8.bin
+```
+The above example executes a similar demonstration using two specific classifiers (from folder `/models/`), ensembles of size 2048, instead of the default ones.
  
 ## License
 This work is licensed under <a rel="license" href="http://creativecommons.org/licenses/by-sa/4.0/">Creative Commons Attribution-ShareAlike 4.0 International License</a>.
