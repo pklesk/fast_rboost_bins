@@ -311,6 +311,8 @@ Software environment 2: Windows 10, Python 3.9.7 [MSC v.1916 64 bit (AMD64)], nu
       <td><br/><a href="https://github.com/pklesk/fast_rboost_bins/assets/23095311/df08ca75-2cc2-4608-bcbd-e7019134030c"><img src="/extras/screenshot_video_2_quadro_m4000m__1280_960.jpg"/></td>
       <td><br/><a href="https://github.com/pklesk/fast_rboost_bins/assets/23095311/efa212a5-88c7-4aa0-bc43-934d74410a1a"><img src="/extras/screenshot_video_3_geforce_rtx_3090__1280_960.jpg"/></td>
    </tr>
+</table>         
+<table>
    <tr>
       <td align="center">environment 1 (GeForce RTX 3090)<br/>64k windows, 1 detector, T=1024</td>
       <td align="center">environment 1 (GeForce RTX 3090)<br/>22k windows, 2 detectors, T=1024 each</td>
