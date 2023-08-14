@@ -429,7 +429,6 @@ optional arguments:
                         spaces as separators)
 ```
 
-```
 #### Examples of `main_detector.py` usage
 ```bash
 python main_detector.py -ddivmc
