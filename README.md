@@ -277,7 +277,7 @@ Execution of the line above leads to 6 experiments (2 random data sets times 3 e
 Sizes of random data sets are defined by `-nmm` option. The first one is defined as: 10<sup>2</sup> features with sample sizes 10<sup>4</sup> (train), 
 and 10<sup>3</sup> (test). The second is defined as: 10<sup>3</sup> features with sample sizes 10<sup>3</sup> (train), and 10<sup>4</sup> (test).
 Ensemble sizes are defined by `-t` option and the number of bins by `-b` (it also could have been a sequence of numbers, leading to more experiments).
-Flags of classifiers can also be specified as `False`/`True` strings. We remark that `-dk random` switch (choosing data kind) could have been skipped, as `random` is the default selection. <br/>
+Flags of classifiers can also be specified as `False`/`True` strings. We remark that `-dk random` switch (choosing the data kind) could have been skipped, as `random` is the default selection. <br/>
 Example full output: [/extras/log_experiment_random_2426086665_20230813.txt](/extras/log_experiment_random_2426086665_20230813.txt).
 
 ```bash
