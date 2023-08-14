@@ -465,7 +465,7 @@ The above example executes a detection demonstration using two specific classifi
 python main_detector.py -rd -k face -npi 50 -s 4 -p 6
 ```
 As an example of other functionalities, the line above generates or regenerates a data set (`-rd` option) meant for face detection based on FDDB images (see folder `/data_raw/fddb/`).
-The switch `-npi 50` (negatives per image) asks for 50 negative examples to be sampled randomly from each image (note: positive examples of targes are extracted exactly 
+The switch `-npi 50` (negatives per image) asks for 50 negative examples to be sampled randomly from each image (note: positive examples - the targets - are extracted exactly 
 in accordance with annotations).
 The last fragment `-s 4 -p 6` specifies the parameterization related to Haar-like features, defining the number of scaling variants along each dimension and the size of grid with
 anchoring points (see documentation of `haar.py` module for more details). The resulting generated data set (data arrays for training and testing) shall be pickled and stored 
