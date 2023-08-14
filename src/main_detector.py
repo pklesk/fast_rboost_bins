@@ -1,5 +1,5 @@
 """
-Auxiliary script with command-line user interface for training and testing object detectors based on ``FastRealBoostBins`` classifier.
+Auxiliary script with command-line user interface for training and testing object detectors based on ``FastRealBoostBins`` classifier from :doc:`frbb`.
 
 For help on the script arguments execute:
 
@@ -11,20 +11,25 @@ For usage examples, see the README.md file in project's repository (`<https://gi
 
 Dependencies
 ------------
+- ``frbb``: required to import the class ``FastRealBoostBins``.
+
 - ``numpy``, ``math``: required for mathematical computations.
 
 - ``numba``: required for just-in-time compilation of crucial computational functions and CUDA kernels (decorated by ``@jit`` and ``@cuda.jit`` imported from ``numba``). 
 
 - ``sklearn``: required for inheritence and other sklearn API purposes,
 
-- ``colorama``: required CLI purposes,
+- ``colorama``: required for CLI purposes,
 
 - ``cv2``: required for video capturing,
 
 - ``joblib``: required for comparisons: CPU with parallelization vs GPU.
+
+Link to project repository
+--------------------------
+`https://github.com/pklesk/fast_rboost_bins <https://github.com/pklesk/fast_rboost_bins>`_
 """
 
-import sys
 import numpy as np
 from frbb import FastRealBoostBins
 from numba import cuda
@@ -32,12 +37,11 @@ import cv2
 import haar
 import datagenerator
 import time
-import pickle
 from joblib import Parallel, delayed
 from functools import reduce
 from sklearn.metrics import roc_curve
 from matplotlib import pyplot as plt
-from utils import cpu_and_system_props, gpu_props, dict_to_str
+from utils import cpu_and_system_props, gpu_props, dict_to_str, pickle_objects, unpickle_objects
 import argparse
 import colorama
 
@@ -90,32 +94,8 @@ FOLDER_DATA = "../data/"
 FOLDER_CLFS = "../models/"
 FOLDER_EXTRAS = "../extras/"
                             
-def pickle_objects(fname, some_list):
-    print(f"PICKLE OBJECTS... [to file: {fname}]")
-    t1 = time.time()
-    try:
-        f = open(fname, "wb+")
-        pickle.dump(some_list, f, protocol=pickle.HIGHEST_PROTOCOL)
-        f.close()
-    except IOError:
-        sys.exit("[error occurred when trying to open or pickle the file]")
-    t2 = time.time()
-    print(f"PICKLE OBJECTS DONE. [time: {t2 - t1} s]")
-
-def unpickle_objects(fname):
-    print(f"UNPICKLE OBJECTS... [from file: {fname}]")
-    t1 = time.time()
-    try:    
-        f = open(fname, "rb")
-        some_list = pickle.load(f)
-        f.close()
-    except IOError:
-        sys.exit("[error occurred when trying to open or read the file]")
-    t2 = time.time()
-    print(f"UNPICKLE OBJECTS DONE. [time: {t2 - t1} s]")
-    return some_list
-
 def measure_accs_of_model(clf, X_train, y_train, X_test, y_test):
+    """Measures and prints accuracies of a model (classifier) for given train and test data.""" 
     print(f"MEASURE ACCS OF MODEL...")
     t1_accs = time.time()    
     t1 = time.time()
@@ -158,6 +138,7 @@ def measure_accs_of_model(clf, X_train, y_train, X_test, y_test):
     print("MEASURE ACCS DONE. [time: " + str(t2_accs - t1_accs) + " s]")
     
 def best_decision_threshold_via_precision(roc, y_test, heuristic_coeff):
+    """Returns `the best` decision threshold that maximizes (approximately) the precision measure for test data (by analyzing its ROC curve)."""
     py = np.zeros(2)
     py[0] = np.mean(y_test == -1)
     py[1] = np.mean(y_test == 1)
@@ -179,18 +160,20 @@ def best_decision_threshold_via_precision(roc, y_test, heuristic_coeff):
     return best_thr, best_prec
 
 def adjust_decision_threshold_via_precision(clf, X_test, y_test, heuristic_coeff=0.25):
-        print("ADJUST DECISION THRESHOLD VIA PRECISION...")
-        t1 = time.time()
-        responses_test = clf.decision_function(X_test)
-        roc = roc_curve(y_test, responses_test)
-        best_thr, _ = best_decision_threshold_via_precision(roc, y_test, heuristic_coeff)
-        print(f"[adjusting decision threshold within clf from {clf.decision_threshold_} to {best_thr}]")
-        clf.decision_threshold_ = best_thr
-        t2 = time.time()
-        print(f"ADJUST DECISION THRESHOLD VIA PRECISION DONE. [time: {t2 - t1} s] ")
+    """Replaces the ``clf.decision_threshold_`` value in a classifier by determining the threshold that maximizes (approximately) the precision measure for test data (by analyzing its ROC curve)."""
+    print("ADJUST DECISION THRESHOLD VIA PRECISION...")
+    t1 = time.time()
+    responses_test = clf.decision_function(X_test)
+    roc = roc_curve(y_test, responses_test)
+    best_thr, _ = best_decision_threshold_via_precision(roc, y_test, heuristic_coeff)
+    print(f"[adjusting decision threshold within clf from {clf.decision_threshold_} to {best_thr}]")
+    clf.decision_threshold_ = best_thr
+    t2 = time.time()
+    print(f"ADJUST DECISION THRESHOLD VIA PRECISION DONE. [time: {t2 - t1} s] ")
         
 
 def draw_feature_at(i, j0, k0, shcoords_one_feature):
+    """Draws a Haar-like feature on top of an image (with transparency) at a given position."""
     i_copy = i.copy()
     j, k, h, w = shcoords_one_feature[0]
     cv2.rectangle(i_copy, (k0 + k, j0 + j), (k0 + k + w - 1, j0 + j + h - 1), (0, 0, 0), cv2.FILLED)
@@ -199,6 +182,7 @@ def draw_feature_at(i, j0, k0, shcoords_one_feature):
     return i_copy
 
 def demo_haar_features(hinds, hcoords, n, selected_indexes=None):
+    """Performs a demonstration of Haar-like features (all or selected by specified indexes) by sequentially drawing them on top of a prepared image (with a face or hand gesture)."""
     print(f"DEMO OF HAAR FEATURES... [hcoords.shape: {hcoords.shape}]")
     print("[with focus placed on display window press 'esc' to quit or any other key to continue]")
     if KIND == "face":
@@ -249,6 +233,7 @@ def demo_haar_features(hinds, hcoords, n, selected_indexes=None):
     print(f"DEMO OF HAAR FEATURES DONE.")
 
 def prepare_detection_windows_and_scaled_haar_coords(image_height, image_width, hcoords, features_indexes):
+    """Prepares and returns coordinates of all windows (two-dimensional array) to be checked during a detection procedure together with relative and scaled pixel coordinates of Haar-like features (four-dimensional array)."""
     hcoords_subset = hcoords[features_indexes]
     windows = []
     shcoords_multiple_scales = []
@@ -268,6 +253,7 @@ def prepare_detection_windows_and_scaled_haar_coords(image_height, image_width, 
     return windows, shcoords_multiple_scales
 
 def prepare_detection_windows(image_height, image_width):
+    """Prepares and returns coordinates of all windows (two-dimensional array) to be checked during a detection procedure."""
     windows = []
     for s in range(DETECTION_SCALES):
         h = int(round(DETECTION_WINDOW_HEIGHT_MIN * DETECTION_WINDOW_GROWTH**s))
@@ -283,6 +269,7 @@ def prepare_detection_windows(image_height, image_width):
     return windows
 
 def prepare_scaled_haar_coords(hcoords, features_indexes):
+    """Prepares and returns relative and scaled pixel coordinates of Haar-like features (four-dimensional array) suitable for a detection procedure."""
     hcoords_subset = hcoords[features_indexes]
     shcoords_multiple_scales = []
     for s in range(DETECTION_SCALES):
@@ -293,6 +280,10 @@ def prepare_scaled_haar_coords(hcoords, features_indexes):
     return shcoords_multiple_scales
 
 def detect_cpu_simple(i, clf, hcoords, n, features_indexes, decision_threshold=None, windows=None, shcoords_multiple_scales=None, verbose=False):
+    """
+    Performs detection on an image frame in the `cpu_simple` mode (i.e. with no CPU parallelization, nor GPU usage).
+    Called for each frame from within the ``demo_detect_in_video`` function.
+    """  
     if verbose:
         print("[detect_cpu_simple...]")
     t1 = time.time()
@@ -352,6 +343,10 @@ def detect_cpu_simple(i, clf, hcoords, n, features_indexes, decision_threshold=N
     return detections, responses, times
 
 def detect_cpu_parallel(i, clf, hcoords, n, features_indexes, decision_threshold=None, windows=None, shcoords_multiple_scales=None, n_jobs=8, verbose=False):
+    """
+    Performs detection on an image frame in the `cpu_parallel` mode (i.e. with CPU parallelization via ``joblib.Parallel`` object, but with no GPU usage).
+    Called for each frame from within the ``demo_detect_in_video`` function.
+    """
     if verbose:
         print("[detect_cpu_parallel...]")
     t1 = time.time()
@@ -411,9 +406,14 @@ def detect_cpu_parallel(i, clf, hcoords, n, features_indexes, decision_threshold
         print(f"[detect_cpu_parallel done; time: {t2 - t1} s]")                    
     return detections, responses, times
 
+
 def detect_gpu_cuda(i, clf, hcoords, features_indexes, decision_threshold=None, windows=None, shcoords_multiple_scales=None, 
                     dev_windows=None, dev_shcoords_multiple_scales=None, dev_X_selected=None, dev_mins_selected=None, dev_maxes_selected=None, dev_logits=None, dev_responses=None, 
                     verbose=False):
+    """
+    Performs detection on an image frame in the `gpu_cude` mode (i.e. using GPU CUDA-based computations for both feature extraction and classifier responses).
+    Called for each frame from within the ``demo_detect_in_video`` function.
+    """    
     if verbose:
         print("[detect_gpu_cuda...]")
     t1 = time.time()
@@ -493,6 +493,10 @@ def detect_gpu_cuda(i, clf, hcoords, features_indexes, decision_threshold=None, 
 def detect_gpu_cuda_within_multiple_clfs(ii, clf, decision_threshold, windows, 
                                          dev_windows=None, dev_shcoords_multiple_scales=None, dev_X_selected=None, dev_mins_selected=None, dev_maxes_selected=None, dev_logits=None, dev_responses=None, 
                                          verbose=False):
+    """
+    Function called from a detection procedure meant for multiple classifiers - performs detection on an image frame (given its integral image computed earlier) in the `gpu_cude` mode (i.e. using GPU CUDA-based computations for both feature extraction and classifier responses).
+    Called for each frame from within the ``demo_detect_in_video_multiple_clfs`` function.
+    """    
     if verbose:
         print("[detect_gpu_cuda_within_multiple_clfs...]")
     t1 = time.time()
@@ -534,6 +538,7 @@ def detect_gpu_cuda_within_multiple_clfs(ii, clf, decision_threshold, windows,
     return detections, responses, times
 
 def postprocess_nms(detections, responses, iou_threshold=0.25):
+    """Postprocesses the list of detections (bounding boxes) according to the `non-max suppression` approach."""    
     d = detections
     r = responses
     d_final = []
@@ -556,6 +561,7 @@ def postprocess_nms(detections, responses, iou_threshold=0.25):
     return d_final, r_final
 
 def postprocess_avg(detections, responses, iou_threshold=0.25):
+    """Postprocesses the list of detections (bounding boxes) according to the `averaging` approach."""
     d = detections
     r = responses
     d_final = []
@@ -586,6 +592,7 @@ def postprocess_avg(detections, responses, iou_threshold=0.25):
     return d_final, r_final
 
 def short_cpu_name(cpu_name):
+    """Returns a short version of a full CPU name (for the purpose of displaying it on video frames)."""
     cpu_name = cpu_name.replace("CPU", "")
     cpu_name = cpu_name.replace("cpu", "")
     cpu_name = cpu_name.replace("  ", " ")
@@ -594,6 +601,7 @@ def short_cpu_name(cpu_name):
     return cpu_name    
 
 def color_by_detector_title(colors_detect, detector_title):
+    """Returns a color (meant to draw a detected bounding box) based on a detector title."""
     mappings = {"face" : 0, "hand": 1}
     title = detector_title.lower()
     index = 0
@@ -602,6 +610,11 @@ def color_by_detector_title(colors_detect, detector_title):
     return colors_detect[index]  
 
 def demo_detect_in_video(clf, hcoords, decision_threshold, computations="gpu_cuda", postprocess="avg", n_jobs=8, detector_title=None, verbose_loop=True, verbose_detect=False):
+    """
+    Performs a demonstration of detection procedure (using a single binary classifier - an instance of ``FastRealBoostBins``) in a video sequence captured from camera.
+    Depending on the mode of computations (argument ``computations`` being one of: ``"cpu_simple"``, ``"cpu_parallel"``, ``"gpu_cuda"``),
+    makes calls for each frame to, respectively, one of the following functions: ``detect_cpu_simple``, ``detect_cpu_parallel``, ``detect_gpu_cuda``. 
+    """
     print(f"DEMO OF DETECT IN VIDEO... [computations: {computations}]")
     colors_detect = [(0, 255, 255), (255, 255, 0), (255, 0, 255), (255, 0, 0), (0, 0, 255), (255, 0, 0)]
     color_detect = color_by_detector_title(colors_detect, detector_title)
@@ -756,6 +769,10 @@ def demo_detect_in_video(clf, hcoords, decision_threshold, computations="gpu_cud
     print(f"DEMO OF DETECT IN VIDEO DONE. [avg fps (computations): {avg_fps_comps:.2f}, avg time haar: {avg_time_comps_haar * 1000:.2f} ms, avg time frbb: {avg_time_comps_frbb * 1000:.2f} ms; avg fps (display): {avg_fps_disp:.2f}]")
         
 def demo_detect_in_video_multiple_clfs(clfs, hcoords, decision_thresholds, postprocess="avg", detector_title=None, verbose_loop=True, verbose_detect=False):
+    """
+    Performs a demonstration of detection procedure (using multiple binary classifiers - instances of ``FastRealBoostBins``) in a video sequence captured from camera.    
+    For each frame makes of call to ``detect_gpu_cuda_within_multiple_clfs`` function.     
+    """
     print("DEMO OF DETECT IN VIDEO  (MULTIPLE CLFS)...")
     colors_detect = [(0, 255, 255), (255, 255, 0), (255, 0, 255), (255, 0, 0), (0, 0, 255), (255, 0, 0)]
     color_info = (255, 255, 255)
@@ -916,42 +933,20 @@ def demo_detect_in_video_multiple_clfs(clfs, hcoords, decision_thresholds, postp
     avg_fps_disp = n_frames / (t2_loop - t1_loop)
     print(f"DEMO OF DETECT IN VIDEO (MULTIPLE CLFS) DONE. [avg fps (computations): {avg_fps_comps:.2f}, avg time haar: {avg_time_comps_haar * 1000:.2f} ms, avg time frbb: {avg_time_comps_frbb * 1000:.2f} ms; avg fps (display): {avg_fps_disp:.2f}]")
 
-def experiment_some_rocs():
-    print("ROCS...")    
-    data_name = "data_face_n_18225_S_5_P_5_NPI_10_SEED_0.bin"    
-    print(f"[data_name: {data_name}]")
-    [X_train, y_train, X_test, y_test] = unpickle_objects(FOLDER_DATA + data_name)    
-    print(f"[X_train.shape: {X_train.shape} with {np.sum(y_train == 1)} positives, X_test.shape: {X_test.shape} with {np.sum(y_test == 1)} positives]")
-    clfs_names = [
-        "clf_frbb_face_n_18225_S_5_P_5_NPI_200_SEED_0_T_1024_B_8.bin",
-        "clf_frbb_face_n_18225_S_5_P_5_NPI_200_SEED_0_T_2048_B_8.bin"                                      
-        ]    
-    for clf_name in clfs_names:                                                                          
-        print("-" * 160)        
-        print(f"[clf_name: {clf_name}]")                            
-        [clf] = unpickle_objects(FOLDER_CLFS + clf_name)                
-        responses_test = clf.decision_function(X_test)
-        roc = roc_curve(y_test, responses_test)
-        best_decision_threshold_via_precision(roc, y_test, heuristic_coeff=0.25) 
-        fars, sens, _ = roc                
-        plt.plot(fars, sens, label=clf_name)                
-    plt.xscale("log")
-    plt.xlabel("FAR")
-    plt.ylabel("SENSITIVITY")
-    plt.legend(loc="lower right", fontsize=8)
-    plt.show()
-
 def str_to_float_or_none(s):
+    """Utility function for ``argparse.ArgumentParser`` (see ``parse_args`` function) meant to return a floating-point number from its string representation or a ``None`` value."""
     if s.lower() == "none":
         return None
     return float(s)
 
 def str_to_int_or_none(s):
+    """Utility function for ``argparse.ArgumentParser`` (see ``parse_args`` function) meant to return an integer from its string representation or a ``None`` value."""
     if s.lower() == "none":
         return None
     return int(s)
 
 def parse_args():
+    """Returns a dictionary of arguments specified by user from CLI."""
     parser = argparse.ArgumentParser()
     parser.add_argument("-k", "--KIND", type=str, default=KIND, choices=["face", "hand"], help=f"detector kind (default: {KIND})")
     parser.add_argument("-s", "--S", type=int, default=S, help=f"\"scales\" parameter of Haar-like features (default: {S})")

@@ -1,11 +1,17 @@
 """
-Auxiliary module with simple utility and informative functions. 
+Auxiliary module with simple utility and informative functions.
+
+Link to project repository
+--------------------------
+`https://github.com/pklesk/fast_rboost_bins <https://github.com/pklesk/fast_rboost_bins>`_ 
 """
 
 import cpuinfo
 import platform
 import psutil
 from numba import cuda
+import pickle
+import sys
  
 __author__ = "Przemysław Klęsk"
 __email__ = "pklesk@zut.edu.pl"
@@ -17,6 +23,41 @@ def dict_to_str(d):
         dict_str += "\n  "  + str(key) + ": " + str(d[key]) + ("," if i < len(d) - 1 else "")    
     dict_str += "\n}"
     return dict_str
+
+def list_to_str(l):
+    """Returns a vertically formatted string representation of a list."""
+    list_str = ""
+    for i, elem in enumerate(l):
+        list_str += "[" if i == 0 else " "  
+        list_str += str(elem) + (",\n" if i < len(l) - 1 else "]")
+    return list_str 
+
+def pickle_objects(fname, some_list):
+    """Pickles a list of objects to a binary file."""
+    print(f"PICKLE OBJECTS... [to file: {fname}]")
+    t1 = time.time()
+    try:
+        f = open(fname, "wb+")
+        pickle.dump(some_list, f, protocol=pickle.HIGHEST_PROTOCOL)
+        f.close()
+    except IOError:
+        sys.exit("[error occurred when trying to open or pickle the file]")
+    t2 = time.time()
+    print(f"PICKLE OBJECTS DONE. [time: {t2 - t1} s]")
+
+def unpickle_objects(fname):
+    """Returns an a list of objects from a binary file."""
+    print(f"UNPICKLE OBJECTS... [from file: {fname}]")
+    t1 = time.time()
+    try:    
+        f = open(fname, "rb")
+        some_list = pickle.load(f)
+        f.close()
+    except IOError:
+        sys.exit("[error occurred when trying to open or read the file]")
+    t2 = time.time()
+    print(f"UNPICKLE OBJECTS DONE. [time: {t2 - t1} s]")
+    return some_list
 
 def cpu_and_system_props():
     """Returns a dictionary with properties of CPU and OS."""

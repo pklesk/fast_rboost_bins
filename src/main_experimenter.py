@@ -1,6 +1,6 @@
 """
-Auxiliary script with command-line user interface for conducting experiments on classifiers related to this project: 
-``FastRealBoostBins`` (two variants) against other ensemble classifiers from ``sklearn.ensemble``.
+Auxiliary script with command-line user interface for conducting experiments on ensemble classifiers related to this project: 
+``FastRealBoostBins`` from :doc:`frbb` and other from ``sklearn.ensemble``.
 
 For help on the script arguments execute: 
 
@@ -12,13 +12,19 @@ For usage examples, see the README.md file in project's repository (`<https://gi
 
 Dependencies
 ------------
+- ``frbb``: required to import the class ``FastRealBoostBins``.
+
 - ``numpy``, ``math``: required for mathematical computations.
 
 - ``numba``: required for just-in-time compilation of crucial computational functions and CUDA kernels (decorated by ``@jit`` and ``@cuda.jit`` imported from ``numba``). 
 
 - ``sklearn``: required for inheritence and other sklearn API purposes,
 
-- ``colorama``: required CLI purposes.
+- ``colorama``: required for CLI purposes.
+
+Link to project repository
+--------------------------
+`https://github.com/pklesk/fast_rboost_bins <https://github.com/pklesk/fast_rboost_bins>`_
 """
 
 import numpy as np
@@ -29,10 +35,8 @@ import time
 import re
 from itertools import product, compress
 from matplotlib import pyplot as plt
-from utils import cpu_and_system_props, gpu_props, dict_to_str
-import pickle
+from utils import cpu_and_system_props, gpu_props, dict_to_str, list_to_str, unpickle_objects
 from datetime import date
-import sys
 import argparse
 import colorama
 
@@ -91,12 +95,14 @@ PLOT_LEGEND_HANDLELENGTH = 4
 PLOT_LEGEND_LABELSPACING = 0.1
 
 def clean_name(name):
+    """Cleans a name of a classifier, provided by ``str(clf)``, getting rid of special characters ``\\n`` and ``\\t``, and replacing space sequences by a single space."""
     name = name.replace("\n", "")
     name = name.replace("\t", "")
     name = re.sub(" +", " ", name)
     return name
 
 def hash_function(s):
+    """Returns a hash code (integer) for given string as a base 31 expansion."""
     h = 0
     for c in s:
         h *= 31 
@@ -104,29 +110,11 @@ def hash_function(s):
     return h
 
 def experiment_hash_str(kind="real", params=None, digits=10):
+    """Returns a hash string for an experiment, based on its kind, parameters and current date (the actual hash code part defaults to 10 digits)."""
     return kind + "_" + str((hash_function(str(params)) & ((1 << 32) - 1)) % 10**digits).rjust(digits, "0") + "_" + date.today().strftime("%Y%m%d")
 
-def list_to_str(l):
-    list_str = ""
-    for i, elem in enumerate(l):
-        list_str += "[" if i == 0 else " "  
-        list_str += str(elem) + (",\n" if i < len(l) - 1 else "]")
-    return list_str 
-
-def unpickle_objects(fname):
-    print(f"UNPICKLE OBJECTS... [from file: {fname}]")
-    t1 = time.time()
-    try:    
-        f = open(fname, "rb")
-        some_list = pickle.load(f)
-        f.close()
-    except IOError:
-        sys.exit("[error occurred when trying to open or read the file]")
-    t2 = time.time()
-    print(f"UNPICKLE OBJECTS DONE. [time: {t2 - t1} s]")
-    return some_list
-
-def read_data_fddb_patches(): 
+def read_data_fddb_patches():
+    """Reads a data set named 'FDDB-PATCHES (3NPI)' (i.e. 32x32 patches from FDDB, 3 negatives sampled per image) and returns a tuple of four data arrays: ``X_train``, ``y_train``, ``X_test``, ``y_test``."""  
     fname = "fddb_patches/fddb_patches_32x32_NPI_3_SEED_0.bin"
     [X_train, y_train, X_test, y_test] = unpickle_objects(FOLDER_DATA_RAW + fname)
     n = np.product(X_train.shape[1:])
@@ -135,6 +123,7 @@ def read_data_fddb_patches():
     return X_train, y_train, X_test, y_test
 
 def read_data_cifar_10():
+    """Reads a data set named 'CIFAR-10 (AIRPLANE)' (i.e. CIFAR-10 with the first class - airplane - treated as positives) and returns a tuple of four data arrays: ``X_train``, ``y_train``, ``X_test``, ``y_test``."""
     (X_train, y_train), (X_test, y_test) = cifar10.load_data()
     class_index = 0 # 'airplane'
     indexes = y_train == class_index
@@ -151,6 +140,7 @@ def read_data_cifar_10():
     return X_train, y_train, X_test, y_test
 
 def read_data_mnist_b(seed=0):
+    """Reads a data set named 'MNIST-B' (i.e. MNIST with random backgrounds) and returns a tuple of four data arrays: ``X_train``, ``y_train``, ``X_test``, ``y_test``."""
     (X_train, y_train), (X_test, y_test) = mnist.load_data()
     indexes = y_train == 0
     y_train[indexes] = 1
@@ -170,22 +160,26 @@ def read_data_mnist_b(seed=0):
     X_test = ((X_test.astype(np.uint16) + noise_test) // 2).astype(np.uint8)             
     return X_train, y_train, X_test, y_test                    
     
-def read_data_fddb_haar_npi_100(): 
+def read_data_fddb_haar_npi_100():
+    """Reads a data set named 'FDDB-HFs (100 NPI)' (i.e. FDDB described by Haar-like features (HFs) generated from grayscale versions, 100 negatives sampled per image) and returns a tuple of four data arrays: ``X_train``, ``y_train``, ``X_test``, ``y_test``.""" 
     fname = "data_face_n_18225_S_5_P_5_NPI_100_SEED_0.bin"
     [X_train, y_train, X_test, y_test] = unpickle_objects(FOLDER_DATA + fname)
     return X_train, y_train, X_test, y_test
 
 def read_data_fddb_haar_npi_300(): 
+    """Reads a data set named 'FDDB-HFs (100 NPI)' (i.e. FDDB described by Haar-like features (HFs) generated from grayscale versions, 300 negatives sampled per image) and returns a tuple of four data arrays: ``X_train``, ``y_train``, ``X_test``, ``y_test``."""
     fname = "data_face_n_18225_S_5_P_5_NPI_300_SEED_0.bin"
     [X_train, y_train, X_test, y_test] = unpickle_objects(FOLDER_DATA + fname)
     return X_train, y_train, X_test, y_test
 
 def read_data_hagrid_haar_npi_10(): 
+    """Reads a data set named 'HaGRID-HFs (10 NPI)' (i.e. HaGRID described by Haar-like features (HFs) generated from grayscale versions, 10 negatives sampled per image) and returns a tuple of four data arrays: ``X_train``, ``y_train``, ``X_test``, ``y_test``."""    
     fname = "data_hand_n_18225_S_5_P_5_NPI_10_SEED_0.bin"
     [X_train, y_train, X_test, y_test] = unpickle_objects(FOLDER_DATA + fname)
     return X_train, y_train, X_test, y_test
 
-def read_data_hagrid_haar_npi_30(): 
+def read_data_hagrid_haar_npi_30():
+    """Reads a data set named 'HaGRID-HFs (30 NPI)' (i.e. HaGRID described by Haar-like features (HFs) generated from grayscale versions, 30 negatives sampled per image) and returns a tuple of four data arrays: ``X_train``, ``y_train``, ``X_test``, ``y_test``.""" 
     fname = "data_hand_n_18225_S_5_P_5_NPI_30_SEED_0.bin"
     [X_train, y_train, X_test, y_test] = unpickle_objects(FOLDER_DATA + fname)
     return X_train, y_train, X_test, y_test    
@@ -195,6 +189,7 @@ def experimenter_for_random_data(dtype=RANDOM_DTYPE, nmm_magn_orders=NMM_MAGN_OR
                                  Ts=TS, Bs=BS, seed=0, 
                                  plots=PLOTS, plots_arg_name=PLOTS_ARG_NAME, plots_values_names=PLOTS_VALUES_NAMES,
                                  cpu_props=None, gpu_props=None):
+    """Main function (called via CLI) performing batch experiments on random data for given settings."""
     print("EXPERIMENTER FOR RANDOM DATA...")
     hash_str = experiment_hash_str("random", locals())
     print(f"[experiment hash string: {hash_str}]")    
@@ -334,6 +329,7 @@ def experimenter_for_real_data(real_data_defs=REAL_DATA_DEFS, real_data_flags=RE
                                Ts=TS, Bs=BS, seed=SEED, 
                                plots=PLOTS, plots_arg_name=PLOTS_ARG_NAME, plots_values_names=PLOTS_VALUES_NAMES,
                                cpu_props=None, gpu_props=None):
+    """Main function (called via CLI) performing batch experiments on real data for given settings."""    
     print("EXPERIMENTER FOR REAL DATA...")    
     hash_str = experiment_hash_str("real", locals())
     print(f"[experiment hash string: {hash_str}]")
@@ -469,15 +465,19 @@ def experimenter_for_real_data(real_data_defs=REAL_DATA_DEFS, real_data_flags=RE
             plt.close()       
             
 def str_to_dtype(s):
+    """Utility function for ``argparse.ArgumentParser`` (see ``parse_args`` function) meant to return a correct ``dtype`` for a short string that represents it e.g. ``np.int8`` or ``np.float32``."""
     return eval(s)
 
 def str_to_tuple(s):
+    """Utility function for ``argparse.ArgumentParser`` (see ``parse_args`` function) meant to return a tuple for a string that represents it."""
     return eval(s)
 
 def str_to_bool(s):
+    """Utility function for ``argparse.ArgumentParser`` (see ``parse_args`` function) meant to return a boolean value for a string that represents it (``False``, ``True`` or also ``0``, ``1``)."""
     return bool(eval(s))
             
 def parse_args():
+    """Returns a dictionary of arguments specified by user from CLI."""
     parser = argparse.ArgumentParser()
     parser.add_argument("-cf", "--CLFS_FLAGS", type=str_to_bool, default=CLFS_FLAGS, nargs="+", 
                         help=f"boolean flags (list) specifying which classifiers from the predefined set will participate in experiments (default: {CLFS_FLAGS}) (attention: type them using spaces as separators)")    

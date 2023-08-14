@@ -55,6 +55,10 @@ Dependencies
 - ``numba``: required for just-in-time compilation of crucial computational functions and CUDA kernels (decorated by ``@jit`` and ``@cuda.jit`` imported from ``numba``). 
 
 - ``sklearn``: required for inheritence and other sklearn API purposes.
+
+Link to project repository
+--------------------------
+`https://github.com/pklesk/fast_rboost_bins <https://github.com/pklesk/fast_rboost_bins>`_
 """
 
 import numpy as np
@@ -195,7 +199,7 @@ class FastRealBoostBins(BaseEstimator, ClassifierMixin):
         self.debug_verbose = debug_verbose        
 
     def _get_tags(self=None):
-        """Returns dictionary with particular properties of this estimator (compliant with scikit-learn guidelines)."""
+        """Returns a dictionary with particular properties of this estimator (compliant with scikit-learn guidelines)."""
         tags = super()._get_tags()
         tags["binary_only"] = True
         tags["non_deterministic"] = True # in case of cuda computations  
@@ -203,7 +207,7 @@ class FastRealBoostBins(BaseEstimator, ClassifierMixin):
     
     def __str__(self):
         """
-        Returns string representation of this classifier.
+        Returns a string representation of this classifier.
         
         Returns:
             str: string representation of this classifier.
@@ -212,7 +216,7 @@ class FastRealBoostBins(BaseEstimator, ClassifierMixin):
             
     def __repr__(self):
         """
-        Returns detailed string representation of this classifier.
+        Returns a detailed string representation of this classifier.
         
         Returns:
             str: detailed string representation of this classifier.

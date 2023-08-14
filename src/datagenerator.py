@@ -1,3 +1,11 @@
+"""
+Auxiliary module with functions processing image data bases (e.g. FDDB, HaGRID) and generating Haar-like features (HFs) for them.
+
+Link to project repository
+--------------------------
+`https://github.com/pklesk/fast_rboost_bins <https://github.com/pklesk/fast_rboost_bins>`_ 
+"""
+
 import os
 import numpy as np
 import cv2
@@ -23,6 +31,10 @@ SYNTHETIC_TRAIN_RATIO = 0.75
 
 
 def fddb_data_to_haar(hcoords, n, negs_per_img, seed=0, verbose=False):
+    """
+    Processes folds of annotated images in FDDB in order to generate Haar-like features (HFs) for selected image patches and to produce the final output data set.
+    Returns a tuple of four data arrays: ``X_train``, ``y_train``, ``X_test``, ``y_test``.
+    """
     fddb_root = FOLDER_DATA_RAW_FDDB
     print("FDDB DATA TO HAAR...")
     t1 = time.time()
@@ -73,6 +85,7 @@ def fddb_data_to_haar(hcoords, n, negs_per_img, seed=0, verbose=False):
     return X_train, y_train, X_test, y_test
 
 def fddb_data_to_haar_single_fold(fddb_root, fold_name, hcoords, n, negs_per_img, seed=0, verbose=False):
+    """Processes a single fold in FDDB. Called from within ``fddb_data_to_haar`` function."""     
     neg_rel_min = 0.1
     neg_rel_max = 0.5
     neg_max_iou = 0.5
@@ -177,6 +190,10 @@ def fddb_data_to_haar_single_fold(fddb_root, fold_name, hcoords, n, negs_per_img
     return X, y
 
 def hagrid_data_to_haar(hcoords, n, negs_per_img, train_ratio=0.75, seed=0, verbose=False):
+    """
+    Processes annotated images in HaGRID database in order to generate Haar-like features (HFs) for selected image patches and to produce the final output data set.
+    Returns a tuple of four data arrays: ``X_train``, ``y_train``, ``X_test``, ``y_test``.
+    """
     print(f"HAGRID DATA TO HAAR...")
     t1 = time.time()        
     neg_rel_min = 0.1
@@ -281,6 +298,11 @@ def hagrid_data_to_haar(hcoords, n, negs_per_img, train_ratio=0.75, seed=0, verb
 def synthetic_data_to_haar(folder_backgrounds, folder_targets, hcoords, n, data_augmentation, positives_to_generate, negs_per_img, seed=0, verbose=False,
                            rotation_range=SYNTHETIC_ROTATION_RANGE, train_ratio=SYNTHETIC_TRAIN_RATIO, 
                            force_random_rotations=SYNTHETIC_FORCE_RANDOM_ROTATIONS, force_random_horizontal_flips=SYNTHETIC_FORCE_RANDOM_HORIZONTAL_FLIPS):
+    """
+    Produces a synthetic data set given a folder of background images and a folder with example target objects.  
+    Returns a tuple of four data arrays: ``X_train``, ``y_train``, ``X_test``, ``y_test``.
+    Note: not used in the current project version.
+    """    
     print("SYNTHETIC DATA TO HAAR...")
     t1 = time.time()
     rel_min = 0.1 # for both positives and negatives
@@ -434,6 +456,7 @@ def synthetic_data_to_haar(folder_backgrounds, folder_targets, hcoords, n, data_
     return X_train, y_train, X_test, y_test             
     
 def rotate_bound(image, angle):
+    """Rotates an image (actually an image patch) by wanted angle, producing an output image with suitably enlarged bounds."""    
     h, w = image.shape[:2]
     cj, ck = w // 2, h // 2
     M = cv2.getRotationMatrix2D((cj, ck), angle, 1.0)

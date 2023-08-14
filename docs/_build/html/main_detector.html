@@ -52,6 +52,7 @@
 <li class="toctree-l2"><a class="reference internal" href="haar.html">haar module</a></li>
 <li class="toctree-l2 current"><a class="current reference internal" href="#">main_detector module</a><ul>
 <li class="toctree-l3"><a class="reference internal" href="#dependencies">Dependencies</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#link-to-project-repository">Link to project repository</a></li>
 </ul>
 </li>
 <li class="toctree-l2"><a class="reference internal" href="main_experimenter.html">main_experimenter module</a></li>
@@ -87,7 +88,7 @@
              
   <section id="module-main_detector">
 <span id="main-detector-module"></span><h1>main_detector module<a class="headerlink" href="#module-main_detector" title="Permalink to this headline"></a></h1>
-<p>Auxiliary script with command-line user interface for training and testing object detectors based on <code class="docutils literal notranslate"><span class="pre">FastRealBoostBins</span></code> classifier.</p>
+<p>Auxiliary script with command-line user interface for training and testing object detectors based on <code class="docutils literal notranslate"><span class="pre">FastRealBoostBins</span></code> classifier from <a class="reference internal" href="frbb.html"><span class="doc">frbb module</span></a>.</p>
 <p>For help on the script arguments execute:</p>
 <div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="go">python main_detector.py -h </span>
 </pre></div>
@@ -96,132 +97,150 @@
 <section id="dependencies">
 <h2>Dependencies<a class="headerlink" href="#dependencies" title="Permalink to this headline"></a></h2>
 <ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">frbb</span></code>: required to import the class <code class="docutils literal notranslate"><span class="pre">FastRealBoostBins</span></code>.</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">numpy</span></code>, <code class="docutils literal notranslate"><span class="pre">math</span></code>: required for mathematical computations.</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">numba</span></code>: required for just-in-time compilation of crucial computational functions and CUDA kernels (decorated by <code class="docutils literal notranslate"><span class="pre">&#64;jit</span></code> and <code class="docutils literal notranslate"><span class="pre">&#64;cuda.jit</span></code> imported from <code class="docutils literal notranslate"><span class="pre">numba</span></code>).</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">sklearn</span></code>: required for inheritence and other sklearn API purposes,</p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">colorama</span></code>: required CLI purposes,</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">colorama</span></code>: required for CLI purposes,</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">cv2</span></code>: required for video capturing,</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">joblib</span></code>: required for comparisons: CPU with parallelization vs GPU.</p></li>
 </ul>
-<dl class="py function">
-<dt class="sig sig-object py" id="main_detector.pickle_objects">
-<span class="sig-prename descclassname"><span class="pre">main_detector.</span></span><span class="sig-name descname"><span class="pre">pickle_objects</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">fname</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">some_list</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/main_detector.html#pickle_objects"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#main_detector.pickle_objects" title="Permalink to this definition"></a></dt>
-<dd></dd></dl>
-
-<dl class="py function">
-<dt class="sig sig-object py" id="main_detector.unpickle_objects">
-<span class="sig-prename descclassname"><span class="pre">main_detector.</span></span><span class="sig-name descname"><span class="pre">unpickle_objects</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">fname</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/main_detector.html#unpickle_objects"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#main_detector.unpickle_objects" title="Permalink to this definition"></a></dt>
-<dd></dd></dl>
-
+</section>
+<section id="link-to-project-repository">
+<h2>Link to project repository<a class="headerlink" href="#link-to-project-repository" title="Permalink to this headline"></a></h2>
+<p><a class="reference external" href="https://github.com/pklesk/fast_rboost_bins">https://github.com/pklesk/fast_rboost_bins</a></p>
 <dl class="py function">
 <dt class="sig sig-object py" id="main_detector.measure_accs_of_model">
 <span class="sig-prename descclassname"><span class="pre">main_detector.</span></span><span class="sig-name descname"><span class="pre">measure_accs_of_model</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">clf</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">X_train</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">y_train</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">X_test</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">y_test</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/main_detector.html#measure_accs_of_model"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#main_detector.measure_accs_of_model" title="Permalink to this definition"></a></dt>
-<dd></dd></dl>
+<dd><p>Measures and prints accuracies of a model (classifier) for given train and test data.</p>
+</dd></dl>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="main_detector.best_decision_threshold_via_precision">
 <span class="sig-prename descclassname"><span class="pre">main_detector.</span></span><span class="sig-name descname"><span class="pre">best_decision_threshold_via_precision</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">roc</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">y_test</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">heuristic_coeff</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/main_detector.html#best_decision_threshold_via_precision"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#main_detector.best_decision_threshold_via_precision" title="Permalink to this definition"></a></dt>
-<dd></dd></dl>
+<dd><p>Returns <cite>the best</cite> decision threshold that maximizes (approximately) the precision measure for test data (by analyzing its ROC curve).</p>
+</dd></dl>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="main_detector.adjust_decision_threshold_via_precision">
 <span class="sig-prename descclassname"><span class="pre">main_detector.</span></span><span class="sig-name descname"><span class="pre">adjust_decision_threshold_via_precision</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">clf</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">X_test</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">y_test</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">heuristic_coeff</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.25</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/main_detector.html#adjust_decision_threshold_via_precision"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#main_detector.adjust_decision_threshold_via_precision" title="Permalink to this definition"></a></dt>
-<dd></dd></dl>
+<dd><p>Replaces the <code class="docutils literal notranslate"><span class="pre">clf.decision_threshold_</span></code> value in a classifier by determining the threshold that maximizes (approximately) the precision measure for test data (by analyzing its ROC curve).</p>
+</dd></dl>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="main_detector.draw_feature_at">
 <span class="sig-prename descclassname"><span class="pre">main_detector.</span></span><span class="sig-name descname"><span class="pre">draw_feature_at</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">i</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">j0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">k0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">shcoords_one_feature</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/main_detector.html#draw_feature_at"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#main_detector.draw_feature_at" title="Permalink to this definition"></a></dt>
-<dd></dd></dl>
+<dd><p>Draws a Haar-like feature on top of an image (with transparency) at a given position.</p>
+</dd></dl>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="main_detector.demo_haar_features">
 <span class="sig-prename descclassname"><span class="pre">main_detector.</span></span><span class="sig-name descname"><span class="pre">demo_haar_features</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">hinds</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">hcoords</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">selected_indexes</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/main_detector.html#demo_haar_features"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#main_detector.demo_haar_features" title="Permalink to this definition"></a></dt>
-<dd></dd></dl>
+<dd><p>Performs a demonstration of Haar-like features (all or selected by specified indexes) by sequentially drawing them on top of a prepared image (with a face or hand gesture).</p>
+</dd></dl>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="main_detector.prepare_detection_windows_and_scaled_haar_coords">
 <span class="sig-prename descclassname"><span class="pre">main_detector.</span></span><span class="sig-name descname"><span class="pre">prepare_detection_windows_and_scaled_haar_coords</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">image_height</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">image_width</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">hcoords</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">features_indexes</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/main_detector.html#prepare_detection_windows_and_scaled_haar_coords"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#main_detector.prepare_detection_windows_and_scaled_haar_coords" title="Permalink to this definition"></a></dt>
-<dd></dd></dl>
+<dd><p>Prepares and returns coordinates of all windows (two-dimensional array) to be checked during a detection procedure together with relative and scaled pixel coordinates of Haar-like features (four-dimensional array).</p>
+</dd></dl>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="main_detector.prepare_detection_windows">
 <span class="sig-prename descclassname"><span class="pre">main_detector.</span></span><span class="sig-name descname"><span class="pre">prepare_detection_windows</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">image_height</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">image_width</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/main_detector.html#prepare_detection_windows"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#main_detector.prepare_detection_windows" title="Permalink to this definition"></a></dt>
-<dd></dd></dl>
+<dd><p>Prepares and returns coordinates of all windows (two-dimensional array) to be checked during a detection procedure.</p>
+</dd></dl>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="main_detector.prepare_scaled_haar_coords">
 <span class="sig-prename descclassname"><span class="pre">main_detector.</span></span><span class="sig-name descname"><span class="pre">prepare_scaled_haar_coords</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">hcoords</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">features_indexes</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/main_detector.html#prepare_scaled_haar_coords"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#main_detector.prepare_scaled_haar_coords" title="Permalink to this definition"></a></dt>
-<dd></dd></dl>
+<dd><p>Prepares and returns relative and scaled pixel coordinates of Haar-like features (four-dimensional array) suitable for a detection procedure.</p>
+</dd></dl>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="main_detector.detect_cpu_simple">
 <span class="sig-prename descclassname"><span class="pre">main_detector.</span></span><span class="sig-name descname"><span class="pre">detect_cpu_simple</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">i</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">clf</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">hcoords</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">features_indexes</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">decision_threshold</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">windows</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">shcoords_multiple_scales</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">verbose</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/main_detector.html#detect_cpu_simple"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#main_detector.detect_cpu_simple" title="Permalink to this definition"></a></dt>
-<dd></dd></dl>
+<dd><p>Performs detection on an image frame in the <cite>cpu_simple</cite> mode (i.e. with no CPU parallelization, nor GPU usage).
+Called for each frame from within the <code class="docutils literal notranslate"><span class="pre">demo_detect_in_video</span></code> function.</p>
+</dd></dl>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="main_detector.detect_cpu_parallel">
 <span class="sig-prename descclassname"><span class="pre">main_detector.</span></span><span class="sig-name descname"><span class="pre">detect_cpu_parallel</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">i</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">clf</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">hcoords</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">features_indexes</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">decision_threshold</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">windows</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">shcoords_multiple_scales</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_jobs</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">8</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">verbose</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/main_detector.html#detect_cpu_parallel"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#main_detector.detect_cpu_parallel" title="Permalink to this definition"></a></dt>
-<dd></dd></dl>
+<dd><p>Performs detection on an image frame in the <cite>cpu_parallel</cite> mode (i.e. with CPU parallelization via <code class="docutils literal notranslate"><span class="pre">joblib.Parallel</span></code> object, but with no GPU usage).
+Called for each frame from within the <code class="docutils literal notranslate"><span class="pre">demo_detect_in_video</span></code> function.</p>
+</dd></dl>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="main_detector.detect_gpu_cuda">
 <span class="sig-prename descclassname"><span class="pre">main_detector.</span></span><span class="sig-name descname"><span class="pre">detect_gpu_cuda</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">i</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">clf</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">hcoords</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">features_indexes</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">decision_threshold</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">windows</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">shcoords_multiple_scales</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dev_windows</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dev_shcoords_multiple_scales</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dev_X_selected</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dev_mins_selected</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dev_maxes_selected</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dev_logits</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dev_responses</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">verbose</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/main_detector.html#detect_gpu_cuda"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#main_detector.detect_gpu_cuda" title="Permalink to this definition"></a></dt>
-<dd></dd></dl>
+<dd><p>Performs detection on an image frame in the <cite>gpu_cude</cite> mode (i.e. using GPU CUDA-based computations for both feature extraction and classifier responses).
+Called for each frame from within the <code class="docutils literal notranslate"><span class="pre">demo_detect_in_video</span></code> function.</p>
+</dd></dl>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="main_detector.detect_gpu_cuda_within_multiple_clfs">
 <span class="sig-prename descclassname"><span class="pre">main_detector.</span></span><span class="sig-name descname"><span class="pre">detect_gpu_cuda_within_multiple_clfs</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ii</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">clf</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">decision_threshold</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">windows</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dev_windows</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dev_shcoords_multiple_scales</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dev_X_selected</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dev_mins_selected</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dev_maxes_selected</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dev_logits</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dev_responses</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">verbose</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/main_detector.html#detect_gpu_cuda_within_multiple_clfs"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#main_detector.detect_gpu_cuda_within_multiple_clfs" title="Permalink to this definition"></a></dt>
-<dd></dd></dl>
+<dd><p>Function called from a detection procedure meant for multiple classifiers - performs detection on an image frame (given its integral image computed earlier) in the <cite>gpu_cude</cite> mode (i.e. using GPU CUDA-based computations for both feature extraction and classifier responses).
+Called for each frame from within the <code class="docutils literal notranslate"><span class="pre">demo_detect_in_video_multiple_clfs</span></code> function.</p>
+</dd></dl>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="main_detector.postprocess_nms">
 <span class="sig-prename descclassname"><span class="pre">main_detector.</span></span><span class="sig-name descname"><span class="pre">postprocess_nms</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">detections</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">responses</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">iou_threshold</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.25</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/main_detector.html#postprocess_nms"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#main_detector.postprocess_nms" title="Permalink to this definition"></a></dt>
-<dd></dd></dl>
+<dd><p>Postprocesses the list of detections (bounding boxes) according to the <cite>non-max suppression</cite> approach.</p>
+</dd></dl>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="main_detector.postprocess_avg">
 <span class="sig-prename descclassname"><span class="pre">main_detector.</span></span><span class="sig-name descname"><span class="pre">postprocess_avg</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">detections</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">responses</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">iou_threshold</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.25</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/main_detector.html#postprocess_avg"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#main_detector.postprocess_avg" title="Permalink to this definition"></a></dt>
-<dd></dd></dl>
+<dd><p>Postprocesses the list of detections (bounding boxes) according to the <cite>averaging</cite> approach.</p>
+</dd></dl>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="main_detector.short_cpu_name">
 <span class="sig-prename descclassname"><span class="pre">main_detector.</span></span><span class="sig-name descname"><span class="pre">short_cpu_name</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">cpu_name</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/main_detector.html#short_cpu_name"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#main_detector.short_cpu_name" title="Permalink to this definition"></a></dt>
-<dd></dd></dl>
+<dd><p>Returns a short version of a full CPU name (for the purpose of displaying it on video frames).</p>
+</dd></dl>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="main_detector.color_by_detector_title">
 <span class="sig-prename descclassname"><span class="pre">main_detector.</span></span><span class="sig-name descname"><span class="pre">color_by_detector_title</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">colors_detect</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">detector_title</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/main_detector.html#color_by_detector_title"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#main_detector.color_by_detector_title" title="Permalink to this definition"></a></dt>
-<dd></dd></dl>
+<dd><p>Returns a color (meant to draw a detected bounding box) based on a detector title.</p>
+</dd></dl>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="main_detector.demo_detect_in_video">
 <span class="sig-prename descclassname"><span class="pre">main_detector.</span></span><span class="sig-name descname"><span class="pre">demo_detect_in_video</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">clf</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">hcoords</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">decision_threshold</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">computations</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'gpu_cuda'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">postprocess</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'avg'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_jobs</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">8</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">detector_title</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">verbose_loop</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">verbose_detect</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/main_detector.html#demo_detect_in_video"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#main_detector.demo_detect_in_video" title="Permalink to this definition"></a></dt>
-<dd></dd></dl>
+<dd><p>Performs a demonstration of detection procedure (using a single binary classifier - an instance of <code class="docutils literal notranslate"><span class="pre">FastRealBoostBins</span></code>) in a video sequence captured from camera.
+Depending on the mode of computations (argument <code class="docutils literal notranslate"><span class="pre">computations</span></code> being one of: <code class="docutils literal notranslate"><span class="pre">&quot;cpu_simple&quot;</span></code>, <code class="docutils literal notranslate"><span class="pre">&quot;cpu_parallel&quot;</span></code>, <code class="docutils literal notranslate"><span class="pre">&quot;gpu_cuda&quot;</span></code>),
+makes calls for each frame to, respectively, one of the following functions: <code class="docutils literal notranslate"><span class="pre">detect_cpu_simple</span></code>, <code class="docutils literal notranslate"><span class="pre">detect_cpu_parallel</span></code>, <code class="docutils literal notranslate"><span class="pre">detect_gpu_cuda</span></code>.</p>
+</dd></dl>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="main_detector.demo_detect_in_video_multiple_clfs">
 <span class="sig-prename descclassname"><span class="pre">main_detector.</span></span><span class="sig-name descname"><span class="pre">demo_detect_in_video_multiple_clfs</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">clfs</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">hcoords</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">decision_thresholds</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">postprocess</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'avg'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">detector_title</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">verbose_loop</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">verbose_detect</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/main_detector.html#demo_detect_in_video_multiple_clfs"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#main_detector.demo_detect_in_video_multiple_clfs" title="Permalink to this definition"></a></dt>
-<dd></dd></dl>
-
-<dl class="py function">
-<dt class="sig sig-object py" id="main_detector.experiment_some_rocs">
-<span class="sig-prename descclassname"><span class="pre">main_detector.</span></span><span class="sig-name descname"><span class="pre">experiment_some_rocs</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/main_detector.html#experiment_some_rocs"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#main_detector.experiment_some_rocs" title="Permalink to this definition"></a></dt>
-<dd></dd></dl>
+<dd><p>Performs a demonstration of detection procedure (using multiple binary classifiers - instances of <code class="docutils literal notranslate"><span class="pre">FastRealBoostBins</span></code>) in a video sequence captured from camera.    
+For each frame makes of call to <code class="docutils literal notranslate"><span class="pre">detect_gpu_cuda_within_multiple_clfs</span></code> function.</p>
+</dd></dl>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="main_detector.str_to_float_or_none">
 <span class="sig-prename descclassname"><span class="pre">main_detector.</span></span><span class="sig-name descname"><span class="pre">str_to_float_or_none</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">s</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/main_detector.html#str_to_float_or_none"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#main_detector.str_to_float_or_none" title="Permalink to this definition"></a></dt>
-<dd></dd></dl>
+<dd><p>Utility function for <code class="docutils literal notranslate"><span class="pre">argparse.ArgumentParser</span></code> (see <code class="docutils literal notranslate"><span class="pre">parse_args</span></code> function) meant to return a floating-point number from its string representation or a <code class="docutils literal notranslate"><span class="pre">None</span></code> value.</p>
+</dd></dl>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="main_detector.str_to_int_or_none">
 <span class="sig-prename descclassname"><span class="pre">main_detector.</span></span><span class="sig-name descname"><span class="pre">str_to_int_or_none</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">s</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/main_detector.html#str_to_int_or_none"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#main_detector.str_to_int_or_none" title="Permalink to this definition"></a></dt>
-<dd></dd></dl>
+<dd><p>Utility function for <code class="docutils literal notranslate"><span class="pre">argparse.ArgumentParser</span></code> (see <code class="docutils literal notranslate"><span class="pre">parse_args</span></code> function) meant to return an integer from its string representation or a <code class="docutils literal notranslate"><span class="pre">None</span></code> value.</p>
+</dd></dl>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="main_detector.parse_args">
 <span class="sig-prename descclassname"><span class="pre">main_detector.</span></span><span class="sig-name descname"><span class="pre">parse_args</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/main_detector.html#parse_args"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#main_detector.parse_args" title="Permalink to this definition"></a></dt>
-<dd></dd></dl>
+<dd><p>Returns a dictionary of arguments specified by user from CLI.</p>
+</dd></dl>
 
 </section>
 </section>

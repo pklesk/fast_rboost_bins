@@ -52,6 +52,7 @@
 <li class="toctree-l3"><a class="reference internal" href="#installation">Installation</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#example-usage">Example Usage</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#dependencies">Dependencies</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#link-to-project-repository">Link to project repository</a></li>
 </ul>
 </li>
 <li class="toctree-l2"><a class="reference internal" href="haar.html">haar module</a></li>
@@ -137,6 +138,10 @@ For actual docstrings associated with those functions see the source code.</p>
 <li><p><code class="docutils literal notranslate"><span class="pre">numba</span></code>: required for just-in-time compilation of crucial computational functions and CUDA kernels (decorated by <code class="docutils literal notranslate"><span class="pre">&#64;jit</span></code> and <code class="docutils literal notranslate"><span class="pre">&#64;cuda.jit</span></code> imported from <code class="docutils literal notranslate"><span class="pre">numba</span></code>).</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">sklearn</span></code>: required for inheritence and other sklearn API purposes.</p></li>
 </ul>
+</section>
+<section id="link-to-project-repository">
+<h2>Link to project repository<a class="headerlink" href="#link-to-project-repository" title="Permalink to this headline"></a></h2>
+<p><a class="reference external" href="https://github.com/pklesk/fast_rboost_bins">https://github.com/pklesk/fast_rboost_bins</a></p>
 <dl class="py class">
 <dt class="sig sig-object py" id="frbb.FastRealBoostBins">
 <em class="property"><span class="pre">class</span> </em><span class="sig-prename descclassname"><span class="pre">frbb.</span></span><span class="sig-name descname"><span class="pre">FastRealBoostBins</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">T</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">256</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">B</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">8</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">outliers_ratio</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.05</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">logit_max</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">2.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fit_mode</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'numba_cuda'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">decision_function_mode</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'numba_cuda'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">verbose</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">debug_verbose</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/frbb.html#FastRealBoostBins"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#frbb.FastRealBoostBins" title="Permalink to this definition"></a></dt>
@@ -295,13 +300,13 @@ Bins with logit transform values play the role of “weak learners”.</p>
 <dl class="py method">
 <dt class="sig sig-object py" id="frbb.FastRealBoostBins._get_tags">
 <span class="sig-name descname"><span class="pre">_get_tags</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/frbb.html#FastRealBoostBins._get_tags"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#frbb.FastRealBoostBins._get_tags" title="Permalink to this definition"></a></dt>
-<dd><p>Returns dictionary with particular properties of this estimator (compliant with scikit-learn guidelines).</p>
+<dd><p>Returns a dictionary with particular properties of this estimator (compliant with scikit-learn guidelines).</p>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="frbb.FastRealBoostBins.__str__">
 <span class="sig-name descname"><span class="pre">__str__</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/frbb.html#FastRealBoostBins.__str__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#frbb.FastRealBoostBins.__str__" title="Permalink to this definition"></a></dt>
-<dd><p>Returns string representation of this classifier.</p>
+<dd><p>Returns a string representation of this classifier.</p>
 <dl class="simple">
 <dt>Returns:</dt><dd><p>str: string representation of this classifier.</p>
 </dd>
@@ -311,7 +316,7 @@ Bins with logit transform values play the role of “weak learners”.</p>
 <dl class="py method">
 <dt class="sig sig-object py" id="frbb.FastRealBoostBins.__repr__">
 <span class="sig-name descname"><span class="pre">__repr__</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/frbb.html#FastRealBoostBins.__repr__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#frbb.FastRealBoostBins.__repr__" title="Permalink to this definition"></a></dt>
-<dd><p>Returns detailed string representation of this classifier.</p>
+<dd><p>Returns a detailed string representation of this classifier.</p>
 <dl class="simple">
 <dt>Returns:</dt><dd><p>str: detailed string representation of this classifier.</p>
 </dd>

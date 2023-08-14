@@ -1,3 +1,15 @@
+"""
+Auxiliary module with utilities related to extraction of Haar-like features (HFs) for given parameterization.
+
+Documentation note: this documentation was built with `Sphinx` tool, which does not correctly process docstrings for CUDA kernel functions, 
+i.e. functions decorated with ``@cuda.jit`` that produce ``numba.cuda.compiler.Dispatcher`` objects as outcomes. 
+For actual docstrings associated with two functions ``ii_delta_numba_cuda`` and ``haar_features_multiple_windows_numba_cuda`` see the source code. 
+
+Link to project repository
+--------------------------
+`https://github.com/pklesk/fast_rboost_bins <https://github.com/pklesk/fast_rboost_bins>`_ 
+"""
+
 import numpy as np
 import cv2
 from numba import cuda, jit
@@ -30,10 +42,15 @@ FEATURE_MAX = 0.75
 HEIGHT = 480 # defualt height to which image or video frame scaled before further computations 
 
 def resize_image(i):
+    """Resizes an image to the globally predefined height.""" 
     h, w, _ = i.shape
     return cv2.resize(i, (round(w * HEIGHT / h), HEIGHT))
 
 def haar_indexes(s, p):
+    """
+    Returns an array of multi-indexes defining HFs for a given ``s, p`` parameterization (``s`` - number of scaling variants along each dimension, ``p`` - constant defining the grid of anchoring points of size (2p - 1) x (2p - 1).
+    Each multi-index is a quintuplet ``t, s_j, s_k, p_j, p_k``, storing respectively: Haar template index, vertical scale index, horizontal scale index, vertical index on the grid, horizontal index on the grid.   
+    """ 
     hinds = []
     for t in range(HAAR_TEMPLATES.shape[0]):
         for s_j in range(s):
@@ -44,6 +61,7 @@ def haar_indexes(s, p):
     return np.array(hinds)
 
 def haar_coords(s, p, hinds):
+    """For given parameterization and HFs multi-indexes (see ``haar_indexes`` function) returns an array of Cartesian coordinates normalized to a unit square: [0, 1] x [0, 1]."""    
     hcoords = []
     for t, s_j, s_k, p_j, p_k in hinds:
         f_h = FEATURE_MIN + s_j * (FEATURE_MAX - FEATURE_MIN) / (s - 1) if s > 1 else FEATURE_MIN
@@ -59,6 +77,7 @@ def haar_coords(s, p, hinds):
     return np.array(hcoords)
 
 def integral_image_python(i):
+    """Computes an integral image for an input image using a pure Python code with loops (very slow, for comparison purposes only)."""
     h, w = i.shape
     ii = np.zeros(i.shape, dtype=np.int32)
     ii_row = np.zeros(w, dtype=np.int32)
@@ -73,10 +92,12 @@ def integral_image_python(i):
     return ii
 
 def integral_image_numpy(i):
+    """Computes an integral image for an input image using ``np.cumsum`` function (faster than ``integral_image_python`` but still slower than ``integral_image_numba_jit``)."""
     return np.cumsum(np.cumsum(i, axis=0), axis=1)
 
 @jit(int32[:,:](uint8[:,:]), nopython=True, cache=True)
 def integral_image_numba_jit(i):
+    """Computes an integral image for an input image using a ``numba.jit``-compiled function (faster than ``integral_image_python`` and ``integral_image_numba_jit``)."""
     h, w = i.shape
     ii = np.zeros(i.shape, dtype=int32)
     ii_row = np.zeros(w, dtype=int32)
@@ -91,7 +112,8 @@ def integral_image_numba_jit(i):
     return ii
 
 @jit(int32(int32[:,:], int16, int16, int16, int16), nopython=True, cache=True)
-def ii_delta_numba_jit(ii, j1, k1, j2, k2): 
+def ii_delta_numba_jit(ii, j1, k1, j2, k2):
+    """Computes a growth (delta operator) of an integral image using a ``numba.jit``-compiled function."""
     delta = ii[j2, k2]
     if j1 > 0: 
         delta -= ii[j1 - 1, k2]
@@ -101,9 +123,9 @@ def ii_delta_numba_jit(ii, j1, k1, j2, k2):
         delta += ii[j1 - 1, k1 - 1]
     return delta
 
-# TODO check if this device function can be supported with specific types in decorator
 @cuda.jit(device=True)
-def ii_delta_numba_cuda(ii, j1, k1, j2, k2): 
+def ii_delta_numba_cuda(ii, j1, k1, j2, k2):
+    """Computes a growth (delta operator) of an integral image using a ``numba.cuda``-compiled function (device-side function).""" 
     delta = ii[j2, k2]
     if j1 > 0: 
         delta -= ii[j1 - 1, k2]
@@ -114,7 +136,8 @@ def ii_delta_numba_cuda(ii, j1, k1, j2, k2):
     return delta
 
 @jit(int16(int32[:,:], int16, int16, int16[:, :]), nopython=True, cache=True)
-def haar_feature_numba_jit(ii, j0, k0, shcoords_one_feature): # (j0, k0) - window top-left corner, shcoords - scaled coordinates (in pixels) of a single haar feature 
+def haar_feature_numba_jit(ii, j0, k0, shcoords_one_feature): # (j0, k0) - window top-left corner, shcoords - scaled coordinates (in pixels) of a single haar feature
+    """Computes a single HF (given: integral image, window offset, and feature pixel coordinates) using a ``numba.jit``-compiled function.""" 
     j, k, h, w = shcoords_one_feature[0] # whole feature background
     j1 = j0 + j
     k1 = k0 + k
@@ -131,6 +154,7 @@ def haar_feature_numba_jit(ii, j0, k0, shcoords_one_feature): # (j0, k0) - windo
 
 @jit(int16[:](int32[:, :], int16, int16, int16[:, :, :], int32, int32[:]), nopython=True, cache=True)        
 def haar_features_one_window_numba_jit(ii, j0, k0, shcoords_one_window, n, features_indexes):
+    """Computes a vector of HFs (given: integral image, window offset, pixel coordinates of all features, and indexes of selected features) using a ``numba.jit``-compiled function."""
     features = np.zeros(n, dtype=np.int16)
     for j in range(features_indexes.size):
         features[features_indexes[j]] = haar_feature_numba_jit(ii, j0, k0, shcoords_one_window[j])
@@ -138,6 +162,7 @@ def haar_features_one_window_numba_jit(ii, j0, k0, shcoords_one_window, n, featu
 
 @jit(int16[:, :](int32[:, :], int16[:, :], int16[:, :, :, :], int32, int32[:]), nopython=True, cache=True)        
 def haar_features_multiple_windows_numba_jit(ii, windows, shcoords_multiple_scales, n, features_indexes):
+    """Computes a two-dimensional array of HFs for multiple windows (given: integral image, windows coordinates, pixel coordinates of all features in several scales, and indexes of selected features) using a ``numba.jit``-compiled function."""
     m = windows.shape[0]
     X = np.zeros((m, n), dtype=np.int16)
     for i in range(m):        
@@ -146,7 +171,8 @@ def haar_features_multiple_windows_numba_jit(ii, windows, shcoords_multiple_scal
     return X
         
 @cuda.jit(void(int32[:, :], int16[:, :], int16[:, :, :, :], int16[:, :]))
-def haar_features_multiple_windows_numba_cuda(ii, windows, shcoords_multiple_scales, X_selected):           
+def haar_features_multiple_windows_numba_cuda(ii, windows, shcoords_multiple_scales, X_selected):
+    """CUDA kernel function (``numba.cuda``-compiled) responsible for computing a two-dimensional array of HFs for multiple windows (given: integral image, windows coordinates, pixel coordinates of all features in several scales, and indexes of selected features)."""               
     i = cuda.blockIdx.x
     tpb = cuda.blockDim.x
     tx = cuda.threadIdx.x
@@ -172,7 +198,11 @@ def haar_features_multiple_windows_numba_cuda(ii, windows, shcoords_multiple_sca
         t += tpb
 
 @jit(nopython=True)
-def ii_delta_numba_jit_tf(ii, j1, k1, j2, k2): # same functionality as in haar_feature_numba_jit but types-free signature (tf)
+def ii_delta_numba_jit_tf(ii, j1, k1, j2, k2): 
+    """
+    Computes a growth (delta operator) of an integral image using a ``numba.jit``-compiled function.
+    Function with the same functionality as ``ii_delta_numba_jit``, but using a types-free signature (tf) necessary in case of parallelization via ``joblib`` module.
+    """
     delta = ii[j2, k2]
     if j1 > 0: 
         delta -= ii[j1 - 1, k2]
@@ -184,6 +214,10 @@ def ii_delta_numba_jit_tf(ii, j1, k1, j2, k2): # same functionality as in haar_f
 
 @jit(nopython=True)
 def haar_feature_numba_jit_tf(ii, j0, k0, shcoords_one_feature): # same functionality as in haar_feature_numba_jit but types-free signature (tf)
+    """
+    Computes a single HF (given: integral image, window offset, and feature pixel coordinates) using a ``numba.jit``-compiled function.
+    Function with the same functionality as ``haar_feature_numba_jit``, but using a types-free signature (tf) necessary in case of parallelization via ``joblib`` module.
+    """
     j, k, h, w = shcoords_one_feature[0] 
     j1 = j0 + j
     k1 = k0 + k
@@ -199,14 +233,22 @@ def haar_feature_numba_jit_tf(ii, j0, k0, shcoords_one_feature): # same function
     return np.int16(white_intensity / white_area - black_intensity / black_area)
         
 @jit(nopython=True)
-def haar_features_one_window_numba_jit_tf(ii, j0, k0, shcoords_one_window, n, features_indexes): # same functionality as in haar_features_one_window_numba_jit but types-free signature (tf)  
+def haar_features_one_window_numba_jit_tf(ii, j0, k0, shcoords_one_window, n, features_indexes):
+    """
+    Computes a vector of HFs (given: integral image, window offset, pixel coordinates of all features, and indexes of selected features) using a ``numba.jit``-compiled function.
+    Function with the same functionality as ``haar_features_one_window_numba_jit``, but using a types-free signature (tf) necessary in case of parallelization via ``joblib`` module.
+    """      
     features = np.zeros(n, dtype=np.int16)
     for j in range(features_indexes.size):
         features[features_indexes[j]] = haar_feature_numba_jit_tf(ii, j0, k0, shcoords_one_window[j])
     return features 
 
 @jit(nopython=True)        
-def haar_features_multiple_windows_numba_jit_tf(ii, windows, shcoords_multiple_scales, n, features_indexes): # same functionality as in haar_features_multiple_windows_numba_jit but types-free signature (tf)
+def haar_features_multiple_windows_numba_jit_tf(ii, windows, shcoords_multiple_scales, n, features_indexes):
+    """
+    Computes a two-dimensional array of HFs for multiple windows (given: integral image, windows coordinates, pixel coordinates of all features in several scales, and indexes of selected features) using a ``numba.jit``-compiled function.
+    Function with the same functionality as ``haar_features_multiple_windows_numba_jit``, but using a types-free signature (tf) necessary in case of parallelization via ``joblib`` module.
+    """    
     m = windows.shape[0]
     X = np.zeros((m, n), dtype=np.int16)
     for i in range(m):        
@@ -214,7 +256,8 @@ def haar_features_multiple_windows_numba_jit_tf(ii, windows, shcoords_multiple_s
         X[i] = haar_features_one_window_numba_jit_tf(ii, j0, k0, shcoords_multiple_scales[s], n, features_indexes)
     return X
 
-def iou(coords1, coords2): # coords of two rectangles given in the form: (j1, k1, j2, k2), where: (j1, k1) - top-left corner, (j2, k2) - bottom-right corner  
+def iou(coords1, coords2): 
+    """Computes IoU (intersection over union ratio) for a pair rectangles with coordinates given as (j1, k1, j2, k2), where: (j1, k1) - top-left corner, (j2, k2) - bottom-right corner."""  
     j11, k11, j12, k12 = coords1
     j21, k21, j22, k22 = coords2    
     dj = np.min([j12, j22]) - np.max([j21, j11]) + 1 
@@ -227,7 +270,8 @@ def iou(coords1, coords2): # coords of two rectangles given in the form: (j1, k1
     u = (j12 - j11 + 1) * (k12 - k11 + 1) + (j22 - j21 + 1) * (k22 - k21 + 1) - i
     return i / u
 
-def iou2(jkhw1, jkhw2): # coords of two rectangles given in the form: (j, k, h, w), where (j, k) - top-left corner, (h, w) - height and width
+def iou2(jkhw1, jkhw2):
+    """Computes IoU (intersection over union ratio) for a pair rectangles given in the form: (j, k, h, w), where (j, k) - top-left corner, (h, w) - height and width."""
     j11 = jkhw1[0] 
     k11 = jkhw1[1] 
     j12 = j11 + jkhw1[2] - 1
