@@ -435,7 +435,7 @@ python main_detector.py -ddivmc
 ```
 The line above executes a demonstration of detection in video using two default classifiers (two  instances of `FastRealBoostBins`, each being an ensemble of size 1024) trained to detect faces and palm gestures.
 Default values are used for all other relevant settings (decision thresholds, detection procedure parameters, video camera selection, etc.). 
-For example, to change classifiers' decision thresholds from their internal defaults to manually imposed values, one can execute:
+For example, to change decision thresholds of the two classifiers (from their internal defaults to manually imposed), one can execute:
 ```bash
 python main_detector.py -ddivmc -mcdt 4.2 5.5
 ```
