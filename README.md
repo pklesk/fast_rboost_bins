@@ -485,7 +485,7 @@ python main_detector.py -ddiv -k face -npi 50 -s 4 -p 6 -t 512 -b 16
 Subsequently, when the fit is done, one can check how the obtained classifier works as an object detector e.g. with an execution as above.
 The new option `-ddiv` is meant for demonstration of detection in video with a single classifier, in contrast to `-ddivmc` meant for multiple classifiers. <br/>
 Remark: by default, all newly trained classifiers use the value of 0.0 as their decision threshold (attribute `decision_threshold_` in instances of `FastRealBoostBins` class).
-To adjust the threshold to a possibly better value, based on ROC analysis and the precision measure, use `-adtom`.
+To adjust the threshold to a possibly better value, based on ROC analysis and the precision measure, use `-adtom` option.
 
 Finally, please note also that in the presence of several connected video cameras, one can use the `-cv2vcci` to pick the camera index.
 
