@@ -445,7 +445,7 @@ An an example, the above execution runs the mentioned demonstration, but changes
 python main_detector.py -ddivmc -ds 12 -dwhm 64 -dwwm 64
 ```
 This execution leads to a heavier detection procedure that scans each frame using 12 scales for the sliding window, starting from its minimum size of 64 $\times$ 64.
-This results in approximately 64k windows to be checked per frame (instead the default of 22k). 
+This results in approximately 64k windows to be checked per frame (instead the default of 22k: 9 scales, starting from 96 $\times$ 96 window). 
 Other detection procedure related options are ``-dwg`` and ``-dwj``, allowing to change the growth factor and relative jump for the sliding window.
 
 ```bash
