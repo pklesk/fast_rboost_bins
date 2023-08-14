@@ -487,8 +487,6 @@ The new option `-ddiv` is meant for demonstration of detection in video with a s
 Remark: by default, all newly trained classifiers use the value of 0.0 as their decision threshold (attribute `decision_threshold_` in instances of `FastRealBoostBins` class).
 To adjust the threshold to a possibly better value, based on ROC analysis and the precision measure, use `-adtom` option.
 
-Finally, please note also that in the presence of several connected video cameras, one can use the `-cv2vcci` to pick the camera index.
-
 ## License
 This work is licensed under <a rel="license" href="http://creativecommons.org/licenses/by-sa/4.0/">Creative Commons Attribution-ShareAlike 4.0 International License</a>.
 
