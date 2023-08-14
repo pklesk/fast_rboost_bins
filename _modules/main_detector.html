@@ -72,7 +72,7 @@
              
   <h1>Source code for main_detector</h1><div class="highlight"><pre>
 <span></span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">Auxiliary script with command-line user interface for training and testing object detectors based on ``FastRealBoostBins`` classifier.</span>
+<span class="sd">Auxiliary script with command-line user interface for training and testing object detectors based on ``FastRealBoostBins`` classifier from :doc:`frbb`.</span>
 
 <span class="sd">For help on the script arguments execute:</span>
 
@@ -84,20 +84,25 @@
 
 <span class="sd">Dependencies</span>
 <span class="sd">------------</span>
+<span class="sd">- ``frbb``: required to import the class ``FastRealBoostBins``.</span>
+
 <span class="sd">- ``numpy``, ``math``: required for mathematical computations.</span>
 
 <span class="sd">- ``numba``: required for just-in-time compilation of crucial computational functions and CUDA kernels (decorated by ``@jit`` and ``@cuda.jit`` imported from ``numba``). </span>
 
 <span class="sd">- ``sklearn``: required for inheritence and other sklearn API purposes,</span>
 
-<span class="sd">- ``colorama``: required CLI purposes,</span>
+<span class="sd">- ``colorama``: required for CLI purposes,</span>
 
 <span class="sd">- ``cv2``: required for video capturing,</span>
 
 <span class="sd">- ``joblib``: required for comparisons: CPU with parallelization vs GPU.</span>
+
+<span class="sd">Link to project repository</span>
+<span class="sd">--------------------------</span>
+<span class="sd">`https://github.com/pklesk/fast_rboost_bins &lt;https://github.com/pklesk/fast_rboost_bins&gt;`_</span>
 <span class="sd">&quot;&quot;&quot;</span>
 
-<span class="kn">import</span> <span class="nn">sys</span>
 <span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
 <span class="kn">from</span> <span class="nn">frbb</span> <span class="kn">import</span> <span class="n">FastRealBoostBins</span>
 <span class="kn">from</span> <span class="nn">numba</span> <span class="kn">import</span> <span class="n">cuda</span>
@@ -105,12 +110,11 @@
 <span class="kn">import</span> <span class="nn">haar</span>
 <span class="kn">import</span> <span class="nn">datagenerator</span>
 <span class="kn">import</span> <span class="nn">time</span>
-<span class="kn">import</span> <span class="nn">pickle</span>
 <span class="kn">from</span> <span class="nn">joblib</span> <span class="kn">import</span> <span class="n">Parallel</span><span class="p">,</span> <span class="n">delayed</span>
 <span class="kn">from</span> <span class="nn">functools</span> <span class="kn">import</span> <span class="n">reduce</span>
 <span class="kn">from</span> <span class="nn">sklearn.metrics</span> <span class="kn">import</span> <span class="n">roc_curve</span>
 <span class="kn">from</span> <span class="nn">matplotlib</span> <span class="kn">import</span> <span class="n">pyplot</span> <span class="k">as</span> <span class="n">plt</span>
-<span class="kn">from</span> <span class="nn">utils</span> <span class="kn">import</span> <span class="n">cpu_and_system_props</span><span class="p">,</span> <span class="n">gpu_props</span><span class="p">,</span> <span class="n">dict_to_str</span>
+<span class="kn">from</span> <span class="nn">utils</span> <span class="kn">import</span> <span class="n">cpu_and_system_props</span><span class="p">,</span> <span class="n">gpu_props</span><span class="p">,</span> <span class="n">dict_to_str</span><span class="p">,</span> <span class="n">pickle_objects</span><span class="p">,</span> <span class="n">unpickle_objects</span>
 <span class="kn">import</span> <span class="nn">argparse</span>
 <span class="kn">import</span> <span class="nn">colorama</span>
 
@@ -163,32 +167,8 @@
 <span class="n">FOLDER_CLFS</span> <span class="o">=</span> <span class="s2">&quot;../models/&quot;</span>
 <span class="n">FOLDER_EXTRAS</span> <span class="o">=</span> <span class="s2">&quot;../extras/&quot;</span>
                             
-<div class="viewcode-block" id="pickle_objects"><a class="viewcode-back" href="../main_detector.html#main_detector.pickle_objects">[docs]</a><span class="k">def</span> <span class="nf">pickle_objects</span><span class="p">(</span><span class="n">fname</span><span class="p">,</span> <span class="n">some_list</span><span class="p">):</span>
-    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;PICKLE OBJECTS... [to file: </span><span class="si">{</span><span class="n">fname</span><span class="si">}</span><span class="s2">]&quot;</span><span class="p">)</span>
-    <span class="n">t1</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
-    <span class="k">try</span><span class="p">:</span>
-        <span class="n">f</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="n">fname</span><span class="p">,</span> <span class="s2">&quot;wb+&quot;</span><span class="p">)</span>
-        <span class="n">pickle</span><span class="o">.</span><span class="n">dump</span><span class="p">(</span><span class="n">some_list</span><span class="p">,</span> <span class="n">f</span><span class="p">,</span> <span class="n">protocol</span><span class="o">=</span><span class="n">pickle</span><span class="o">.</span><span class="n">HIGHEST_PROTOCOL</span><span class="p">)</span>
-        <span class="n">f</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
-    <span class="k">except</span> <span class="ne">IOError</span><span class="p">:</span>
-        <span class="n">sys</span><span class="o">.</span><span class="n">exit</span><span class="p">(</span><span class="s2">&quot;[error occurred when trying to open or pickle the file]&quot;</span><span class="p">)</span>
-    <span class="n">t2</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
-    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;PICKLE OBJECTS DONE. [time: </span><span class="si">{</span><span class="n">t2</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">t1</span><span class="si">}</span><span class="s2"> s]&quot;</span><span class="p">)</span></div>
-
-<div class="viewcode-block" id="unpickle_objects"><a class="viewcode-back" href="../main_detector.html#main_detector.unpickle_objects">[docs]</a><span class="k">def</span> <span class="nf">unpickle_objects</span><span class="p">(</span><span class="n">fname</span><span class="p">):</span>
-    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;UNPICKLE OBJECTS... [from file: </span><span class="si">{</span><span class="n">fname</span><span class="si">}</span><span class="s2">]&quot;</span><span class="p">)</span>
-    <span class="n">t1</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
-    <span class="k">try</span><span class="p">:</span>    
-        <span class="n">f</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="n">fname</span><span class="p">,</span> <span class="s2">&quot;rb&quot;</span><span class="p">)</span>
-        <span class="n">some_list</span> <span class="o">=</span> <span class="n">pickle</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>
-        <span class="n">f</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
-    <span class="k">except</span> <span class="ne">IOError</span><span class="p">:</span>
-        <span class="n">sys</span><span class="o">.</span><span class="n">exit</span><span class="p">(</span><span class="s2">&quot;[error occurred when trying to open or read the file]&quot;</span><span class="p">)</span>
-    <span class="n">t2</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
-    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;UNPICKLE OBJECTS DONE. [time: </span><span class="si">{</span><span class="n">t2</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">t1</span><span class="si">}</span><span class="s2"> s]&quot;</span><span class="p">)</span>
-    <span class="k">return</span> <span class="n">some_list</span></div>
-
 <div class="viewcode-block" id="measure_accs_of_model"><a class="viewcode-back" href="../main_detector.html#main_detector.measure_accs_of_model">[docs]</a><span class="k">def</span> <span class="nf">measure_accs_of_model</span><span class="p">(</span><span class="n">clf</span><span class="p">,</span> <span class="n">X_train</span><span class="p">,</span> <span class="n">y_train</span><span class="p">,</span> <span class="n">X_test</span><span class="p">,</span> <span class="n">y_test</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Measures and prints accuracies of a model (classifier) for given train and test data.&quot;&quot;&quot;</span> 
     <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;MEASURE ACCS OF MODEL...&quot;</span><span class="p">)</span>
     <span class="n">t1_accs</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>    
     <span class="n">t1</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
@@ -231,6 +211,7 @@
     <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;MEASURE ACCS DONE. [time: &quot;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">t2_accs</span> <span class="o">-</span> <span class="n">t1_accs</span><span class="p">)</span> <span class="o">+</span> <span class="s2">&quot; s]&quot;</span><span class="p">)</span></div>
     
 <div class="viewcode-block" id="best_decision_threshold_via_precision"><a class="viewcode-back" href="../main_detector.html#main_detector.best_decision_threshold_via_precision">[docs]</a><span class="k">def</span> <span class="nf">best_decision_threshold_via_precision</span><span class="p">(</span><span class="n">roc</span><span class="p">,</span> <span class="n">y_test</span><span class="p">,</span> <span class="n">heuristic_coeff</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Returns `the best` decision threshold that maximizes (approximately) the precision measure for test data (by analyzing its ROC curve).&quot;&quot;&quot;</span>
     <span class="n">py</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>
     <span class="n">py</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">y_test</span> <span class="o">==</span> <span class="o">-</span><span class="mi">1</span><span class="p">)</span>
     <span class="n">py</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">y_test</span> <span class="o">==</span> <span class="mi">1</span><span class="p">)</span>
@@ -252,18 +233,20 @@
     <span class="k">return</span> <span class="n">best_thr</span><span class="p">,</span> <span class="n">best_prec</span></div>
 
 <div class="viewcode-block" id="adjust_decision_threshold_via_precision"><a class="viewcode-back" href="../main_detector.html#main_detector.adjust_decision_threshold_via_precision">[docs]</a><span class="k">def</span> <span class="nf">adjust_decision_threshold_via_precision</span><span class="p">(</span><span class="n">clf</span><span class="p">,</span> <span class="n">X_test</span><span class="p">,</span> <span class="n">y_test</span><span class="p">,</span> <span class="n">heuristic_coeff</span><span class="o">=</span><span class="mf">0.25</span><span class="p">):</span>
-        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;ADJUST DECISION THRESHOLD VIA PRECISION...&quot;</span><span class="p">)</span>
-        <span class="n">t1</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
-        <span class="n">responses_test</span> <span class="o">=</span> <span class="n">clf</span><span class="o">.</span><span class="n">decision_function</span><span class="p">(</span><span class="n">X_test</span><span class="p">)</span>
-        <span class="n">roc</span> <span class="o">=</span> <span class="n">roc_curve</span><span class="p">(</span><span class="n">y_test</span><span class="p">,</span> <span class="n">responses_test</span><span class="p">)</span>
-        <span class="n">best_thr</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">best_decision_threshold_via_precision</span><span class="p">(</span><span class="n">roc</span><span class="p">,</span> <span class="n">y_test</span><span class="p">,</span> <span class="n">heuristic_coeff</span><span class="p">)</span>
-        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;[adjusting decision threshold within clf from </span><span class="si">{</span><span class="n">clf</span><span class="o">.</span><span class="n">decision_threshold_</span><span class="si">}</span><span class="s2"> to </span><span class="si">{</span><span class="n">best_thr</span><span class="si">}</span><span class="s2">]&quot;</span><span class="p">)</span>
-        <span class="n">clf</span><span class="o">.</span><span class="n">decision_threshold_</span> <span class="o">=</span> <span class="n">best_thr</span>
-        <span class="n">t2</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
-        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;ADJUST DECISION THRESHOLD VIA PRECISION DONE. [time: </span><span class="si">{</span><span class="n">t2</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">t1</span><span class="si">}</span><span class="s2"> s] &quot;</span><span class="p">)</span></div>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Replaces the ``clf.decision_threshold_`` value in a classifier by determining the threshold that maximizes (approximately) the precision measure for test data (by analyzing its ROC curve).&quot;&quot;&quot;</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;ADJUST DECISION THRESHOLD VIA PRECISION...&quot;</span><span class="p">)</span>
+    <span class="n">t1</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
+    <span class="n">responses_test</span> <span class="o">=</span> <span class="n">clf</span><span class="o">.</span><span class="n">decision_function</span><span class="p">(</span><span class="n">X_test</span><span class="p">)</span>
+    <span class="n">roc</span> <span class="o">=</span> <span class="n">roc_curve</span><span class="p">(</span><span class="n">y_test</span><span class="p">,</span> <span class="n">responses_test</span><span class="p">)</span>
+    <span class="n">best_thr</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">best_decision_threshold_via_precision</span><span class="p">(</span><span class="n">roc</span><span class="p">,</span> <span class="n">y_test</span><span class="p">,</span> <span class="n">heuristic_coeff</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;[adjusting decision threshold within clf from </span><span class="si">{</span><span class="n">clf</span><span class="o">.</span><span class="n">decision_threshold_</span><span class="si">}</span><span class="s2"> to </span><span class="si">{</span><span class="n">best_thr</span><span class="si">}</span><span class="s2">]&quot;</span><span class="p">)</span>
+    <span class="n">clf</span><span class="o">.</span><span class="n">decision_threshold_</span> <span class="o">=</span> <span class="n">best_thr</span>
+    <span class="n">t2</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;ADJUST DECISION THRESHOLD VIA PRECISION DONE. [time: </span><span class="si">{</span><span class="n">t2</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">t1</span><span class="si">}</span><span class="s2"> s] &quot;</span><span class="p">)</span></div>
         
 
 <div class="viewcode-block" id="draw_feature_at"><a class="viewcode-back" href="../main_detector.html#main_detector.draw_feature_at">[docs]</a><span class="k">def</span> <span class="nf">draw_feature_at</span><span class="p">(</span><span class="n">i</span><span class="p">,</span> <span class="n">j0</span><span class="p">,</span> <span class="n">k0</span><span class="p">,</span> <span class="n">shcoords_one_feature</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Draws a Haar-like feature on top of an image (with transparency) at a given position.&quot;&quot;&quot;</span>
     <span class="n">i_copy</span> <span class="o">=</span> <span class="n">i</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
     <span class="n">j</span><span class="p">,</span> <span class="n">k</span><span class="p">,</span> <span class="n">h</span><span class="p">,</span> <span class="n">w</span> <span class="o">=</span> <span class="n">shcoords_one_feature</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
     <span class="n">cv2</span><span class="o">.</span><span class="n">rectangle</span><span class="p">(</span><span class="n">i_copy</span><span class="p">,</span> <span class="p">(</span><span class="n">k0</span> <span class="o">+</span> <span class="n">k</span><span class="p">,</span> <span class="n">j0</span> <span class="o">+</span> <span class="n">j</span><span class="p">),</span> <span class="p">(</span><span class="n">k0</span> <span class="o">+</span> <span class="n">k</span> <span class="o">+</span> <span class="n">w</span> <span class="o">-</span> <span class="mi">1</span><span class="p">,</span> <span class="n">j0</span> <span class="o">+</span> <span class="n">j</span> <span class="o">+</span> <span class="n">h</span> <span class="o">-</span> <span class="mi">1</span><span class="p">),</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span> <span class="n">cv2</span><span class="o">.</span><span class="n">FILLED</span><span class="p">)</span>
@@ -272,6 +255,7 @@
     <span class="k">return</span> <span class="n">i_copy</span></div>
 
 <div class="viewcode-block" id="demo_haar_features"><a class="viewcode-back" href="../main_detector.html#main_detector.demo_haar_features">[docs]</a><span class="k">def</span> <span class="nf">demo_haar_features</span><span class="p">(</span><span class="n">hinds</span><span class="p">,</span> <span class="n">hcoords</span><span class="p">,</span> <span class="n">n</span><span class="p">,</span> <span class="n">selected_indexes</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Performs a demonstration of Haar-like features (all or selected by specified indexes) by sequentially drawing them on top of a prepared image (with a face or hand gesture).&quot;&quot;&quot;</span>
     <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;DEMO OF HAAR FEATURES... [hcoords.shape: </span><span class="si">{</span><span class="n">hcoords</span><span class="o">.</span><span class="n">shape</span><span class="si">}</span><span class="s2">]&quot;</span><span class="p">)</span>
     <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;[with focus placed on display window press &#39;esc&#39; to quit or any other key to continue]&quot;</span><span class="p">)</span>
     <span class="k">if</span> <span class="n">KIND</span> <span class="o">==</span> <span class="s2">&quot;face&quot;</span><span class="p">:</span>
@@ -322,6 +306,7 @@
     <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;DEMO OF HAAR FEATURES DONE.&quot;</span><span class="p">)</span></div>
 
 <div class="viewcode-block" id="prepare_detection_windows_and_scaled_haar_coords"><a class="viewcode-back" href="../main_detector.html#main_detector.prepare_detection_windows_and_scaled_haar_coords">[docs]</a><span class="k">def</span> <span class="nf">prepare_detection_windows_and_scaled_haar_coords</span><span class="p">(</span><span class="n">image_height</span><span class="p">,</span> <span class="n">image_width</span><span class="p">,</span> <span class="n">hcoords</span><span class="p">,</span> <span class="n">features_indexes</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Prepares and returns coordinates of all windows (two-dimensional array) to be checked during a detection procedure together with relative and scaled pixel coordinates of Haar-like features (four-dimensional array).&quot;&quot;&quot;</span>
     <span class="n">hcoords_subset</span> <span class="o">=</span> <span class="n">hcoords</span><span class="p">[</span><span class="n">features_indexes</span><span class="p">]</span>
     <span class="n">windows</span> <span class="o">=</span> <span class="p">[]</span>
     <span class="n">shcoords_multiple_scales</span> <span class="o">=</span> <span class="p">[]</span>
@@ -341,6 +326,7 @@
     <span class="k">return</span> <span class="n">windows</span><span class="p">,</span> <span class="n">shcoords_multiple_scales</span></div>
 
 <div class="viewcode-block" id="prepare_detection_windows"><a class="viewcode-back" href="../main_detector.html#main_detector.prepare_detection_windows">[docs]</a><span class="k">def</span> <span class="nf">prepare_detection_windows</span><span class="p">(</span><span class="n">image_height</span><span class="p">,</span> <span class="n">image_width</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Prepares and returns coordinates of all windows (two-dimensional array) to be checked during a detection procedure.&quot;&quot;&quot;</span>
     <span class="n">windows</span> <span class="o">=</span> <span class="p">[]</span>
     <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">DETECTION_SCALES</span><span class="p">):</span>
         <span class="n">h</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="nb">round</span><span class="p">(</span><span class="n">DETECTION_WINDOW_HEIGHT_MIN</span> <span class="o">*</span> <span class="n">DETECTION_WINDOW_GROWTH</span><span class="o">**</span><span class="n">s</span><span class="p">))</span>
@@ -356,6 +342,7 @@
     <span class="k">return</span> <span class="n">windows</span></div>
 
 <div class="viewcode-block" id="prepare_scaled_haar_coords"><a class="viewcode-back" href="../main_detector.html#main_detector.prepare_scaled_haar_coords">[docs]</a><span class="k">def</span> <span class="nf">prepare_scaled_haar_coords</span><span class="p">(</span><span class="n">hcoords</span><span class="p">,</span> <span class="n">features_indexes</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Prepares and returns relative and scaled pixel coordinates of Haar-like features (four-dimensional array) suitable for a detection procedure.&quot;&quot;&quot;</span>
     <span class="n">hcoords_subset</span> <span class="o">=</span> <span class="n">hcoords</span><span class="p">[</span><span class="n">features_indexes</span><span class="p">]</span>
     <span class="n">shcoords_multiple_scales</span> <span class="o">=</span> <span class="p">[]</span>
     <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">DETECTION_SCALES</span><span class="p">):</span>
@@ -366,6 +353,10 @@
     <span class="k">return</span> <span class="n">shcoords_multiple_scales</span></div>
 
 <div class="viewcode-block" id="detect_cpu_simple"><a class="viewcode-back" href="../main_detector.html#main_detector.detect_cpu_simple">[docs]</a><span class="k">def</span> <span class="nf">detect_cpu_simple</span><span class="p">(</span><span class="n">i</span><span class="p">,</span> <span class="n">clf</span><span class="p">,</span> <span class="n">hcoords</span><span class="p">,</span> <span class="n">n</span><span class="p">,</span> <span class="n">features_indexes</span><span class="p">,</span> <span class="n">decision_threshold</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">windows</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">shcoords_multiple_scales</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Performs detection on an image frame in the `cpu_simple` mode (i.e. with no CPU parallelization, nor GPU usage).</span>
+<span class="sd">    Called for each frame from within the ``demo_detect_in_video`` function.</span>
+<span class="sd">    &quot;&quot;&quot;</span>  
     <span class="k">if</span> <span class="n">verbose</span><span class="p">:</span>
         <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;[detect_cpu_simple...]&quot;</span><span class="p">)</span>
     <span class="n">t1</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
@@ -425,6 +416,10 @@
     <span class="k">return</span> <span class="n">detections</span><span class="p">,</span> <span class="n">responses</span><span class="p">,</span> <span class="n">times</span></div>
 
 <div class="viewcode-block" id="detect_cpu_parallel"><a class="viewcode-back" href="../main_detector.html#main_detector.detect_cpu_parallel">[docs]</a><span class="k">def</span> <span class="nf">detect_cpu_parallel</span><span class="p">(</span><span class="n">i</span><span class="p">,</span> <span class="n">clf</span><span class="p">,</span> <span class="n">hcoords</span><span class="p">,</span> <span class="n">n</span><span class="p">,</span> <span class="n">features_indexes</span><span class="p">,</span> <span class="n">decision_threshold</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">windows</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">shcoords_multiple_scales</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">n_jobs</span><span class="o">=</span><span class="mi">8</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Performs detection on an image frame in the `cpu_parallel` mode (i.e. with CPU parallelization via ``joblib.Parallel`` object, but with no GPU usage).</span>
+<span class="sd">    Called for each frame from within the ``demo_detect_in_video`` function.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
     <span class="k">if</span> <span class="n">verbose</span><span class="p">:</span>
         <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;[detect_cpu_parallel...]&quot;</span><span class="p">)</span>
     <span class="n">t1</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
@@ -484,9 +479,14 @@
         <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;[detect_cpu_parallel done; time: </span><span class="si">{</span><span class="n">t2</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">t1</span><span class="si">}</span><span class="s2"> s]&quot;</span><span class="p">)</span>                    
     <span class="k">return</span> <span class="n">detections</span><span class="p">,</span> <span class="n">responses</span><span class="p">,</span> <span class="n">times</span></div>
 
+
 <div class="viewcode-block" id="detect_gpu_cuda"><a class="viewcode-back" href="../main_detector.html#main_detector.detect_gpu_cuda">[docs]</a><span class="k">def</span> <span class="nf">detect_gpu_cuda</span><span class="p">(</span><span class="n">i</span><span class="p">,</span> <span class="n">clf</span><span class="p">,</span> <span class="n">hcoords</span><span class="p">,</span> <span class="n">features_indexes</span><span class="p">,</span> <span class="n">decision_threshold</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">windows</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">shcoords_multiple_scales</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> 
                     <span class="n">dev_windows</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">dev_shcoords_multiple_scales</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">dev_X_selected</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">dev_mins_selected</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">dev_maxes_selected</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">dev_logits</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">dev_responses</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> 
                     <span class="n">verbose</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Performs detection on an image frame in the `gpu_cude` mode (i.e. using GPU CUDA-based computations for both feature extraction and classifier responses).</span>
+<span class="sd">    Called for each frame from within the ``demo_detect_in_video`` function.</span>
+<span class="sd">    &quot;&quot;&quot;</span>    
     <span class="k">if</span> <span class="n">verbose</span><span class="p">:</span>
         <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;[detect_gpu_cuda...]&quot;</span><span class="p">)</span>
     <span class="n">t1</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
@@ -566,6 +566,10 @@
 <div class="viewcode-block" id="detect_gpu_cuda_within_multiple_clfs"><a class="viewcode-back" href="../main_detector.html#main_detector.detect_gpu_cuda_within_multiple_clfs">[docs]</a><span class="k">def</span> <span class="nf">detect_gpu_cuda_within_multiple_clfs</span><span class="p">(</span><span class="n">ii</span><span class="p">,</span> <span class="n">clf</span><span class="p">,</span> <span class="n">decision_threshold</span><span class="p">,</span> <span class="n">windows</span><span class="p">,</span> 
                                          <span class="n">dev_windows</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">dev_shcoords_multiple_scales</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">dev_X_selected</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">dev_mins_selected</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">dev_maxes_selected</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">dev_logits</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">dev_responses</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> 
                                          <span class="n">verbose</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Function called from a detection procedure meant for multiple classifiers - performs detection on an image frame (given its integral image computed earlier) in the `gpu_cude` mode (i.e. using GPU CUDA-based computations for both feature extraction and classifier responses).</span>
+<span class="sd">    Called for each frame from within the ``demo_detect_in_video_multiple_clfs`` function.</span>
+<span class="sd">    &quot;&quot;&quot;</span>    
     <span class="k">if</span> <span class="n">verbose</span><span class="p">:</span>
         <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;[detect_gpu_cuda_within_multiple_clfs...]&quot;</span><span class="p">)</span>
     <span class="n">t1</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
@@ -607,6 +611,7 @@
     <span class="k">return</span> <span class="n">detections</span><span class="p">,</span> <span class="n">responses</span><span class="p">,</span> <span class="n">times</span></div>
 
 <div class="viewcode-block" id="postprocess_nms"><a class="viewcode-back" href="../main_detector.html#main_detector.postprocess_nms">[docs]</a><span class="k">def</span> <span class="nf">postprocess_nms</span><span class="p">(</span><span class="n">detections</span><span class="p">,</span> <span class="n">responses</span><span class="p">,</span> <span class="n">iou_threshold</span><span class="o">=</span><span class="mf">0.25</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Postprocesses the list of detections (bounding boxes) according to the `non-max suppression` approach.&quot;&quot;&quot;</span>    
     <span class="n">d</span> <span class="o">=</span> <span class="n">detections</span>
     <span class="n">r</span> <span class="o">=</span> <span class="n">responses</span>
     <span class="n">d_final</span> <span class="o">=</span> <span class="p">[]</span>
@@ -629,6 +634,7 @@
     <span class="k">return</span> <span class="n">d_final</span><span class="p">,</span> <span class="n">r_final</span></div>
 
 <div class="viewcode-block" id="postprocess_avg"><a class="viewcode-back" href="../main_detector.html#main_detector.postprocess_avg">[docs]</a><span class="k">def</span> <span class="nf">postprocess_avg</span><span class="p">(</span><span class="n">detections</span><span class="p">,</span> <span class="n">responses</span><span class="p">,</span> <span class="n">iou_threshold</span><span class="o">=</span><span class="mf">0.25</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Postprocesses the list of detections (bounding boxes) according to the `averaging` approach.&quot;&quot;&quot;</span>
     <span class="n">d</span> <span class="o">=</span> <span class="n">detections</span>
     <span class="n">r</span> <span class="o">=</span> <span class="n">responses</span>
     <span class="n">d_final</span> <span class="o">=</span> <span class="p">[]</span>
@@ -659,6 +665,7 @@
     <span class="k">return</span> <span class="n">d_final</span><span class="p">,</span> <span class="n">r_final</span></div>
 
 <div class="viewcode-block" id="short_cpu_name"><a class="viewcode-back" href="../main_detector.html#main_detector.short_cpu_name">[docs]</a><span class="k">def</span> <span class="nf">short_cpu_name</span><span class="p">(</span><span class="n">cpu_name</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Returns a short version of a full CPU name (for the purpose of displaying it on video frames).&quot;&quot;&quot;</span>
     <span class="n">cpu_name</span> <span class="o">=</span> <span class="n">cpu_name</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">&quot;CPU&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">)</span>
     <span class="n">cpu_name</span> <span class="o">=</span> <span class="n">cpu_name</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">&quot;cpu&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">)</span>
     <span class="n">cpu_name</span> <span class="o">=</span> <span class="n">cpu_name</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">&quot;  &quot;</span><span class="p">,</span> <span class="s2">&quot; &quot;</span><span class="p">)</span>
@@ -667,6 +674,7 @@
     <span class="k">return</span> <span class="n">cpu_name</span>    </div>
 
 <div class="viewcode-block" id="color_by_detector_title"><a class="viewcode-back" href="../main_detector.html#main_detector.color_by_detector_title">[docs]</a><span class="k">def</span> <span class="nf">color_by_detector_title</span><span class="p">(</span><span class="n">colors_detect</span><span class="p">,</span> <span class="n">detector_title</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Returns a color (meant to draw a detected bounding box) based on a detector title.&quot;&quot;&quot;</span>
     <span class="n">mappings</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;face&quot;</span> <span class="p">:</span> <span class="mi">0</span><span class="p">,</span> <span class="s2">&quot;hand&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">}</span>
     <span class="n">title</span> <span class="o">=</span> <span class="n">detector_title</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span>
     <span class="n">index</span> <span class="o">=</span> <span class="mi">0</span>
@@ -675,6 +683,11 @@
     <span class="k">return</span> <span class="n">colors_detect</span><span class="p">[</span><span class="n">index</span><span class="p">]</span>  </div>
 
 <div class="viewcode-block" id="demo_detect_in_video"><a class="viewcode-back" href="../main_detector.html#main_detector.demo_detect_in_video">[docs]</a><span class="k">def</span> <span class="nf">demo_detect_in_video</span><span class="p">(</span><span class="n">clf</span><span class="p">,</span> <span class="n">hcoords</span><span class="p">,</span> <span class="n">decision_threshold</span><span class="p">,</span> <span class="n">computations</span><span class="o">=</span><span class="s2">&quot;gpu_cuda&quot;</span><span class="p">,</span> <span class="n">postprocess</span><span class="o">=</span><span class="s2">&quot;avg&quot;</span><span class="p">,</span> <span class="n">n_jobs</span><span class="o">=</span><span class="mi">8</span><span class="p">,</span> <span class="n">detector_title</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">verbose_loop</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">verbose_detect</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Performs a demonstration of detection procedure (using a single binary classifier - an instance of ``FastRealBoostBins``) in a video sequence captured from camera.</span>
+<span class="sd">    Depending on the mode of computations (argument ``computations`` being one of: ``&quot;cpu_simple&quot;``, ``&quot;cpu_parallel&quot;``, ``&quot;gpu_cuda&quot;``),</span>
+<span class="sd">    makes calls for each frame to, respectively, one of the following functions: ``detect_cpu_simple``, ``detect_cpu_parallel``, ``detect_gpu_cuda``. </span>
+<span class="sd">    &quot;&quot;&quot;</span>
     <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;DEMO OF DETECT IN VIDEO... [computations: </span><span class="si">{</span><span class="n">computations</span><span class="si">}</span><span class="s2">]&quot;</span><span class="p">)</span>
     <span class="n">colors_detect</span> <span class="o">=</span> <span class="p">[(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">255</span><span class="p">,</span> <span class="mi">255</span><span class="p">),</span> <span class="p">(</span><span class="mi">255</span><span class="p">,</span> <span class="mi">255</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span> <span class="p">(</span><span class="mi">255</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">255</span><span class="p">),</span> <span class="p">(</span><span class="mi">255</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">255</span><span class="p">),</span> <span class="p">(</span><span class="mi">255</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">)]</span>
     <span class="n">color_detect</span> <span class="o">=</span> <span class="n">color_by_detector_title</span><span class="p">(</span><span class="n">colors_detect</span><span class="p">,</span> <span class="n">detector_title</span><span class="p">)</span>
@@ -829,6 +842,10 @@
     <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;DEMO OF DETECT IN VIDEO DONE. [avg fps (computations): </span><span class="si">{</span><span class="n">avg_fps_comps</span><span class="si">:</span><span class="s2">.2f</span><span class="si">}</span><span class="s2">, avg time haar: </span><span class="si">{</span><span class="n">avg_time_comps_haar</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="mi">1000</span><span class="si">:</span><span class="s2">.2f</span><span class="si">}</span><span class="s2"> ms, avg time frbb: </span><span class="si">{</span><span class="n">avg_time_comps_frbb</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="mi">1000</span><span class="si">:</span><span class="s2">.2f</span><span class="si">}</span><span class="s2"> ms; avg fps (display): </span><span class="si">{</span><span class="n">avg_fps_disp</span><span class="si">:</span><span class="s2">.2f</span><span class="si">}</span><span class="s2">]&quot;</span><span class="p">)</span></div>
         
 <div class="viewcode-block" id="demo_detect_in_video_multiple_clfs"><a class="viewcode-back" href="../main_detector.html#main_detector.demo_detect_in_video_multiple_clfs">[docs]</a><span class="k">def</span> <span class="nf">demo_detect_in_video_multiple_clfs</span><span class="p">(</span><span class="n">clfs</span><span class="p">,</span> <span class="n">hcoords</span><span class="p">,</span> <span class="n">decision_thresholds</span><span class="p">,</span> <span class="n">postprocess</span><span class="o">=</span><span class="s2">&quot;avg&quot;</span><span class="p">,</span> <span class="n">detector_title</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">verbose_loop</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">verbose_detect</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Performs a demonstration of detection procedure (using multiple binary classifiers - instances of ``FastRealBoostBins``) in a video sequence captured from camera.    </span>
+<span class="sd">    For each frame makes of call to ``detect_gpu_cuda_within_multiple_clfs`` function.     </span>
+<span class="sd">    &quot;&quot;&quot;</span>
     <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;DEMO OF DETECT IN VIDEO  (MULTIPLE CLFS)...&quot;</span><span class="p">)</span>
     <span class="n">colors_detect</span> <span class="o">=</span> <span class="p">[(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">255</span><span class="p">,</span> <span class="mi">255</span><span class="p">),</span> <span class="p">(</span><span class="mi">255</span><span class="p">,</span> <span class="mi">255</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span> <span class="p">(</span><span class="mi">255</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">255</span><span class="p">),</span> <span class="p">(</span><span class="mi">255</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">255</span><span class="p">),</span> <span class="p">(</span><span class="mi">255</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">)]</span>
     <span class="n">color_info</span> <span class="o">=</span> <span class="p">(</span><span class="mi">255</span><span class="p">,</span> <span class="mi">255</span><span class="p">,</span> <span class="mi">255</span><span class="p">)</span>
@@ -989,42 +1006,20 @@
     <span class="n">avg_fps_disp</span> <span class="o">=</span> <span class="n">n_frames</span> <span class="o">/</span> <span class="p">(</span><span class="n">t2_loop</span> <span class="o">-</span> <span class="n">t1_loop</span><span class="p">)</span>
     <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;DEMO OF DETECT IN VIDEO (MULTIPLE CLFS) DONE. [avg fps (computations): </span><span class="si">{</span><span class="n">avg_fps_comps</span><span class="si">:</span><span class="s2">.2f</span><span class="si">}</span><span class="s2">, avg time haar: </span><span class="si">{</span><span class="n">avg_time_comps_haar</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="mi">1000</span><span class="si">:</span><span class="s2">.2f</span><span class="si">}</span><span class="s2"> ms, avg time frbb: </span><span class="si">{</span><span class="n">avg_time_comps_frbb</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="mi">1000</span><span class="si">:</span><span class="s2">.2f</span><span class="si">}</span><span class="s2"> ms; avg fps (display): </span><span class="si">{</span><span class="n">avg_fps_disp</span><span class="si">:</span><span class="s2">.2f</span><span class="si">}</span><span class="s2">]&quot;</span><span class="p">)</span></div>
 
-<div class="viewcode-block" id="experiment_some_rocs"><a class="viewcode-back" href="../main_detector.html#main_detector.experiment_some_rocs">[docs]</a><span class="k">def</span> <span class="nf">experiment_some_rocs</span><span class="p">():</span>
-    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;ROCS...&quot;</span><span class="p">)</span>    
-    <span class="n">data_name</span> <span class="o">=</span> <span class="s2">&quot;data_face_n_18225_S_5_P_5_NPI_10_SEED_0.bin&quot;</span>    
-    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;[data_name: </span><span class="si">{</span><span class="n">data_name</span><span class="si">}</span><span class="s2">]&quot;</span><span class="p">)</span>
-    <span class="p">[</span><span class="n">X_train</span><span class="p">,</span> <span class="n">y_train</span><span class="p">,</span> <span class="n">X_test</span><span class="p">,</span> <span class="n">y_test</span><span class="p">]</span> <span class="o">=</span> <span class="n">unpickle_objects</span><span class="p">(</span><span class="n">FOLDER_DATA</span> <span class="o">+</span> <span class="n">data_name</span><span class="p">)</span>    
-    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;[X_train.shape: </span><span class="si">{</span><span class="n">X_train</span><span class="o">.</span><span class="n">shape</span><span class="si">}</span><span class="s2"> with </span><span class="si">{</span><span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">y_train</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="mi">1</span><span class="p">)</span><span class="si">}</span><span class="s2"> positives, X_test.shape: </span><span class="si">{</span><span class="n">X_test</span><span class="o">.</span><span class="n">shape</span><span class="si">}</span><span class="s2"> with </span><span class="si">{</span><span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">y_test</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="mi">1</span><span class="p">)</span><span class="si">}</span><span class="s2"> positives]&quot;</span><span class="p">)</span>
-    <span class="n">clfs_names</span> <span class="o">=</span> <span class="p">[</span>
-        <span class="s2">&quot;clf_frbb_face_n_18225_S_5_P_5_NPI_200_SEED_0_T_1024_B_8.bin&quot;</span><span class="p">,</span>
-        <span class="s2">&quot;clf_frbb_face_n_18225_S_5_P_5_NPI_200_SEED_0_T_2048_B_8.bin&quot;</span>                                      
-        <span class="p">]</span>    
-    <span class="k">for</span> <span class="n">clf_name</span> <span class="ow">in</span> <span class="n">clfs_names</span><span class="p">:</span>                                                                          
-        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;-&quot;</span> <span class="o">*</span> <span class="mi">160</span><span class="p">)</span>        
-        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;[clf_name: </span><span class="si">{</span><span class="n">clf_name</span><span class="si">}</span><span class="s2">]&quot;</span><span class="p">)</span>                            
-        <span class="p">[</span><span class="n">clf</span><span class="p">]</span> <span class="o">=</span> <span class="n">unpickle_objects</span><span class="p">(</span><span class="n">FOLDER_CLFS</span> <span class="o">+</span> <span class="n">clf_name</span><span class="p">)</span>                
-        <span class="n">responses_test</span> <span class="o">=</span> <span class="n">clf</span><span class="o">.</span><span class="n">decision_function</span><span class="p">(</span><span class="n">X_test</span><span class="p">)</span>
-        <span class="n">roc</span> <span class="o">=</span> <span class="n">roc_curve</span><span class="p">(</span><span class="n">y_test</span><span class="p">,</span> <span class="n">responses_test</span><span class="p">)</span>
-        <span class="n">best_decision_threshold_via_precision</span><span class="p">(</span><span class="n">roc</span><span class="p">,</span> <span class="n">y_test</span><span class="p">,</span> <span class="n">heuristic_coeff</span><span class="o">=</span><span class="mf">0.25</span><span class="p">)</span> 
-        <span class="n">fars</span><span class="p">,</span> <span class="n">sens</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">roc</span>                
-        <span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">fars</span><span class="p">,</span> <span class="n">sens</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="n">clf_name</span><span class="p">)</span>                
-    <span class="n">plt</span><span class="o">.</span><span class="n">xscale</span><span class="p">(</span><span class="s2">&quot;log&quot;</span><span class="p">)</span>
-    <span class="n">plt</span><span class="o">.</span><span class="n">xlabel</span><span class="p">(</span><span class="s2">&quot;FAR&quot;</span><span class="p">)</span>
-    <span class="n">plt</span><span class="o">.</span><span class="n">ylabel</span><span class="p">(</span><span class="s2">&quot;SENSITIVITY&quot;</span><span class="p">)</span>
-    <span class="n">plt</span><span class="o">.</span><span class="n">legend</span><span class="p">(</span><span class="n">loc</span><span class="o">=</span><span class="s2">&quot;lower right&quot;</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="mi">8</span><span class="p">)</span>
-    <span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span></div>
-
 <div class="viewcode-block" id="str_to_float_or_none"><a class="viewcode-back" href="../main_detector.html#main_detector.str_to_float_or_none">[docs]</a><span class="k">def</span> <span class="nf">str_to_float_or_none</span><span class="p">(</span><span class="n">s</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Utility function for ``argparse.ArgumentParser`` (see ``parse_args`` function) meant to return a floating-point number from its string representation or a ``None`` value.&quot;&quot;&quot;</span>
     <span class="k">if</span> <span class="n">s</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="o">==</span> <span class="s2">&quot;none&quot;</span><span class="p">:</span>
         <span class="k">return</span> <span class="kc">None</span>
     <span class="k">return</span> <span class="nb">float</span><span class="p">(</span><span class="n">s</span><span class="p">)</span></div>
 
 <div class="viewcode-block" id="str_to_int_or_none"><a class="viewcode-back" href="../main_detector.html#main_detector.str_to_int_or_none">[docs]</a><span class="k">def</span> <span class="nf">str_to_int_or_none</span><span class="p">(</span><span class="n">s</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Utility function for ``argparse.ArgumentParser`` (see ``parse_args`` function) meant to return an integer from its string representation or a ``None`` value.&quot;&quot;&quot;</span>
     <span class="k">if</span> <span class="n">s</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="o">==</span> <span class="s2">&quot;none&quot;</span><span class="p">:</span>
         <span class="k">return</span> <span class="kc">None</span>
     <span class="k">return</span> <span class="nb">int</span><span class="p">(</span><span class="n">s</span><span class="p">)</span></div>
 
 <div class="viewcode-block" id="parse_args"><a class="viewcode-back" href="../main_detector.html#main_detector.parse_args">[docs]</a><span class="k">def</span> <span class="nf">parse_args</span><span class="p">():</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Returns a dictionary of arguments specified by user from CLI.&quot;&quot;&quot;</span>
     <span class="n">parser</span> <span class="o">=</span> <span class="n">argparse</span><span class="o">.</span><span class="n">ArgumentParser</span><span class="p">()</span>
     <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s2">&quot;-k&quot;</span><span class="p">,</span> <span class="s2">&quot;--KIND&quot;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">str</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="n">KIND</span><span class="p">,</span> <span class="n">choices</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;face&quot;</span><span class="p">,</span> <span class="s2">&quot;hand&quot;</span><span class="p">],</span> <span class="n">help</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;detector kind (default: </span><span class="si">{</span><span class="n">KIND</span><span class="si">}</span><span class="s2">)&quot;</span><span class="p">)</span>
     <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s2">&quot;-s&quot;</span><span class="p">,</span> <span class="s2">&quot;--S&quot;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">int</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="n">S</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;</span><span class="se">\&quot;</span><span class="s2">scales</span><span class="se">\&quot;</span><span class="s2"> parameter of Haar-like features (default: </span><span class="si">{</span><span class="n">S</span><span class="si">}</span><span class="s2">)&quot;</span><span class="p">)</span>

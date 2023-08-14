@@ -49,7 +49,10 @@
 <li class="toctree-l1 current"><a class="reference internal" href="modules.html">src</a><ul class="current">
 <li class="toctree-l2"><a class="reference internal" href="datagenerator.html">datagenerator module</a></li>
 <li class="toctree-l2"><a class="reference internal" href="frbb.html">frbb module</a></li>
-<li class="toctree-l2 current"><a class="current reference internal" href="#">haar module</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">haar module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#link-to-project-repository">Link to project repository</a></li>
+</ul>
+</li>
 <li class="toctree-l2"><a class="reference internal" href="main_detector.html">main_detector module</a></li>
 <li class="toctree-l2"><a class="reference internal" href="main_experimenter.html">main_experimenter module</a></li>
 <li class="toctree-l2"><a class="reference internal" href="utils.html">utils module</a></li>
@@ -84,86 +87,115 @@
              
   <section id="module-haar">
 <span id="haar-module"></span><h1>haar module<a class="headerlink" href="#module-haar" title="Permalink to this headline"></a></h1>
+<p>Auxiliary module with utilities related to extraction of Haar-like features (HFs) for given parameterization.</p>
+<p>Documentation note: this documentation was built with <cite>Sphinx</cite> tool, which does not correctly process docstrings for CUDA kernel functions, 
+i.e. functions decorated with <code class="docutils literal notranslate"><span class="pre">&#64;cuda.jit</span></code> that produce <code class="docutils literal notranslate"><span class="pre">numba.cuda.compiler.Dispatcher</span></code> objects as outcomes. 
+For actual docstrings associated with two functions <code class="docutils literal notranslate"><span class="pre">ii_delta_numba_cuda</span></code> and <code class="docutils literal notranslate"><span class="pre">haar_features_multiple_windows_numba_cuda</span></code> see the source code.</p>
+<section id="link-to-project-repository">
+<h2>Link to project repository<a class="headerlink" href="#link-to-project-repository" title="Permalink to this headline"></a></h2>
+<p><a class="reference external" href="https://github.com/pklesk/fast_rboost_bins">https://github.com/pklesk/fast_rboost_bins</a></p>
 <dl class="py function">
 <dt class="sig sig-object py" id="haar.resize_image">
 <span class="sig-prename descclassname"><span class="pre">haar.</span></span><span class="sig-name descname"><span class="pre">resize_image</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">i</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/haar.html#resize_image"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#haar.resize_image" title="Permalink to this definition"></a></dt>
-<dd></dd></dl>
+<dd><p>Resizes an image to the globally predefined height.</p>
+</dd></dl>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="haar.haar_indexes">
 <span class="sig-prename descclassname"><span class="pre">haar.</span></span><span class="sig-name descname"><span class="pre">haar_indexes</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">s</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">p</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/haar.html#haar_indexes"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#haar.haar_indexes" title="Permalink to this definition"></a></dt>
-<dd></dd></dl>
+<dd><p>Returns an array of multi-indexes defining HFs for a given <code class="docutils literal notranslate"><span class="pre">s,</span> <span class="pre">p</span></code> parameterization (<code class="docutils literal notranslate"><span class="pre">s</span></code> - number of scaling variants along each dimension, <code class="docutils literal notranslate"><span class="pre">p</span></code> - constant defining the grid of anchoring points of size (2p - 1) x (2p - 1).
+Each multi-index is a quintuplet <code class="docutils literal notranslate"><span class="pre">t,</span> <span class="pre">s_j,</span> <span class="pre">s_k,</span> <span class="pre">p_j,</span> <span class="pre">p_k</span></code>, storing respectively: Haar template index, vertical scale index, horizontal scale index, vertical index on the grid, horizontal index on the grid.</p>
+</dd></dl>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="haar.haar_coords">
 <span class="sig-prename descclassname"><span class="pre">haar.</span></span><span class="sig-name descname"><span class="pre">haar_coords</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">s</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">p</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">hinds</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/haar.html#haar_coords"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#haar.haar_coords" title="Permalink to this definition"></a></dt>
-<dd></dd></dl>
+<dd><p>For given parameterization and HFs multi-indexes (see <code class="docutils literal notranslate"><span class="pre">haar_indexes</span></code> function) returns an array of Cartesian coordinates normalized to a unit square: [0, 1] x [0, 1].</p>
+</dd></dl>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="haar.integral_image_python">
 <span class="sig-prename descclassname"><span class="pre">haar.</span></span><span class="sig-name descname"><span class="pre">integral_image_python</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">i</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/haar.html#integral_image_python"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#haar.integral_image_python" title="Permalink to this definition"></a></dt>
-<dd></dd></dl>
+<dd><p>Computes an integral image for an input image using a pure Python code with loops (very slow, for comparison purposes only).</p>
+</dd></dl>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="haar.integral_image_numpy">
 <span class="sig-prename descclassname"><span class="pre">haar.</span></span><span class="sig-name descname"><span class="pre">integral_image_numpy</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">i</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/haar.html#integral_image_numpy"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#haar.integral_image_numpy" title="Permalink to this definition"></a></dt>
-<dd></dd></dl>
+<dd><p>Computes an integral image for an input image using <code class="docutils literal notranslate"><span class="pre">np.cumsum</span></code> function (faster than <code class="docutils literal notranslate"><span class="pre">integral_image_python</span></code> but still slower than <code class="docutils literal notranslate"><span class="pre">integral_image_numba_jit</span></code>).</p>
+</dd></dl>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="haar.integral_image_numba_jit">
 <span class="sig-prename descclassname"><span class="pre">haar.</span></span><span class="sig-name descname"><span class="pre">integral_image_numba_jit</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">i</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/haar.html#integral_image_numba_jit"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#haar.integral_image_numba_jit" title="Permalink to this definition"></a></dt>
-<dd></dd></dl>
+<dd><p>Computes an integral image for an input image using a <code class="docutils literal notranslate"><span class="pre">numba.jit</span></code>-compiled function (faster than <code class="docutils literal notranslate"><span class="pre">integral_image_python</span></code> and <code class="docutils literal notranslate"><span class="pre">integral_image_numba_jit</span></code>).</p>
+</dd></dl>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="haar.ii_delta_numba_jit">
 <span class="sig-prename descclassname"><span class="pre">haar.</span></span><span class="sig-name descname"><span class="pre">ii_delta_numba_jit</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ii</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">j1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">k1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">j2</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">k2</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/haar.html#ii_delta_numba_jit"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#haar.ii_delta_numba_jit" title="Permalink to this definition"></a></dt>
-<dd></dd></dl>
+<dd><p>Computes a growth (delta operator) of an integral image using a <code class="docutils literal notranslate"><span class="pre">numba.jit</span></code>-compiled function.</p>
+</dd></dl>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="haar.haar_feature_numba_jit">
 <span class="sig-prename descclassname"><span class="pre">haar.</span></span><span class="sig-name descname"><span class="pre">haar_feature_numba_jit</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ii</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">j0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">k0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">shcoords_one_feature</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/haar.html#haar_feature_numba_jit"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#haar.haar_feature_numba_jit" title="Permalink to this definition"></a></dt>
-<dd></dd></dl>
+<dd><p>Computes a single HF (given: integral image, window offset, and feature pixel coordinates) using a <code class="docutils literal notranslate"><span class="pre">numba.jit</span></code>-compiled function.</p>
+</dd></dl>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="haar.haar_features_one_window_numba_jit">
 <span class="sig-prename descclassname"><span class="pre">haar.</span></span><span class="sig-name descname"><span class="pre">haar_features_one_window_numba_jit</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ii</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">j0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">k0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">shcoords_one_window</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">features_indexes</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/haar.html#haar_features_one_window_numba_jit"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#haar.haar_features_one_window_numba_jit" title="Permalink to this definition"></a></dt>
-<dd></dd></dl>
+<dd><p>Computes a vector of HFs (given: integral image, window offset, pixel coordinates of all features, and indexes of selected features) using a <code class="docutils literal notranslate"><span class="pre">numba.jit</span></code>-compiled function.</p>
+</dd></dl>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="haar.haar_features_multiple_windows_numba_jit">
 <span class="sig-prename descclassname"><span class="pre">haar.</span></span><span class="sig-name descname"><span class="pre">haar_features_multiple_windows_numba_jit</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ii</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">windows</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">shcoords_multiple_scales</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">features_indexes</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/haar.html#haar_features_multiple_windows_numba_jit"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#haar.haar_features_multiple_windows_numba_jit" title="Permalink to this definition"></a></dt>
-<dd></dd></dl>
+<dd><p>Computes a two-dimensional array of HFs for multiple windows (given: integral image, windows coordinates, pixel coordinates of all features in several scales, and indexes of selected features) using a <code class="docutils literal notranslate"><span class="pre">numba.jit</span></code>-compiled function.</p>
+</dd></dl>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="haar.ii_delta_numba_jit_tf">
 <span class="sig-prename descclassname"><span class="pre">haar.</span></span><span class="sig-name descname"><span class="pre">ii_delta_numba_jit_tf</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ii</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">j1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">k1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">j2</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">k2</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/haar.html#ii_delta_numba_jit_tf"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#haar.ii_delta_numba_jit_tf" title="Permalink to this definition"></a></dt>
-<dd></dd></dl>
+<dd><p>Computes a growth (delta operator) of an integral image using a <code class="docutils literal notranslate"><span class="pre">numba.jit</span></code>-compiled function.
+Function with the same functionality as <code class="docutils literal notranslate"><span class="pre">ii_delta_numba_jit</span></code>, but using a types-free signature (tf) necessary in case of parallelization via <code class="docutils literal notranslate"><span class="pre">joblib</span></code> module.</p>
+</dd></dl>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="haar.haar_feature_numba_jit_tf">
 <span class="sig-prename descclassname"><span class="pre">haar.</span></span><span class="sig-name descname"><span class="pre">haar_feature_numba_jit_tf</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ii</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">j0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">k0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">shcoords_one_feature</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/haar.html#haar_feature_numba_jit_tf"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#haar.haar_feature_numba_jit_tf" title="Permalink to this definition"></a></dt>
-<dd></dd></dl>
+<dd><p>Computes a single HF (given: integral image, window offset, and feature pixel coordinates) using a <code class="docutils literal notranslate"><span class="pre">numba.jit</span></code>-compiled function.
+Function with the same functionality as <code class="docutils literal notranslate"><span class="pre">haar_feature_numba_jit</span></code>, but using a types-free signature (tf) necessary in case of parallelization via <code class="docutils literal notranslate"><span class="pre">joblib</span></code> module.</p>
+</dd></dl>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="haar.haar_features_one_window_numba_jit_tf">
 <span class="sig-prename descclassname"><span class="pre">haar.</span></span><span class="sig-name descname"><span class="pre">haar_features_one_window_numba_jit_tf</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ii</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">j0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">k0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">shcoords_one_window</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">features_indexes</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/haar.html#haar_features_one_window_numba_jit_tf"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#haar.haar_features_one_window_numba_jit_tf" title="Permalink to this definition"></a></dt>
-<dd></dd></dl>
+<dd><p>Computes a vector of HFs (given: integral image, window offset, pixel coordinates of all features, and indexes of selected features) using a <code class="docutils literal notranslate"><span class="pre">numba.jit</span></code>-compiled function.
+Function with the same functionality as <code class="docutils literal notranslate"><span class="pre">haar_features_one_window_numba_jit</span></code>, but using a types-free signature (tf) necessary in case of parallelization via <code class="docutils literal notranslate"><span class="pre">joblib</span></code> module.</p>
+</dd></dl>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="haar.haar_features_multiple_windows_numba_jit_tf">
 <span class="sig-prename descclassname"><span class="pre">haar.</span></span><span class="sig-name descname"><span class="pre">haar_features_multiple_windows_numba_jit_tf</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ii</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">windows</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">shcoords_multiple_scales</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">features_indexes</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/haar.html#haar_features_multiple_windows_numba_jit_tf"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#haar.haar_features_multiple_windows_numba_jit_tf" title="Permalink to this definition"></a></dt>
-<dd></dd></dl>
+<dd><p>Computes a two-dimensional array of HFs for multiple windows (given: integral image, windows coordinates, pixel coordinates of all features in several scales, and indexes of selected features) using a <code class="docutils literal notranslate"><span class="pre">numba.jit</span></code>-compiled function.
+Function with the same functionality as <code class="docutils literal notranslate"><span class="pre">haar_features_multiple_windows_numba_jit</span></code>, but using a types-free signature (tf) necessary in case of parallelization via <code class="docutils literal notranslate"><span class="pre">joblib</span></code> module.</p>
+</dd></dl>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="haar.iou">
 <span class="sig-prename descclassname"><span class="pre">haar.</span></span><span class="sig-name descname"><span class="pre">iou</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">coords1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">coords2</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/haar.html#iou"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#haar.iou" title="Permalink to this definition"></a></dt>
-<dd></dd></dl>
+<dd><p>Computes IoU (intersection over union ratio) for a pair rectangles with coordinates given as (j1, k1, j2, k2), where: (j1, k1) - top-left corner, (j2, k2) - bottom-right corner.</p>
+</dd></dl>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="haar.iou2">
 <span class="sig-prename descclassname"><span class="pre">haar.</span></span><span class="sig-name descname"><span class="pre">iou2</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">jkhw1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">jkhw2</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/haar.html#iou2"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#haar.iou2" title="Permalink to this definition"></a></dt>
-<dd></dd></dl>
+<dd><p>Computes IoU (intersection over union ratio) for a pair rectangles given in the form: (j, k, h, w), where (j, k) - top-left corner, (h, w) - height and width.</p>
+</dd></dl>
 
+</section>
 </section>
 
 

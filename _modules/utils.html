@@ -72,13 +72,19 @@
              
   <h1>Source code for utils</h1><div class="highlight"><pre>
 <span></span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">Auxiliary module with simple utility and informative functions. </span>
+<span class="sd">Auxiliary module with simple utility and informative functions.</span>
+
+<span class="sd">Link to project repository</span>
+<span class="sd">--------------------------</span>
+<span class="sd">`https://github.com/pklesk/fast_rboost_bins &lt;https://github.com/pklesk/fast_rboost_bins&gt;`_ </span>
 <span class="sd">&quot;&quot;&quot;</span>
 
 <span class="kn">import</span> <span class="nn">cpuinfo</span>
 <span class="kn">import</span> <span class="nn">platform</span>
 <span class="kn">import</span> <span class="nn">psutil</span>
 <span class="kn">from</span> <span class="nn">numba</span> <span class="kn">import</span> <span class="n">cuda</span>
+<span class="kn">import</span> <span class="nn">pickle</span>
+<span class="kn">import</span> <span class="nn">sys</span>
  
 <span class="n">__author__</span> <span class="o">=</span> <span class="s2">&quot;Przemysław Klęsk&quot;</span>
 <span class="n">__email__</span> <span class="o">=</span> <span class="s2">&quot;pklesk@zut.edu.pl&quot;</span>
@@ -90,6 +96,41 @@
         <span class="n">dict_str</span> <span class="o">+=</span> <span class="s2">&quot;</span><span class="se">\n</span><span class="s2">  &quot;</span>  <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">key</span><span class="p">)</span> <span class="o">+</span> <span class="s2">&quot;: &quot;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">d</span><span class="p">[</span><span class="n">key</span><span class="p">])</span> <span class="o">+</span> <span class="p">(</span><span class="s2">&quot;,&quot;</span> <span class="k">if</span> <span class="n">i</span> <span class="o">&lt;</span> <span class="nb">len</span><span class="p">(</span><span class="n">d</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span> <span class="k">else</span> <span class="s2">&quot;&quot;</span><span class="p">)</span>    
     <span class="n">dict_str</span> <span class="o">+=</span> <span class="s2">&quot;</span><span class="se">\n</span><span class="s2">}&quot;</span>
     <span class="k">return</span> <span class="n">dict_str</span></div>
+
+<div class="viewcode-block" id="list_to_str"><a class="viewcode-back" href="../utils.html#utils.list_to_str">[docs]</a><span class="k">def</span> <span class="nf">list_to_str</span><span class="p">(</span><span class="n">l</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Returns a vertically formatted string representation of a list.&quot;&quot;&quot;</span>
+    <span class="n">list_str</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span>
+    <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">elem</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">l</span><span class="p">):</span>
+        <span class="n">list_str</span> <span class="o">+=</span> <span class="s2">&quot;[&quot;</span> <span class="k">if</span> <span class="n">i</span> <span class="o">==</span> <span class="mi">0</span> <span class="k">else</span> <span class="s2">&quot; &quot;</span>  
+        <span class="n">list_str</span> <span class="o">+=</span> <span class="nb">str</span><span class="p">(</span><span class="n">elem</span><span class="p">)</span> <span class="o">+</span> <span class="p">(</span><span class="s2">&quot;,</span><span class="se">\n</span><span class="s2">&quot;</span> <span class="k">if</span> <span class="n">i</span> <span class="o">&lt;</span> <span class="nb">len</span><span class="p">(</span><span class="n">l</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span> <span class="k">else</span> <span class="s2">&quot;]&quot;</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">list_str</span> </div>
+
+<div class="viewcode-block" id="pickle_objects"><a class="viewcode-back" href="../utils.html#utils.pickle_objects">[docs]</a><span class="k">def</span> <span class="nf">pickle_objects</span><span class="p">(</span><span class="n">fname</span><span class="p">,</span> <span class="n">some_list</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Pickles a list of objects to a binary file.&quot;&quot;&quot;</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;PICKLE OBJECTS... [to file: </span><span class="si">{</span><span class="n">fname</span><span class="si">}</span><span class="s2">]&quot;</span><span class="p">)</span>
+    <span class="n">t1</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">f</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="n">fname</span><span class="p">,</span> <span class="s2">&quot;wb+&quot;</span><span class="p">)</span>
+        <span class="n">pickle</span><span class="o">.</span><span class="n">dump</span><span class="p">(</span><span class="n">some_list</span><span class="p">,</span> <span class="n">f</span><span class="p">,</span> <span class="n">protocol</span><span class="o">=</span><span class="n">pickle</span><span class="o">.</span><span class="n">HIGHEST_PROTOCOL</span><span class="p">)</span>
+        <span class="n">f</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+    <span class="k">except</span> <span class="ne">IOError</span><span class="p">:</span>
+        <span class="n">sys</span><span class="o">.</span><span class="n">exit</span><span class="p">(</span><span class="s2">&quot;[error occurred when trying to open or pickle the file]&quot;</span><span class="p">)</span>
+    <span class="n">t2</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;PICKLE OBJECTS DONE. [time: </span><span class="si">{</span><span class="n">t2</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">t1</span><span class="si">}</span><span class="s2"> s]&quot;</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="unpickle_objects"><a class="viewcode-back" href="../utils.html#utils.unpickle_objects">[docs]</a><span class="k">def</span> <span class="nf">unpickle_objects</span><span class="p">(</span><span class="n">fname</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Returns an a list of objects from a binary file.&quot;&quot;&quot;</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;UNPICKLE OBJECTS... [from file: </span><span class="si">{</span><span class="n">fname</span><span class="si">}</span><span class="s2">]&quot;</span><span class="p">)</span>
+    <span class="n">t1</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
+    <span class="k">try</span><span class="p">:</span>    
+        <span class="n">f</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="n">fname</span><span class="p">,</span> <span class="s2">&quot;rb&quot;</span><span class="p">)</span>
+        <span class="n">some_list</span> <span class="o">=</span> <span class="n">pickle</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>
+        <span class="n">f</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+    <span class="k">except</span> <span class="ne">IOError</span><span class="p">:</span>
+        <span class="n">sys</span><span class="o">.</span><span class="n">exit</span><span class="p">(</span><span class="s2">&quot;[error occurred when trying to open or read the file]&quot;</span><span class="p">)</span>
+    <span class="n">t2</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;UNPICKLE OBJECTS DONE. [time: </span><span class="si">{</span><span class="n">t2</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">t1</span><span class="si">}</span><span class="s2"> s]&quot;</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">some_list</span></div>
 
 <div class="viewcode-block" id="cpu_and_system_props"><a class="viewcode-back" href="../utils.html#utils.cpu_and_system_props">[docs]</a><span class="k">def</span> <span class="nf">cpu_and_system_props</span><span class="p">():</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Returns a dictionary with properties of CPU and OS.&quot;&quot;&quot;</span>

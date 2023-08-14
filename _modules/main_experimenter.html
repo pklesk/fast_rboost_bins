@@ -72,8 +72,8 @@
              
   <h1>Source code for main_experimenter</h1><div class="highlight"><pre>
 <span></span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">Auxiliary script with command-line user interface for conducting experiments on classifiers related to this project: </span>
-<span class="sd">``FastRealBoostBins`` (two variants) against other ensemble classifiers from ``sklearn.ensemble``.</span>
+<span class="sd">Auxiliary script with command-line user interface for conducting experiments on ensemble classifiers related to this project: </span>
+<span class="sd">``FastRealBoostBins`` from :doc:`frbb` and other from ``sklearn.ensemble``.</span>
 
 <span class="sd">For help on the script arguments execute: </span>
 
@@ -85,13 +85,19 @@
 
 <span class="sd">Dependencies</span>
 <span class="sd">------------</span>
+<span class="sd">- ``frbb``: required to import the class ``FastRealBoostBins``.</span>
+
 <span class="sd">- ``numpy``, ``math``: required for mathematical computations.</span>
 
 <span class="sd">- ``numba``: required for just-in-time compilation of crucial computational functions and CUDA kernels (decorated by ``@jit`` and ``@cuda.jit`` imported from ``numba``). </span>
 
 <span class="sd">- ``sklearn``: required for inheritence and other sklearn API purposes,</span>
 
-<span class="sd">- ``colorama``: required CLI purposes.</span>
+<span class="sd">- ``colorama``: required for CLI purposes.</span>
+
+<span class="sd">Link to project repository</span>
+<span class="sd">--------------------------</span>
+<span class="sd">`https://github.com/pklesk/fast_rboost_bins &lt;https://github.com/pklesk/fast_rboost_bins&gt;`_</span>
 <span class="sd">&quot;&quot;&quot;</span>
 
 <span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
@@ -102,10 +108,8 @@
 <span class="kn">import</span> <span class="nn">re</span>
 <span class="kn">from</span> <span class="nn">itertools</span> <span class="kn">import</span> <span class="n">product</span><span class="p">,</span> <span class="n">compress</span>
 <span class="kn">from</span> <span class="nn">matplotlib</span> <span class="kn">import</span> <span class="n">pyplot</span> <span class="k">as</span> <span class="n">plt</span>
-<span class="kn">from</span> <span class="nn">utils</span> <span class="kn">import</span> <span class="n">cpu_and_system_props</span><span class="p">,</span> <span class="n">gpu_props</span><span class="p">,</span> <span class="n">dict_to_str</span>
-<span class="kn">import</span> <span class="nn">pickle</span>
+<span class="kn">from</span> <span class="nn">utils</span> <span class="kn">import</span> <span class="n">cpu_and_system_props</span><span class="p">,</span> <span class="n">gpu_props</span><span class="p">,</span> <span class="n">dict_to_str</span><span class="p">,</span> <span class="n">list_to_str</span><span class="p">,</span> <span class="n">unpickle_objects</span>
 <span class="kn">from</span> <span class="nn">datetime</span> <span class="kn">import</span> <span class="n">date</span>
-<span class="kn">import</span> <span class="nn">sys</span>
 <span class="kn">import</span> <span class="nn">argparse</span>
 <span class="kn">import</span> <span class="nn">colorama</span>
 
@@ -164,12 +168,14 @@
 <span class="n">PLOT_LEGEND_LABELSPACING</span> <span class="o">=</span> <span class="mf">0.1</span>
 
 <div class="viewcode-block" id="clean_name"><a class="viewcode-back" href="../main_experimenter.html#main_experimenter.clean_name">[docs]</a><span class="k">def</span> <span class="nf">clean_name</span><span class="p">(</span><span class="n">name</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Cleans a name of a classifier, provided by ``str(clf)``, getting rid of special characters ``\\n`` and ``\\t``, and replacing space sequences by a single space.&quot;&quot;&quot;</span>
     <span class="n">name</span> <span class="o">=</span> <span class="n">name</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">)</span>
     <span class="n">name</span> <span class="o">=</span> <span class="n">name</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\t</span><span class="s2">&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">)</span>
     <span class="n">name</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">sub</span><span class="p">(</span><span class="s2">&quot; +&quot;</span><span class="p">,</span> <span class="s2">&quot; &quot;</span><span class="p">,</span> <span class="n">name</span><span class="p">)</span>
     <span class="k">return</span> <span class="n">name</span></div>
 
 <div class="viewcode-block" id="hash_function"><a class="viewcode-back" href="../main_experimenter.html#main_experimenter.hash_function">[docs]</a><span class="k">def</span> <span class="nf">hash_function</span><span class="p">(</span><span class="n">s</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Returns a hash code (integer) for given string as a base 31 expansion.&quot;&quot;&quot;</span>
     <span class="n">h</span> <span class="o">=</span> <span class="mi">0</span>
     <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">s</span><span class="p">:</span>
         <span class="n">h</span> <span class="o">*=</span> <span class="mi">31</span> 
@@ -177,29 +183,11 @@
     <span class="k">return</span> <span class="n">h</span></div>
 
 <div class="viewcode-block" id="experiment_hash_str"><a class="viewcode-back" href="../main_experimenter.html#main_experimenter.experiment_hash_str">[docs]</a><span class="k">def</span> <span class="nf">experiment_hash_str</span><span class="p">(</span><span class="n">kind</span><span class="o">=</span><span class="s2">&quot;real&quot;</span><span class="p">,</span> <span class="n">params</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">digits</span><span class="o">=</span><span class="mi">10</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Returns a hash string for an experiment, based on its kind, parameters and current date (the actual hash code part defaults to 10 digits).&quot;&quot;&quot;</span>
     <span class="k">return</span> <span class="n">kind</span> <span class="o">+</span> <span class="s2">&quot;_&quot;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">((</span><span class="n">hash_function</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">params</span><span class="p">))</span> <span class="o">&amp;</span> <span class="p">((</span><span class="mi">1</span> <span class="o">&lt;&lt;</span> <span class="mi">32</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span><span class="p">))</span> <span class="o">%</span> <span class="mi">10</span><span class="o">**</span><span class="n">digits</span><span class="p">)</span><span class="o">.</span><span class="n">rjust</span><span class="p">(</span><span class="n">digits</span><span class="p">,</span> <span class="s2">&quot;0&quot;</span><span class="p">)</span> <span class="o">+</span> <span class="s2">&quot;_&quot;</span> <span class="o">+</span> <span class="n">date</span><span class="o">.</span><span class="n">today</span><span class="p">()</span><span class="o">.</span><span class="n">strftime</span><span class="p">(</span><span class="s2">&quot;%Y%m</span><span class="si">%d</span><span class="s2">&quot;</span><span class="p">)</span></div>
 
-<div class="viewcode-block" id="list_to_str"><a class="viewcode-back" href="../main_experimenter.html#main_experimenter.list_to_str">[docs]</a><span class="k">def</span> <span class="nf">list_to_str</span><span class="p">(</span><span class="n">l</span><span class="p">):</span>
-    <span class="n">list_str</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span>
-    <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">elem</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">l</span><span class="p">):</span>
-        <span class="n">list_str</span> <span class="o">+=</span> <span class="s2">&quot;[&quot;</span> <span class="k">if</span> <span class="n">i</span> <span class="o">==</span> <span class="mi">0</span> <span class="k">else</span> <span class="s2">&quot; &quot;</span>  
-        <span class="n">list_str</span> <span class="o">+=</span> <span class="nb">str</span><span class="p">(</span><span class="n">elem</span><span class="p">)</span> <span class="o">+</span> <span class="p">(</span><span class="s2">&quot;,</span><span class="se">\n</span><span class="s2">&quot;</span> <span class="k">if</span> <span class="n">i</span> <span class="o">&lt;</span> <span class="nb">len</span><span class="p">(</span><span class="n">l</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span> <span class="k">else</span> <span class="s2">&quot;]&quot;</span><span class="p">)</span>
-    <span class="k">return</span> <span class="n">list_str</span> </div>
-
-<div class="viewcode-block" id="unpickle_objects"><a class="viewcode-back" href="../main_experimenter.html#main_experimenter.unpickle_objects">[docs]</a><span class="k">def</span> <span class="nf">unpickle_objects</span><span class="p">(</span><span class="n">fname</span><span class="p">):</span>
-    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;UNPICKLE OBJECTS... [from file: </span><span class="si">{</span><span class="n">fname</span><span class="si">}</span><span class="s2">]&quot;</span><span class="p">)</span>
-    <span class="n">t1</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
-    <span class="k">try</span><span class="p">:</span>    
-        <span class="n">f</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="n">fname</span><span class="p">,</span> <span class="s2">&quot;rb&quot;</span><span class="p">)</span>
-        <span class="n">some_list</span> <span class="o">=</span> <span class="n">pickle</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>
-        <span class="n">f</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
-    <span class="k">except</span> <span class="ne">IOError</span><span class="p">:</span>
-        <span class="n">sys</span><span class="o">.</span><span class="n">exit</span><span class="p">(</span><span class="s2">&quot;[error occurred when trying to open or read the file]&quot;</span><span class="p">)</span>
-    <span class="n">t2</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
-    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;UNPICKLE OBJECTS DONE. [time: </span><span class="si">{</span><span class="n">t2</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">t1</span><span class="si">}</span><span class="s2"> s]&quot;</span><span class="p">)</span>
-    <span class="k">return</span> <span class="n">some_list</span></div>
-
-<div class="viewcode-block" id="read_data_fddb_patches"><a class="viewcode-back" href="../main_experimenter.html#main_experimenter.read_data_fddb_patches">[docs]</a><span class="k">def</span> <span class="nf">read_data_fddb_patches</span><span class="p">():</span> 
+<div class="viewcode-block" id="read_data_fddb_patches"><a class="viewcode-back" href="../main_experimenter.html#main_experimenter.read_data_fddb_patches">[docs]</a><span class="k">def</span> <span class="nf">read_data_fddb_patches</span><span class="p">():</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Reads a data set named &#39;FDDB-PATCHES (3NPI)&#39; (i.e. 32x32 patches from FDDB, 3 negatives sampled per image) and returns a tuple of four data arrays: ``X_train``, ``y_train``, ``X_test``, ``y_test``.&quot;&quot;&quot;</span>  
     <span class="n">fname</span> <span class="o">=</span> <span class="s2">&quot;fddb_patches/fddb_patches_32x32_NPI_3_SEED_0.bin&quot;</span>
     <span class="p">[</span><span class="n">X_train</span><span class="p">,</span> <span class="n">y_train</span><span class="p">,</span> <span class="n">X_test</span><span class="p">,</span> <span class="n">y_test</span><span class="p">]</span> <span class="o">=</span> <span class="n">unpickle_objects</span><span class="p">(</span><span class="n">FOLDER_DATA_RAW</span> <span class="o">+</span> <span class="n">fname</span><span class="p">)</span>
     <span class="n">n</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">product</span><span class="p">(</span><span class="n">X_train</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">:])</span>
@@ -208,6 +196,7 @@
     <span class="k">return</span> <span class="n">X_train</span><span class="p">,</span> <span class="n">y_train</span><span class="p">,</span> <span class="n">X_test</span><span class="p">,</span> <span class="n">y_test</span></div>
 
 <div class="viewcode-block" id="read_data_cifar_10"><a class="viewcode-back" href="../main_experimenter.html#main_experimenter.read_data_cifar_10">[docs]</a><span class="k">def</span> <span class="nf">read_data_cifar_10</span><span class="p">():</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Reads a data set named &#39;CIFAR-10 (AIRPLANE)&#39; (i.e. CIFAR-10 with the first class - airplane - treated as positives) and returns a tuple of four data arrays: ``X_train``, ``y_train``, ``X_test``, ``y_test``.&quot;&quot;&quot;</span>
     <span class="p">(</span><span class="n">X_train</span><span class="p">,</span> <span class="n">y_train</span><span class="p">),</span> <span class="p">(</span><span class="n">X_test</span><span class="p">,</span> <span class="n">y_test</span><span class="p">)</span> <span class="o">=</span> <span class="n">cifar10</span><span class="o">.</span><span class="n">load_data</span><span class="p">()</span>
     <span class="n">class_index</span> <span class="o">=</span> <span class="mi">0</span> <span class="c1"># &#39;airplane&#39;</span>
     <span class="n">indexes</span> <span class="o">=</span> <span class="n">y_train</span> <span class="o">==</span> <span class="n">class_index</span>
@@ -224,6 +213,7 @@
     <span class="k">return</span> <span class="n">X_train</span><span class="p">,</span> <span class="n">y_train</span><span class="p">,</span> <span class="n">X_test</span><span class="p">,</span> <span class="n">y_test</span></div>
 
 <div class="viewcode-block" id="read_data_mnist_b"><a class="viewcode-back" href="../main_experimenter.html#main_experimenter.read_data_mnist_b">[docs]</a><span class="k">def</span> <span class="nf">read_data_mnist_b</span><span class="p">(</span><span class="n">seed</span><span class="o">=</span><span class="mi">0</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Reads a data set named &#39;MNIST-B&#39; (i.e. MNIST with random backgrounds) and returns a tuple of four data arrays: ``X_train``, ``y_train``, ``X_test``, ``y_test``.&quot;&quot;&quot;</span>
     <span class="p">(</span><span class="n">X_train</span><span class="p">,</span> <span class="n">y_train</span><span class="p">),</span> <span class="p">(</span><span class="n">X_test</span><span class="p">,</span> <span class="n">y_test</span><span class="p">)</span> <span class="o">=</span> <span class="n">mnist</span><span class="o">.</span><span class="n">load_data</span><span class="p">()</span>
     <span class="n">indexes</span> <span class="o">=</span> <span class="n">y_train</span> <span class="o">==</span> <span class="mi">0</span>
     <span class="n">y_train</span><span class="p">[</span><span class="n">indexes</span><span class="p">]</span> <span class="o">=</span> <span class="mi">1</span>
@@ -243,22 +233,26 @@
     <span class="n">X_test</span> <span class="o">=</span> <span class="p">((</span><span class="n">X_test</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">uint16</span><span class="p">)</span> <span class="o">+</span> <span class="n">noise_test</span><span class="p">)</span> <span class="o">//</span> <span class="mi">2</span><span class="p">)</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">uint8</span><span class="p">)</span>             
     <span class="k">return</span> <span class="n">X_train</span><span class="p">,</span> <span class="n">y_train</span><span class="p">,</span> <span class="n">X_test</span><span class="p">,</span> <span class="n">y_test</span>                    </div>
     
-<div class="viewcode-block" id="read_data_fddb_haar_npi_100"><a class="viewcode-back" href="../main_experimenter.html#main_experimenter.read_data_fddb_haar_npi_100">[docs]</a><span class="k">def</span> <span class="nf">read_data_fddb_haar_npi_100</span><span class="p">():</span> 
+<div class="viewcode-block" id="read_data_fddb_haar_npi_100"><a class="viewcode-back" href="../main_experimenter.html#main_experimenter.read_data_fddb_haar_npi_100">[docs]</a><span class="k">def</span> <span class="nf">read_data_fddb_haar_npi_100</span><span class="p">():</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Reads a data set named &#39;FDDB-HFs (100 NPI)&#39; (i.e. FDDB described by Haar-like features (HFs) generated from grayscale versions, 100 negatives sampled per image) and returns a tuple of four data arrays: ``X_train``, ``y_train``, ``X_test``, ``y_test``.&quot;&quot;&quot;</span> 
     <span class="n">fname</span> <span class="o">=</span> <span class="s2">&quot;data_face_n_18225_S_5_P_5_NPI_100_SEED_0.bin&quot;</span>
     <span class="p">[</span><span class="n">X_train</span><span class="p">,</span> <span class="n">y_train</span><span class="p">,</span> <span class="n">X_test</span><span class="p">,</span> <span class="n">y_test</span><span class="p">]</span> <span class="o">=</span> <span class="n">unpickle_objects</span><span class="p">(</span><span class="n">FOLDER_DATA</span> <span class="o">+</span> <span class="n">fname</span><span class="p">)</span>
     <span class="k">return</span> <span class="n">X_train</span><span class="p">,</span> <span class="n">y_train</span><span class="p">,</span> <span class="n">X_test</span><span class="p">,</span> <span class="n">y_test</span></div>
 
 <div class="viewcode-block" id="read_data_fddb_haar_npi_300"><a class="viewcode-back" href="../main_experimenter.html#main_experimenter.read_data_fddb_haar_npi_300">[docs]</a><span class="k">def</span> <span class="nf">read_data_fddb_haar_npi_300</span><span class="p">():</span> 
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Reads a data set named &#39;FDDB-HFs (100 NPI)&#39; (i.e. FDDB described by Haar-like features (HFs) generated from grayscale versions, 300 negatives sampled per image) and returns a tuple of four data arrays: ``X_train``, ``y_train``, ``X_test``, ``y_test``.&quot;&quot;&quot;</span>
     <span class="n">fname</span> <span class="o">=</span> <span class="s2">&quot;data_face_n_18225_S_5_P_5_NPI_300_SEED_0.bin&quot;</span>
     <span class="p">[</span><span class="n">X_train</span><span class="p">,</span> <span class="n">y_train</span><span class="p">,</span> <span class="n">X_test</span><span class="p">,</span> <span class="n">y_test</span><span class="p">]</span> <span class="o">=</span> <span class="n">unpickle_objects</span><span class="p">(</span><span class="n">FOLDER_DATA</span> <span class="o">+</span> <span class="n">fname</span><span class="p">)</span>
     <span class="k">return</span> <span class="n">X_train</span><span class="p">,</span> <span class="n">y_train</span><span class="p">,</span> <span class="n">X_test</span><span class="p">,</span> <span class="n">y_test</span></div>
 
 <div class="viewcode-block" id="read_data_hagrid_haar_npi_10"><a class="viewcode-back" href="../main_experimenter.html#main_experimenter.read_data_hagrid_haar_npi_10">[docs]</a><span class="k">def</span> <span class="nf">read_data_hagrid_haar_npi_10</span><span class="p">():</span> 
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Reads a data set named &#39;HaGRID-HFs (10 NPI)&#39; (i.e. HaGRID described by Haar-like features (HFs) generated from grayscale versions, 10 negatives sampled per image) and returns a tuple of four data arrays: ``X_train``, ``y_train``, ``X_test``, ``y_test``.&quot;&quot;&quot;</span>    
     <span class="n">fname</span> <span class="o">=</span> <span class="s2">&quot;data_hand_n_18225_S_5_P_5_NPI_10_SEED_0.bin&quot;</span>
     <span class="p">[</span><span class="n">X_train</span><span class="p">,</span> <span class="n">y_train</span><span class="p">,</span> <span class="n">X_test</span><span class="p">,</span> <span class="n">y_test</span><span class="p">]</span> <span class="o">=</span> <span class="n">unpickle_objects</span><span class="p">(</span><span class="n">FOLDER_DATA</span> <span class="o">+</span> <span class="n">fname</span><span class="p">)</span>
     <span class="k">return</span> <span class="n">X_train</span><span class="p">,</span> <span class="n">y_train</span><span class="p">,</span> <span class="n">X_test</span><span class="p">,</span> <span class="n">y_test</span></div>
 
-<div class="viewcode-block" id="read_data_hagrid_haar_npi_30"><a class="viewcode-back" href="../main_experimenter.html#main_experimenter.read_data_hagrid_haar_npi_30">[docs]</a><span class="k">def</span> <span class="nf">read_data_hagrid_haar_npi_30</span><span class="p">():</span> 
+<div class="viewcode-block" id="read_data_hagrid_haar_npi_30"><a class="viewcode-back" href="../main_experimenter.html#main_experimenter.read_data_hagrid_haar_npi_30">[docs]</a><span class="k">def</span> <span class="nf">read_data_hagrid_haar_npi_30</span><span class="p">():</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Reads a data set named &#39;HaGRID-HFs (30 NPI)&#39; (i.e. HaGRID described by Haar-like features (HFs) generated from grayscale versions, 30 negatives sampled per image) and returns a tuple of four data arrays: ``X_train``, ``y_train``, ``X_test``, ``y_test``.&quot;&quot;&quot;</span> 
     <span class="n">fname</span> <span class="o">=</span> <span class="s2">&quot;data_hand_n_18225_S_5_P_5_NPI_30_SEED_0.bin&quot;</span>
     <span class="p">[</span><span class="n">X_train</span><span class="p">,</span> <span class="n">y_train</span><span class="p">,</span> <span class="n">X_test</span><span class="p">,</span> <span class="n">y_test</span><span class="p">]</span> <span class="o">=</span> <span class="n">unpickle_objects</span><span class="p">(</span><span class="n">FOLDER_DATA</span> <span class="o">+</span> <span class="n">fname</span><span class="p">)</span>
     <span class="k">return</span> <span class="n">X_train</span><span class="p">,</span> <span class="n">y_train</span><span class="p">,</span> <span class="n">X_test</span><span class="p">,</span> <span class="n">y_test</span>    </div>
@@ -268,6 +262,7 @@
                                  <span class="n">Ts</span><span class="o">=</span><span class="n">TS</span><span class="p">,</span> <span class="n">Bs</span><span class="o">=</span><span class="n">BS</span><span class="p">,</span> <span class="n">seed</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> 
                                  <span class="n">plots</span><span class="o">=</span><span class="n">PLOTS</span><span class="p">,</span> <span class="n">plots_arg_name</span><span class="o">=</span><span class="n">PLOTS_ARG_NAME</span><span class="p">,</span> <span class="n">plots_values_names</span><span class="o">=</span><span class="n">PLOTS_VALUES_NAMES</span><span class="p">,</span>
                                  <span class="n">cpu_props</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">gpu_props</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Main function (called via CLI) performing batch experiments on random data for given settings.&quot;&quot;&quot;</span>
     <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;EXPERIMENTER FOR RANDOM DATA...&quot;</span><span class="p">)</span>
     <span class="n">hash_str</span> <span class="o">=</span> <span class="n">experiment_hash_str</span><span class="p">(</span><span class="s2">&quot;random&quot;</span><span class="p">,</span> <span class="nb">locals</span><span class="p">())</span>
     <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;[experiment hash string: </span><span class="si">{</span><span class="n">hash_str</span><span class="si">}</span><span class="s2">]&quot;</span><span class="p">)</span>    
@@ -407,6 +402,7 @@
                                <span class="n">Ts</span><span class="o">=</span><span class="n">TS</span><span class="p">,</span> <span class="n">Bs</span><span class="o">=</span><span class="n">BS</span><span class="p">,</span> <span class="n">seed</span><span class="o">=</span><span class="n">SEED</span><span class="p">,</span> 
                                <span class="n">plots</span><span class="o">=</span><span class="n">PLOTS</span><span class="p">,</span> <span class="n">plots_arg_name</span><span class="o">=</span><span class="n">PLOTS_ARG_NAME</span><span class="p">,</span> <span class="n">plots_values_names</span><span class="o">=</span><span class="n">PLOTS_VALUES_NAMES</span><span class="p">,</span>
                                <span class="n">cpu_props</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">gpu_props</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Main function (called via CLI) performing batch experiments on real data for given settings.&quot;&quot;&quot;</span>    
     <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;EXPERIMENTER FOR REAL DATA...&quot;</span><span class="p">)</span>    
     <span class="n">hash_str</span> <span class="o">=</span> <span class="n">experiment_hash_str</span><span class="p">(</span><span class="s2">&quot;real&quot;</span><span class="p">,</span> <span class="nb">locals</span><span class="p">())</span>
     <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;[experiment hash string: </span><span class="si">{</span><span class="n">hash_str</span><span class="si">}</span><span class="s2">]&quot;</span><span class="p">)</span>
@@ -542,15 +538,19 @@
             <span class="n">plt</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>       </div>
             
 <div class="viewcode-block" id="str_to_dtype"><a class="viewcode-back" href="../main_experimenter.html#main_experimenter.str_to_dtype">[docs]</a><span class="k">def</span> <span class="nf">str_to_dtype</span><span class="p">(</span><span class="n">s</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Utility function for ``argparse.ArgumentParser`` (see ``parse_args`` function) meant to return a correct ``dtype`` for a short string that represents it e.g. ``np.int8`` or ``np.float32``.&quot;&quot;&quot;</span>
     <span class="k">return</span> <span class="nb">eval</span><span class="p">(</span><span class="n">s</span><span class="p">)</span></div>
 
 <div class="viewcode-block" id="str_to_tuple"><a class="viewcode-back" href="../main_experimenter.html#main_experimenter.str_to_tuple">[docs]</a><span class="k">def</span> <span class="nf">str_to_tuple</span><span class="p">(</span><span class="n">s</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Utility function for ``argparse.ArgumentParser`` (see ``parse_args`` function) meant to return a tuple for a string that represents it.&quot;&quot;&quot;</span>
     <span class="k">return</span> <span class="nb">eval</span><span class="p">(</span><span class="n">s</span><span class="p">)</span></div>
 
 <div class="viewcode-block" id="str_to_bool"><a class="viewcode-back" href="../main_experimenter.html#main_experimenter.str_to_bool">[docs]</a><span class="k">def</span> <span class="nf">str_to_bool</span><span class="p">(</span><span class="n">s</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Utility function for ``argparse.ArgumentParser`` (see ``parse_args`` function) meant to return a boolean value for a string that represents it (``False``, ``True`` or also ``0``, ``1``).&quot;&quot;&quot;</span>
     <span class="k">return</span> <span class="nb">bool</span><span class="p">(</span><span class="nb">eval</span><span class="p">(</span><span class="n">s</span><span class="p">))</span></div>
             
 <div class="viewcode-block" id="parse_args"><a class="viewcode-back" href="../main_experimenter.html#main_experimenter.parse_args">[docs]</a><span class="k">def</span> <span class="nf">parse_args</span><span class="p">():</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Returns a dictionary of arguments specified by user from CLI.&quot;&quot;&quot;</span>
     <span class="n">parser</span> <span class="o">=</span> <span class="n">argparse</span><span class="o">.</span><span class="n">ArgumentParser</span><span class="p">()</span>
     <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s2">&quot;-cf&quot;</span><span class="p">,</span> <span class="s2">&quot;--CLFS_FLAGS&quot;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="n">str_to_bool</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="n">CLFS_FLAGS</span><span class="p">,</span> <span class="n">nargs</span><span class="o">=</span><span class="s2">&quot;+&quot;</span><span class="p">,</span> 
                         <span class="n">help</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;boolean flags (list) specifying which classifiers from the predefined set will participate in experiments (default: </span><span class="si">{</span><span class="n">CLFS_FLAGS</span><span class="si">}</span><span class="s2">) (attention: type them using spaces as separators)&quot;</span><span class="p">)</span>    

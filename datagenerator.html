@@ -47,7 +47,10 @@
               <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
 <ul class="current">
 <li class="toctree-l1 current"><a class="reference internal" href="modules.html">src</a><ul class="current">
-<li class="toctree-l2 current"><a class="current reference internal" href="#">datagenerator module</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">datagenerator module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#link-to-project-repository">Link to project repository</a></li>
+</ul>
+</li>
 <li class="toctree-l2"><a class="reference internal" href="frbb.html">frbb module</a></li>
 <li class="toctree-l2"><a class="reference internal" href="haar.html">haar module</a></li>
 <li class="toctree-l2"><a class="reference internal" href="main_detector.html">main_detector module</a></li>
@@ -84,31 +87,45 @@
              
   <section id="module-datagenerator">
 <span id="datagenerator-module"></span><h1>datagenerator module<a class="headerlink" href="#module-datagenerator" title="Permalink to this headline"></a></h1>
+<p>Auxiliary module with functions processing image data bases (e.g. FDDB, HaGRID) and generating Haar-like features (HFs) for them.</p>
+<section id="link-to-project-repository">
+<h2>Link to project repository<a class="headerlink" href="#link-to-project-repository" title="Permalink to this headline"></a></h2>
+<p><a class="reference external" href="https://github.com/pklesk/fast_rboost_bins">https://github.com/pklesk/fast_rboost_bins</a></p>
 <dl class="py function">
 <dt class="sig sig-object py" id="datagenerator.fddb_data_to_haar">
 <span class="sig-prename descclassname"><span class="pre">datagenerator.</span></span><span class="sig-name descname"><span class="pre">fddb_data_to_haar</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">hcoords</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">negs_per_img</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">seed</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">verbose</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/datagenerator.html#fddb_data_to_haar"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#datagenerator.fddb_data_to_haar" title="Permalink to this definition"></a></dt>
-<dd></dd></dl>
+<dd><p>Processes folds of annotated images in FDDB in order to generate Haar-like features (HFs) for selected image patches and to produce the final output data set.
+Returns a tuple of four data arrays: <code class="docutils literal notranslate"><span class="pre">X_train</span></code>, <code class="docutils literal notranslate"><span class="pre">y_train</span></code>, <code class="docutils literal notranslate"><span class="pre">X_test</span></code>, <code class="docutils literal notranslate"><span class="pre">y_test</span></code>.</p>
+</dd></dl>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="datagenerator.fddb_data_to_haar_single_fold">
 <span class="sig-prename descclassname"><span class="pre">datagenerator.</span></span><span class="sig-name descname"><span class="pre">fddb_data_to_haar_single_fold</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">fddb_root</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fold_name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">hcoords</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">negs_per_img</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">seed</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">verbose</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/datagenerator.html#fddb_data_to_haar_single_fold"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#datagenerator.fddb_data_to_haar_single_fold" title="Permalink to this definition"></a></dt>
-<dd></dd></dl>
+<dd><p>Processes a single fold in FDDB. Called from within <code class="docutils literal notranslate"><span class="pre">fddb_data_to_haar</span></code> function.</p>
+</dd></dl>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="datagenerator.hagrid_data_to_haar">
 <span class="sig-prename descclassname"><span class="pre">datagenerator.</span></span><span class="sig-name descname"><span class="pre">hagrid_data_to_haar</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">hcoords</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">negs_per_img</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">train_ratio</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.75</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">seed</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">verbose</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/datagenerator.html#hagrid_data_to_haar"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#datagenerator.hagrid_data_to_haar" title="Permalink to this definition"></a></dt>
-<dd></dd></dl>
+<dd><p>Processes annotated images in HaGRID database in order to generate Haar-like features (HFs) for selected image patches and to produce the final output data set.
+Returns a tuple of four data arrays: <code class="docutils literal notranslate"><span class="pre">X_train</span></code>, <code class="docutils literal notranslate"><span class="pre">y_train</span></code>, <code class="docutils literal notranslate"><span class="pre">X_test</span></code>, <code class="docutils literal notranslate"><span class="pre">y_test</span></code>.</p>
+</dd></dl>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="datagenerator.synthetic_data_to_haar">
 <span class="sig-prename descclassname"><span class="pre">datagenerator.</span></span><span class="sig-name descname"><span class="pre">synthetic_data_to_haar</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">folder_backgrounds</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">folder_targets</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">hcoords</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">data_augmentation</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">positives_to_generate</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">negs_per_img</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">seed</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">verbose</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rotation_range</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.39269908169872414</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">train_ratio</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.75</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">force_random_rotations</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">force_random_horizontal_flips</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/datagenerator.html#synthetic_data_to_haar"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#datagenerator.synthetic_data_to_haar" title="Permalink to this definition"></a></dt>
-<dd></dd></dl>
+<dd><p>Produces a synthetic data set given a folder of background images and a folder with example target objects.  
+Returns a tuple of four data arrays: <code class="docutils literal notranslate"><span class="pre">X_train</span></code>, <code class="docutils literal notranslate"><span class="pre">y_train</span></code>, <code class="docutils literal notranslate"><span class="pre">X_test</span></code>, <code class="docutils literal notranslate"><span class="pre">y_test</span></code>.
+Note: not used in the current project version.</p>
+</dd></dl>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="datagenerator.rotate_bound">
 <span class="sig-prename descclassname"><span class="pre">datagenerator.</span></span><span class="sig-name descname"><span class="pre">rotate_bound</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">image</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">angle</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/datagenerator.html#rotate_bound"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#datagenerator.rotate_bound" title="Permalink to this definition"></a></dt>
-<dd></dd></dl>
+<dd><p>Rotates an image (actually an image patch) by wanted angle, producing an output image with suitably enlarged bounds.</p>
+</dd></dl>
 
+</section>
 </section>
 
 

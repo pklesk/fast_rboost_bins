@@ -53,6 +53,7 @@
 <li class="toctree-l2"><a class="reference internal" href="main_detector.html">main_detector module</a></li>
 <li class="toctree-l2 current"><a class="current reference internal" href="#">main_experimenter module</a><ul>
 <li class="toctree-l3"><a class="reference internal" href="#dependencies">Dependencies</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#link-to-project-repository">Link to project repository</a></li>
 </ul>
 </li>
 <li class="toctree-l2"><a class="reference internal" href="utils.html">utils module</a></li>
@@ -87,8 +88,8 @@
              
   <section id="module-main_experimenter">
 <span id="main-experimenter-module"></span><h1>main_experimenter module<a class="headerlink" href="#module-main_experimenter" title="Permalink to this headline"></a></h1>
-<p>Auxiliary script with command-line user interface for conducting experiments on classifiers related to this project: 
-<code class="docutils literal notranslate"><span class="pre">FastRealBoostBins</span></code> (two variants) against other ensemble classifiers from <code class="docutils literal notranslate"><span class="pre">sklearn.ensemble</span></code>.</p>
+<p>Auxiliary script with command-line user interface for conducting experiments on ensemble classifiers related to this project: 
+<code class="docutils literal notranslate"><span class="pre">FastRealBoostBins</span></code> from <a class="reference internal" href="frbb.html"><span class="doc">frbb module</span></a> and other from <code class="docutils literal notranslate"><span class="pre">sklearn.ensemble</span></code>.</p>
 <p>For help on the script arguments execute:</p>
 <div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="go">python main_experimenter.py -h   </span>
 </pre></div>
@@ -97,100 +98,111 @@
 <section id="dependencies">
 <h2>Dependencies<a class="headerlink" href="#dependencies" title="Permalink to this headline"></a></h2>
 <ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">frbb</span></code>: required to import the class <code class="docutils literal notranslate"><span class="pre">FastRealBoostBins</span></code>.</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">numpy</span></code>, <code class="docutils literal notranslate"><span class="pre">math</span></code>: required for mathematical computations.</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">numba</span></code>: required for just-in-time compilation of crucial computational functions and CUDA kernels (decorated by <code class="docutils literal notranslate"><span class="pre">&#64;jit</span></code> and <code class="docutils literal notranslate"><span class="pre">&#64;cuda.jit</span></code> imported from <code class="docutils literal notranslate"><span class="pre">numba</span></code>).</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">sklearn</span></code>: required for inheritence and other sklearn API purposes,</p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">colorama</span></code>: required CLI purposes.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">colorama</span></code>: required for CLI purposes.</p></li>
 </ul>
+</section>
+<section id="link-to-project-repository">
+<h2>Link to project repository<a class="headerlink" href="#link-to-project-repository" title="Permalink to this headline"></a></h2>
+<p><a class="reference external" href="https://github.com/pklesk/fast_rboost_bins">https://github.com/pklesk/fast_rboost_bins</a></p>
 <dl class="py function">
 <dt class="sig sig-object py" id="main_experimenter.clean_name">
 <span class="sig-prename descclassname"><span class="pre">main_experimenter.</span></span><span class="sig-name descname"><span class="pre">clean_name</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/main_experimenter.html#clean_name"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#main_experimenter.clean_name" title="Permalink to this definition"></a></dt>
-<dd></dd></dl>
+<dd><p>Cleans a name of a classifier, provided by <code class="docutils literal notranslate"><span class="pre">str(clf)</span></code>, getting rid of special characters <code class="docutils literal notranslate"><span class="pre">\n</span></code> and <code class="docutils literal notranslate"><span class="pre">\t</span></code>, and replacing space sequences by a single space.</p>
+</dd></dl>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="main_experimenter.hash_function">
 <span class="sig-prename descclassname"><span class="pre">main_experimenter.</span></span><span class="sig-name descname"><span class="pre">hash_function</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">s</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/main_experimenter.html#hash_function"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#main_experimenter.hash_function" title="Permalink to this definition"></a></dt>
-<dd></dd></dl>
+<dd><p>Returns a hash code (integer) for given string as a base 31 expansion.</p>
+</dd></dl>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="main_experimenter.experiment_hash_str">
 <span class="sig-prename descclassname"><span class="pre">main_experimenter.</span></span><span class="sig-name descname"><span class="pre">experiment_hash_str</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">kind</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'real'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">params</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">digits</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">10</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/main_experimenter.html#experiment_hash_str"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#main_experimenter.experiment_hash_str" title="Permalink to this definition"></a></dt>
-<dd></dd></dl>
-
-<dl class="py function">
-<dt class="sig sig-object py" id="main_experimenter.list_to_str">
-<span class="sig-prename descclassname"><span class="pre">main_experimenter.</span></span><span class="sig-name descname"><span class="pre">list_to_str</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">l</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/main_experimenter.html#list_to_str"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#main_experimenter.list_to_str" title="Permalink to this definition"></a></dt>
-<dd></dd></dl>
-
-<dl class="py function">
-<dt class="sig sig-object py" id="main_experimenter.unpickle_objects">
-<span class="sig-prename descclassname"><span class="pre">main_experimenter.</span></span><span class="sig-name descname"><span class="pre">unpickle_objects</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">fname</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/main_experimenter.html#unpickle_objects"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#main_experimenter.unpickle_objects" title="Permalink to this definition"></a></dt>
-<dd></dd></dl>
+<dd><p>Returns a hash string for an experiment, based on its kind, parameters and current date (the actual hash code part defaults to 10 digits).</p>
+</dd></dl>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="main_experimenter.read_data_fddb_patches">
 <span class="sig-prename descclassname"><span class="pre">main_experimenter.</span></span><span class="sig-name descname"><span class="pre">read_data_fddb_patches</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/main_experimenter.html#read_data_fddb_patches"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#main_experimenter.read_data_fddb_patches" title="Permalink to this definition"></a></dt>
-<dd></dd></dl>
+<dd><p>Reads a data set named ‘FDDB-PATCHES (3NPI)’ (i.e. 32x32 patches from FDDB, 3 negatives sampled per image) and returns a tuple of four data arrays: <code class="docutils literal notranslate"><span class="pre">X_train</span></code>, <code class="docutils literal notranslate"><span class="pre">y_train</span></code>, <code class="docutils literal notranslate"><span class="pre">X_test</span></code>, <code class="docutils literal notranslate"><span class="pre">y_test</span></code>.</p>
+</dd></dl>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="main_experimenter.read_data_cifar_10">
 <span class="sig-prename descclassname"><span class="pre">main_experimenter.</span></span><span class="sig-name descname"><span class="pre">read_data_cifar_10</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/main_experimenter.html#read_data_cifar_10"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#main_experimenter.read_data_cifar_10" title="Permalink to this definition"></a></dt>
-<dd></dd></dl>
+<dd><p>Reads a data set named ‘CIFAR-10 (AIRPLANE)’ (i.e. CIFAR-10 with the first class - airplane - treated as positives) and returns a tuple of four data arrays: <code class="docutils literal notranslate"><span class="pre">X_train</span></code>, <code class="docutils literal notranslate"><span class="pre">y_train</span></code>, <code class="docutils literal notranslate"><span class="pre">X_test</span></code>, <code class="docutils literal notranslate"><span class="pre">y_test</span></code>.</p>
+</dd></dl>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="main_experimenter.read_data_mnist_b">
 <span class="sig-prename descclassname"><span class="pre">main_experimenter.</span></span><span class="sig-name descname"><span class="pre">read_data_mnist_b</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">seed</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/main_experimenter.html#read_data_mnist_b"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#main_experimenter.read_data_mnist_b" title="Permalink to this definition"></a></dt>
-<dd></dd></dl>
+<dd><p>Reads a data set named ‘MNIST-B’ (i.e. MNIST with random backgrounds) and returns a tuple of four data arrays: <code class="docutils literal notranslate"><span class="pre">X_train</span></code>, <code class="docutils literal notranslate"><span class="pre">y_train</span></code>, <code class="docutils literal notranslate"><span class="pre">X_test</span></code>, <code class="docutils literal notranslate"><span class="pre">y_test</span></code>.</p>
+</dd></dl>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="main_experimenter.read_data_fddb_haar_npi_100">
 <span class="sig-prename descclassname"><span class="pre">main_experimenter.</span></span><span class="sig-name descname"><span class="pre">read_data_fddb_haar_npi_100</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/main_experimenter.html#read_data_fddb_haar_npi_100"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#main_experimenter.read_data_fddb_haar_npi_100" title="Permalink to this definition"></a></dt>
-<dd></dd></dl>
+<dd><p>Reads a data set named ‘FDDB-HFs (100 NPI)’ (i.e. FDDB described by Haar-like features (HFs) generated from grayscale versions, 100 negatives sampled per image) and returns a tuple of four data arrays: <code class="docutils literal notranslate"><span class="pre">X_train</span></code>, <code class="docutils literal notranslate"><span class="pre">y_train</span></code>, <code class="docutils literal notranslate"><span class="pre">X_test</span></code>, <code class="docutils literal notranslate"><span class="pre">y_test</span></code>.</p>
+</dd></dl>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="main_experimenter.read_data_fddb_haar_npi_300">
 <span class="sig-prename descclassname"><span class="pre">main_experimenter.</span></span><span class="sig-name descname"><span class="pre">read_data_fddb_haar_npi_300</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/main_experimenter.html#read_data_fddb_haar_npi_300"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#main_experimenter.read_data_fddb_haar_npi_300" title="Permalink to this definition"></a></dt>
-<dd></dd></dl>
+<dd><p>Reads a data set named ‘FDDB-HFs (100 NPI)’ (i.e. FDDB described by Haar-like features (HFs) generated from grayscale versions, 300 negatives sampled per image) and returns a tuple of four data arrays: <code class="docutils literal notranslate"><span class="pre">X_train</span></code>, <code class="docutils literal notranslate"><span class="pre">y_train</span></code>, <code class="docutils literal notranslate"><span class="pre">X_test</span></code>, <code class="docutils literal notranslate"><span class="pre">y_test</span></code>.</p>
+</dd></dl>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="main_experimenter.read_data_hagrid_haar_npi_10">
 <span class="sig-prename descclassname"><span class="pre">main_experimenter.</span></span><span class="sig-name descname"><span class="pre">read_data_hagrid_haar_npi_10</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/main_experimenter.html#read_data_hagrid_haar_npi_10"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#main_experimenter.read_data_hagrid_haar_npi_10" title="Permalink to this definition"></a></dt>
-<dd></dd></dl>
+<dd><p>Reads a data set named ‘HaGRID-HFs (10 NPI)’ (i.e. HaGRID described by Haar-like features (HFs) generated from grayscale versions, 10 negatives sampled per image) and returns a tuple of four data arrays: <code class="docutils literal notranslate"><span class="pre">X_train</span></code>, <code class="docutils literal notranslate"><span class="pre">y_train</span></code>, <code class="docutils literal notranslate"><span class="pre">X_test</span></code>, <code class="docutils literal notranslate"><span class="pre">y_test</span></code>.</p>
+</dd></dl>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="main_experimenter.read_data_hagrid_haar_npi_30">
 <span class="sig-prename descclassname"><span class="pre">main_experimenter.</span></span><span class="sig-name descname"><span class="pre">read_data_hagrid_haar_npi_30</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/main_experimenter.html#read_data_hagrid_haar_npi_30"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#main_experimenter.read_data_hagrid_haar_npi_30" title="Permalink to this definition"></a></dt>
-<dd></dd></dl>
+<dd><p>Reads a data set named ‘HaGRID-HFs (30 NPI)’ (i.e. HaGRID described by Haar-like features (HFs) generated from grayscale versions, 30 negatives sampled per image) and returns a tuple of four data arrays: <code class="docutils literal notranslate"><span class="pre">X_train</span></code>, <code class="docutils literal notranslate"><span class="pre">y_train</span></code>, <code class="docutils literal notranslate"><span class="pre">X_test</span></code>, <code class="docutils literal notranslate"><span class="pre">y_test</span></code>.</p>
+</dd></dl>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="main_experimenter.experimenter_for_random_data">
 <span class="sig-prename descclassname"><span class="pre">main_experimenter.</span></span><span class="sig-name descname"><span class="pre">experimenter_for_random_data</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="pre">dtype=&lt;class</span> <span class="pre">'numpy.int8'&gt;,</span> <span class="pre">nmm_magn_orders=[(3,</span> <span class="pre">4,</span> <span class="pre">4)],</span> <span class="pre">clfs_defs=[(&lt;class</span> <span class="pre">'sklearn.ensemble._weight_boosting.AdaBoostClassifier'&gt;,</span> <span class="pre">{'algorithm':</span> <span class="pre">'SAMME.R'},</span> <span class="pre">{'color':</span> <span class="pre">'black'}),</span> <span class="pre">(&lt;class</span> <span class="pre">'sklearn.ensemble._gb.GradientBoostingClassifier'&gt;,</span> <span class="pre">{'max_depth':</span> <span class="pre">1},</span> <span class="pre">{'color':</span> <span class="pre">'green'}),</span> <span class="pre">(&lt;class</span> <span class="pre">'sklearn.ensemble._hist_gradient_boosting.gradient_boosting.HistGradientBoostingClassifier'&gt;,</span> <span class="pre">{'max_depth':</span> <span class="pre">1,</span> <span class="pre">'early_stopping':</span> <span class="pre">False},</span> <span class="pre">{'color':</span> <span class="pre">'orange'}),</span> <span class="pre">(&lt;class</span> <span class="pre">'frbb.FastRealBoostBins'&gt;,</span> <span class="pre">{'fit_mode':</span> <span class="pre">'numba_jit',</span> <span class="pre">'decision_function_mode':</span> <span class="pre">'numba_jit'},</span> <span class="pre">{'color':</span> <span class="pre">'blue'}),</span> <span class="pre">(&lt;class</span> <span class="pre">'frbb.FastRealBoostBins'&gt;,</span> <span class="pre">{'fit_mode':</span> <span class="pre">'numba_cuda',</span> <span class="pre">'decision_function_mode':</span> <span class="pre">'numba_cuda'},</span> <span class="pre">{'color':</span> <span class="pre">'red'})],</span> <span class="pre">clfs_flags=[True,</span> <span class="pre">False,</span> <span class="pre">False,</span> <span class="pre">True,</span> <span class="pre">True],</span> <span class="pre">Ts=[16,</span> <span class="pre">32,</span> <span class="pre">64],</span> <span class="pre">Bs=[8],</span> <span class="pre">seed=0,</span> <span class="pre">plots=False,</span> <span class="pre">plots_arg_name='T',</span> <span class="pre">plots_values_names=['acc_test',</span> <span class="pre">'acc_train',</span> <span class="pre">'time_fit',</span> <span class="pre">'time_predict_train',</span> <span class="pre">'time_predict_test'],</span> <span class="pre">cpu_props=None,</span> <span class="pre">gpu_props=None</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/main_experimenter.html#experimenter_for_random_data"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#main_experimenter.experimenter_for_random_data" title="Permalink to this definition"></a></dt>
-<dd></dd></dl>
+<dd><p>Main function (called via CLI) performing batch experiments on random data for given settings.</p>
+</dd></dl>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="main_experimenter.experimenter_for_real_data">
 <span class="sig-prename descclassname"><span class="pre">main_experimenter.</span></span><span class="sig-name descname"><span class="pre">experimenter_for_real_data</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="pre">real_data_defs=[('fddb-patches',</span> <span class="pre">'read_data_fddb_patches',</span> <span class="pre">'FDDB-PATCHES</span> <span class="pre">(3NPI)'),</span> <span class="pre">('cifar-10',</span> <span class="pre">'read_data_cifar_10',</span> <span class="pre">'CIFAR-10</span> <span class="pre">(AIRPLANE)'),</span> <span class="pre">('mnist-b',</span> <span class="pre">'read_data_mnist_b',</span> <span class="pre">'MNIST-B</span> <span class="pre">(DIGIT</span> <span class="pre">0)'),</span> <span class="pre">('fddb-hfs-100',</span> <span class="pre">'read_data_fddb_haar_npi_100',</span> <span class="pre">'FDDB-HFs</span> <span class="pre">(100NPI)'),</span> <span class="pre">('fddb-hfs-300',</span> <span class="pre">'read_data_fddb_haar_npi_300',</span> <span class="pre">'FDDB-HFs</span> <span class="pre">(300NPI)'),</span> <span class="pre">('hagrid-hfs-10',</span> <span class="pre">'read_data_hagrid_haar_npi_10',</span> <span class="pre">'HaGRID-HFs</span> <span class="pre">(PALM,</span> <span class="pre">10NPI)'),</span> <span class="pre">('hagrid-hfs-30',</span> <span class="pre">'read_data_hagrid_haar_npi_30',</span> <span class="pre">'HaGRID-HFs</span> <span class="pre">(PALM,</span> <span class="pre">30NPI)')],</span> <span class="pre">real_data_flags=[True,</span> <span class="pre">False,</span> <span class="pre">False,</span> <span class="pre">False,</span> <span class="pre">False,</span> <span class="pre">False,</span> <span class="pre">False],</span> <span class="pre">clfs_defs=[(&lt;class</span> <span class="pre">'sklearn.ensemble._weight_boosting.AdaBoostClassifier'&gt;,</span> <span class="pre">{'algorithm':</span> <span class="pre">'SAMME.R'},</span> <span class="pre">{'color':</span> <span class="pre">'black'}),</span> <span class="pre">(&lt;class</span> <span class="pre">'sklearn.ensemble._gb.GradientBoostingClassifier'&gt;,</span> <span class="pre">{'max_depth':</span> <span class="pre">1},</span> <span class="pre">{'color':</span> <span class="pre">'green'}),</span> <span class="pre">(&lt;class</span> <span class="pre">'sklearn.ensemble._hist_gradient_boosting.gradient_boosting.HistGradientBoostingClassifier'&gt;,</span> <span class="pre">{'max_depth':</span> <span class="pre">1,</span> <span class="pre">'early_stopping':</span> <span class="pre">False},</span> <span class="pre">{'color':</span> <span class="pre">'orange'}),</span> <span class="pre">(&lt;class</span> <span class="pre">'frbb.FastRealBoostBins'&gt;,</span> <span class="pre">{'fit_mode':</span> <span class="pre">'numba_jit',</span> <span class="pre">'decision_function_mode':</span> <span class="pre">'numba_jit'},</span> <span class="pre">{'color':</span> <span class="pre">'blue'}),</span> <span class="pre">(&lt;class</span> <span class="pre">'frbb.FastRealBoostBins'&gt;,</span> <span class="pre">{'fit_mode':</span> <span class="pre">'numba_cuda',</span> <span class="pre">'decision_function_mode':</span> <span class="pre">'numba_cuda'},</span> <span class="pre">{'color':</span> <span class="pre">'red'})],</span> <span class="pre">clfs_flags=[True,</span> <span class="pre">False,</span> <span class="pre">False,</span> <span class="pre">True,</span> <span class="pre">True],</span> <span class="pre">Ts=[16,</span> <span class="pre">32,</span> <span class="pre">64],</span> <span class="pre">Bs=[8],</span> <span class="pre">seed=0,</span> <span class="pre">plots=False,</span> <span class="pre">plots_arg_name='T',</span> <span class="pre">plots_values_names=['acc_test',</span> <span class="pre">'acc_train',</span> <span class="pre">'time_fit',</span> <span class="pre">'time_predict_train',</span> <span class="pre">'time_predict_test'],</span> <span class="pre">cpu_props=None,</span> <span class="pre">gpu_props=None</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/main_experimenter.html#experimenter_for_real_data"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#main_experimenter.experimenter_for_real_data" title="Permalink to this definition"></a></dt>
-<dd></dd></dl>
+<dd><p>Main function (called via CLI) performing batch experiments on real data for given settings.</p>
+</dd></dl>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="main_experimenter.str_to_dtype">
 <span class="sig-prename descclassname"><span class="pre">main_experimenter.</span></span><span class="sig-name descname"><span class="pre">str_to_dtype</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">s</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/main_experimenter.html#str_to_dtype"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#main_experimenter.str_to_dtype" title="Permalink to this definition"></a></dt>
-<dd></dd></dl>
+<dd><p>Utility function for <code class="docutils literal notranslate"><span class="pre">argparse.ArgumentParser</span></code> (see <code class="docutils literal notranslate"><span class="pre">parse_args</span></code> function) meant to return a correct <code class="docutils literal notranslate"><span class="pre">dtype</span></code> for a short string that represents it e.g. <code class="docutils literal notranslate"><span class="pre">np.int8</span></code> or <code class="docutils literal notranslate"><span class="pre">np.float32</span></code>.</p>
+</dd></dl>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="main_experimenter.str_to_tuple">
 <span class="sig-prename descclassname"><span class="pre">main_experimenter.</span></span><span class="sig-name descname"><span class="pre">str_to_tuple</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">s</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/main_experimenter.html#str_to_tuple"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#main_experimenter.str_to_tuple" title="Permalink to this definition"></a></dt>
-<dd></dd></dl>
+<dd><p>Utility function for <code class="docutils literal notranslate"><span class="pre">argparse.ArgumentParser</span></code> (see <code class="docutils literal notranslate"><span class="pre">parse_args</span></code> function) meant to return a tuple for a string that represents it.</p>
+</dd></dl>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="main_experimenter.str_to_bool">
 <span class="sig-prename descclassname"><span class="pre">main_experimenter.</span></span><span class="sig-name descname"><span class="pre">str_to_bool</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">s</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/main_experimenter.html#str_to_bool"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#main_experimenter.str_to_bool" title="Permalink to this definition"></a></dt>
-<dd></dd></dl>
+<dd><p>Utility function for <code class="docutils literal notranslate"><span class="pre">argparse.ArgumentParser</span></code> (see <code class="docutils literal notranslate"><span class="pre">parse_args</span></code> function) meant to return a boolean value for a string that represents it (<code class="docutils literal notranslate"><span class="pre">False</span></code>, <code class="docutils literal notranslate"><span class="pre">True</span></code> or also <code class="docutils literal notranslate"><span class="pre">0</span></code>, <code class="docutils literal notranslate"><span class="pre">1</span></code>).</p>
+</dd></dl>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="main_experimenter.parse_args">
 <span class="sig-prename descclassname"><span class="pre">main_experimenter.</span></span><span class="sig-name descname"><span class="pre">parse_args</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/main_experimenter.html#parse_args"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#main_experimenter.parse_args" title="Permalink to this definition"></a></dt>
-<dd></dd></dl>
+<dd><p>Returns a dictionary of arguments specified by user from CLI.</p>
+</dd></dl>
 
 </section>
 </section>

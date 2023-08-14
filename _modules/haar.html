@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>haar &mdash; fast_rboost_bins 1.0.0 documentation</title>
+  <title>haar &mdash; fast_rboost_bins 0.9.4 documentation</title>
       <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
       <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
   <!--[if lt IE 9]>
@@ -30,6 +30,9 @@
           <a href="../index.html" class="icon icon-home">
             fast_rboost_bins
           </a>
+              <div class="version">
+                0.9.4
+              </div>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
     <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
@@ -68,7 +71,19 @@
            <div itemprop="articleBody">
              
   <h1>Source code for haar</h1><div class="highlight"><pre>
-<span></span><span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span></span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">Auxiliary module with utilities related to extraction of Haar-like features (HFs) for given parameterization.</span>
+
+<span class="sd">Documentation note: this documentation was built with `Sphinx` tool, which does not correctly process docstrings for CUDA kernel functions, </span>
+<span class="sd">i.e. functions decorated with ``@cuda.jit`` that produce ``numba.cuda.compiler.Dispatcher`` objects as outcomes. </span>
+<span class="sd">For actual docstrings associated with two functions ``ii_delta_numba_cuda`` and ``haar_features_multiple_windows_numba_cuda`` see the source code. </span>
+
+<span class="sd">Link to project repository</span>
+<span class="sd">--------------------------</span>
+<span class="sd">`https://github.com/pklesk/fast_rboost_bins &lt;https://github.com/pklesk/fast_rboost_bins&gt;`_ </span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
 <span class="kn">import</span> <span class="nn">cv2</span>
 <span class="kn">from</span> <span class="nn">numba</span> <span class="kn">import</span> <span class="n">cuda</span><span class="p">,</span> <span class="n">jit</span>
 <span class="kn">from</span> <span class="nn">numba</span> <span class="kn">import</span> <span class="n">void</span><span class="p">,</span> <span class="n">int16</span><span class="p">,</span> <span class="n">int32</span><span class="p">,</span> <span class="n">float32</span><span class="p">,</span> <span class="n">uint8</span>
@@ -100,10 +115,15 @@
 <span class="n">HEIGHT</span> <span class="o">=</span> <span class="mi">480</span> <span class="c1"># defualt height to which image or video frame scaled before further computations </span>
 
 <div class="viewcode-block" id="resize_image"><a class="viewcode-back" href="../haar.html#haar.resize_image">[docs]</a><span class="k">def</span> <span class="nf">resize_image</span><span class="p">(</span><span class="n">i</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Resizes an image to the globally predefined height.&quot;&quot;&quot;</span> 
     <span class="n">h</span><span class="p">,</span> <span class="n">w</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">i</span><span class="o">.</span><span class="n">shape</span>
     <span class="k">return</span> <span class="n">cv2</span><span class="o">.</span><span class="n">resize</span><span class="p">(</span><span class="n">i</span><span class="p">,</span> <span class="p">(</span><span class="nb">round</span><span class="p">(</span><span class="n">w</span> <span class="o">*</span> <span class="n">HEIGHT</span> <span class="o">/</span> <span class="n">h</span><span class="p">),</span> <span class="n">HEIGHT</span><span class="p">))</span></div>
 
 <div class="viewcode-block" id="haar_indexes"><a class="viewcode-back" href="../haar.html#haar.haar_indexes">[docs]</a><span class="k">def</span> <span class="nf">haar_indexes</span><span class="p">(</span><span class="n">s</span><span class="p">,</span> <span class="n">p</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Returns an array of multi-indexes defining HFs for a given ``s, p`` parameterization (``s`` - number of scaling variants along each dimension, ``p`` - constant defining the grid of anchoring points of size (2p - 1) x (2p - 1).</span>
+<span class="sd">    Each multi-index is a quintuplet ``t, s_j, s_k, p_j, p_k``, storing respectively: Haar template index, vertical scale index, horizontal scale index, vertical index on the grid, horizontal index on the grid.   </span>
+<span class="sd">    &quot;&quot;&quot;</span> 
     <span class="n">hinds</span> <span class="o">=</span> <span class="p">[]</span>
     <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">HAAR_TEMPLATES</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]):</span>
         <span class="k">for</span> <span class="n">s_j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">s</span><span class="p">):</span>
@@ -114,6 +134,7 @@
     <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">hinds</span><span class="p">)</span></div>
 
 <div class="viewcode-block" id="haar_coords"><a class="viewcode-back" href="../haar.html#haar.haar_coords">[docs]</a><span class="k">def</span> <span class="nf">haar_coords</span><span class="p">(</span><span class="n">s</span><span class="p">,</span> <span class="n">p</span><span class="p">,</span> <span class="n">hinds</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;For given parameterization and HFs multi-indexes (see ``haar_indexes`` function) returns an array of Cartesian coordinates normalized to a unit square: [0, 1] x [0, 1].&quot;&quot;&quot;</span>    
     <span class="n">hcoords</span> <span class="o">=</span> <span class="p">[]</span>
     <span class="k">for</span> <span class="n">t</span><span class="p">,</span> <span class="n">s_j</span><span class="p">,</span> <span class="n">s_k</span><span class="p">,</span> <span class="n">p_j</span><span class="p">,</span> <span class="n">p_k</span> <span class="ow">in</span> <span class="n">hinds</span><span class="p">:</span>
         <span class="n">f_h</span> <span class="o">=</span> <span class="n">FEATURE_MIN</span> <span class="o">+</span> <span class="n">s_j</span> <span class="o">*</span> <span class="p">(</span><span class="n">FEATURE_MAX</span> <span class="o">-</span> <span class="n">FEATURE_MIN</span><span class="p">)</span> <span class="o">/</span> <span class="p">(</span><span class="n">s</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span> <span class="k">if</span> <span class="n">s</span> <span class="o">&gt;</span> <span class="mi">1</span> <span class="k">else</span> <span class="n">FEATURE_MIN</span>
@@ -129,6 +150,7 @@
     <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">hcoords</span><span class="p">)</span></div>
 
 <div class="viewcode-block" id="integral_image_python"><a class="viewcode-back" href="../haar.html#haar.integral_image_python">[docs]</a><span class="k">def</span> <span class="nf">integral_image_python</span><span class="p">(</span><span class="n">i</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Computes an integral image for an input image using a pure Python code with loops (very slow, for comparison purposes only).&quot;&quot;&quot;</span>
     <span class="n">h</span><span class="p">,</span> <span class="n">w</span> <span class="o">=</span> <span class="n">i</span><span class="o">.</span><span class="n">shape</span>
     <span class="n">ii</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">i</span><span class="o">.</span><span class="n">shape</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">int32</span><span class="p">)</span>
     <span class="n">ii_row</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">w</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">int32</span><span class="p">)</span>
@@ -143,10 +165,12 @@
     <span class="k">return</span> <span class="n">ii</span></div>
 
 <div class="viewcode-block" id="integral_image_numpy"><a class="viewcode-back" href="../haar.html#haar.integral_image_numpy">[docs]</a><span class="k">def</span> <span class="nf">integral_image_numpy</span><span class="p">(</span><span class="n">i</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Computes an integral image for an input image using ``np.cumsum`` function (faster than ``integral_image_python`` but still slower than ``integral_image_numba_jit``).&quot;&quot;&quot;</span>
     <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">cumsum</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">cumsum</span><span class="p">(</span><span class="n">i</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">),</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span></div>
 
 <div class="viewcode-block" id="integral_image_numba_jit"><a class="viewcode-back" href="../haar.html#haar.integral_image_numba_jit">[docs]</a><span class="nd">@jit</span><span class="p">(</span><span class="n">int32</span><span class="p">[:,:](</span><span class="n">uint8</span><span class="p">[:,:]),</span> <span class="n">nopython</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">cache</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 <span class="k">def</span> <span class="nf">integral_image_numba_jit</span><span class="p">(</span><span class="n">i</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Computes an integral image for an input image using a ``numba.jit``-compiled function (faster than ``integral_image_python`` and ``integral_image_numba_jit``).&quot;&quot;&quot;</span>
     <span class="n">h</span><span class="p">,</span> <span class="n">w</span> <span class="o">=</span> <span class="n">i</span><span class="o">.</span><span class="n">shape</span>
     <span class="n">ii</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">i</span><span class="o">.</span><span class="n">shape</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">int32</span><span class="p">)</span>
     <span class="n">ii_row</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">w</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">int32</span><span class="p">)</span>
@@ -161,7 +185,8 @@
     <span class="k">return</span> <span class="n">ii</span></div>
 
 <div class="viewcode-block" id="ii_delta_numba_jit"><a class="viewcode-back" href="../haar.html#haar.ii_delta_numba_jit">[docs]</a><span class="nd">@jit</span><span class="p">(</span><span class="n">int32</span><span class="p">(</span><span class="n">int32</span><span class="p">[:,:],</span> <span class="n">int16</span><span class="p">,</span> <span class="n">int16</span><span class="p">,</span> <span class="n">int16</span><span class="p">,</span> <span class="n">int16</span><span class="p">),</span> <span class="n">nopython</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">cache</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-<span class="k">def</span> <span class="nf">ii_delta_numba_jit</span><span class="p">(</span><span class="n">ii</span><span class="p">,</span> <span class="n">j1</span><span class="p">,</span> <span class="n">k1</span><span class="p">,</span> <span class="n">j2</span><span class="p">,</span> <span class="n">k2</span><span class="p">):</span> 
+<span class="k">def</span> <span class="nf">ii_delta_numba_jit</span><span class="p">(</span><span class="n">ii</span><span class="p">,</span> <span class="n">j1</span><span class="p">,</span> <span class="n">k1</span><span class="p">,</span> <span class="n">j2</span><span class="p">,</span> <span class="n">k2</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Computes a growth (delta operator) of an integral image using a ``numba.jit``-compiled function.&quot;&quot;&quot;</span>
     <span class="n">delta</span> <span class="o">=</span> <span class="n">ii</span><span class="p">[</span><span class="n">j2</span><span class="p">,</span> <span class="n">k2</span><span class="p">]</span>
     <span class="k">if</span> <span class="n">j1</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span> 
         <span class="n">delta</span> <span class="o">-=</span> <span class="n">ii</span><span class="p">[</span><span class="n">j1</span> <span class="o">-</span> <span class="mi">1</span><span class="p">,</span> <span class="n">k2</span><span class="p">]</span>
@@ -171,9 +196,9 @@
         <span class="n">delta</span> <span class="o">+=</span> <span class="n">ii</span><span class="p">[</span><span class="n">j1</span> <span class="o">-</span> <span class="mi">1</span><span class="p">,</span> <span class="n">k1</span> <span class="o">-</span> <span class="mi">1</span><span class="p">]</span>
     <span class="k">return</span> <span class="n">delta</span></div>
 
-<span class="c1"># TODO check if this device function can be supported with specific types in decorator</span>
 <span class="nd">@cuda</span><span class="o">.</span><span class="n">jit</span><span class="p">(</span><span class="n">device</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-<span class="k">def</span> <span class="nf">ii_delta_numba_cuda</span><span class="p">(</span><span class="n">ii</span><span class="p">,</span> <span class="n">j1</span><span class="p">,</span> <span class="n">k1</span><span class="p">,</span> <span class="n">j2</span><span class="p">,</span> <span class="n">k2</span><span class="p">):</span> 
+<span class="k">def</span> <span class="nf">ii_delta_numba_cuda</span><span class="p">(</span><span class="n">ii</span><span class="p">,</span> <span class="n">j1</span><span class="p">,</span> <span class="n">k1</span><span class="p">,</span> <span class="n">j2</span><span class="p">,</span> <span class="n">k2</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Computes a growth (delta operator) of an integral image using a ``numba.cuda``-compiled function (device-side function).&quot;&quot;&quot;</span> 
     <span class="n">delta</span> <span class="o">=</span> <span class="n">ii</span><span class="p">[</span><span class="n">j2</span><span class="p">,</span> <span class="n">k2</span><span class="p">]</span>
     <span class="k">if</span> <span class="n">j1</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span> 
         <span class="n">delta</span> <span class="o">-=</span> <span class="n">ii</span><span class="p">[</span><span class="n">j1</span> <span class="o">-</span> <span class="mi">1</span><span class="p">,</span> <span class="n">k2</span><span class="p">]</span>
@@ -184,7 +209,8 @@
     <span class="k">return</span> <span class="n">delta</span>
 
 <div class="viewcode-block" id="haar_feature_numba_jit"><a class="viewcode-back" href="../haar.html#haar.haar_feature_numba_jit">[docs]</a><span class="nd">@jit</span><span class="p">(</span><span class="n">int16</span><span class="p">(</span><span class="n">int32</span><span class="p">[:,:],</span> <span class="n">int16</span><span class="p">,</span> <span class="n">int16</span><span class="p">,</span> <span class="n">int16</span><span class="p">[:,</span> <span class="p">:]),</span> <span class="n">nopython</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">cache</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-<span class="k">def</span> <span class="nf">haar_feature_numba_jit</span><span class="p">(</span><span class="n">ii</span><span class="p">,</span> <span class="n">j0</span><span class="p">,</span> <span class="n">k0</span><span class="p">,</span> <span class="n">shcoords_one_feature</span><span class="p">):</span> <span class="c1"># (j0, k0) - window top-left corner, shcoords - scaled coordinates (in pixels) of a single haar feature </span>
+<span class="k">def</span> <span class="nf">haar_feature_numba_jit</span><span class="p">(</span><span class="n">ii</span><span class="p">,</span> <span class="n">j0</span><span class="p">,</span> <span class="n">k0</span><span class="p">,</span> <span class="n">shcoords_one_feature</span><span class="p">):</span> <span class="c1"># (j0, k0) - window top-left corner, shcoords - scaled coordinates (in pixels) of a single haar feature</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Computes a single HF (given: integral image, window offset, and feature pixel coordinates) using a ``numba.jit``-compiled function.&quot;&quot;&quot;</span> 
     <span class="n">j</span><span class="p">,</span> <span class="n">k</span><span class="p">,</span> <span class="n">h</span><span class="p">,</span> <span class="n">w</span> <span class="o">=</span> <span class="n">shcoords_one_feature</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="c1"># whole feature background</span>
     <span class="n">j1</span> <span class="o">=</span> <span class="n">j0</span> <span class="o">+</span> <span class="n">j</span>
     <span class="n">k1</span> <span class="o">=</span> <span class="n">k0</span> <span class="o">+</span> <span class="n">k</span>
@@ -201,6 +227,7 @@
 
 <div class="viewcode-block" id="haar_features_one_window_numba_jit"><a class="viewcode-back" href="../haar.html#haar.haar_features_one_window_numba_jit">[docs]</a><span class="nd">@jit</span><span class="p">(</span><span class="n">int16</span><span class="p">[:](</span><span class="n">int32</span><span class="p">[:,</span> <span class="p">:],</span> <span class="n">int16</span><span class="p">,</span> <span class="n">int16</span><span class="p">,</span> <span class="n">int16</span><span class="p">[:,</span> <span class="p">:,</span> <span class="p">:],</span> <span class="n">int32</span><span class="p">,</span> <span class="n">int32</span><span class="p">[:]),</span> <span class="n">nopython</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">cache</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>        
 <span class="k">def</span> <span class="nf">haar_features_one_window_numba_jit</span><span class="p">(</span><span class="n">ii</span><span class="p">,</span> <span class="n">j0</span><span class="p">,</span> <span class="n">k0</span><span class="p">,</span> <span class="n">shcoords_one_window</span><span class="p">,</span> <span class="n">n</span><span class="p">,</span> <span class="n">features_indexes</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Computes a vector of HFs (given: integral image, window offset, pixel coordinates of all features, and indexes of selected features) using a ``numba.jit``-compiled function.&quot;&quot;&quot;</span>
     <span class="n">features</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">int16</span><span class="p">)</span>
     <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">features_indexes</span><span class="o">.</span><span class="n">size</span><span class="p">):</span>
         <span class="n">features</span><span class="p">[</span><span class="n">features_indexes</span><span class="p">[</span><span class="n">j</span><span class="p">]]</span> <span class="o">=</span> <span class="n">haar_feature_numba_jit</span><span class="p">(</span><span class="n">ii</span><span class="p">,</span> <span class="n">j0</span><span class="p">,</span> <span class="n">k0</span><span class="p">,</span> <span class="n">shcoords_one_window</span><span class="p">[</span><span class="n">j</span><span class="p">])</span>
@@ -208,6 +235,7 @@
 
 <div class="viewcode-block" id="haar_features_multiple_windows_numba_jit"><a class="viewcode-back" href="../haar.html#haar.haar_features_multiple_windows_numba_jit">[docs]</a><span class="nd">@jit</span><span class="p">(</span><span class="n">int16</span><span class="p">[:,</span> <span class="p">:](</span><span class="n">int32</span><span class="p">[:,</span> <span class="p">:],</span> <span class="n">int16</span><span class="p">[:,</span> <span class="p">:],</span> <span class="n">int16</span><span class="p">[:,</span> <span class="p">:,</span> <span class="p">:,</span> <span class="p">:],</span> <span class="n">int32</span><span class="p">,</span> <span class="n">int32</span><span class="p">[:]),</span> <span class="n">nopython</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">cache</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>        
 <span class="k">def</span> <span class="nf">haar_features_multiple_windows_numba_jit</span><span class="p">(</span><span class="n">ii</span><span class="p">,</span> <span class="n">windows</span><span class="p">,</span> <span class="n">shcoords_multiple_scales</span><span class="p">,</span> <span class="n">n</span><span class="p">,</span> <span class="n">features_indexes</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Computes a two-dimensional array of HFs for multiple windows (given: integral image, windows coordinates, pixel coordinates of all features in several scales, and indexes of selected features) using a ``numba.jit``-compiled function.&quot;&quot;&quot;</span>
     <span class="n">m</span> <span class="o">=</span> <span class="n">windows</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
     <span class="n">X</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">m</span><span class="p">,</span> <span class="n">n</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">int16</span><span class="p">)</span>
     <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">m</span><span class="p">):</span>        
@@ -216,7 +244,8 @@
     <span class="k">return</span> <span class="n">X</span></div>
         
 <span class="nd">@cuda</span><span class="o">.</span><span class="n">jit</span><span class="p">(</span><span class="n">void</span><span class="p">(</span><span class="n">int32</span><span class="p">[:,</span> <span class="p">:],</span> <span class="n">int16</span><span class="p">[:,</span> <span class="p">:],</span> <span class="n">int16</span><span class="p">[:,</span> <span class="p">:,</span> <span class="p">:,</span> <span class="p">:],</span> <span class="n">int16</span><span class="p">[:,</span> <span class="p">:]))</span>
-<span class="k">def</span> <span class="nf">haar_features_multiple_windows_numba_cuda</span><span class="p">(</span><span class="n">ii</span><span class="p">,</span> <span class="n">windows</span><span class="p">,</span> <span class="n">shcoords_multiple_scales</span><span class="p">,</span> <span class="n">X_selected</span><span class="p">):</span>           
+<span class="k">def</span> <span class="nf">haar_features_multiple_windows_numba_cuda</span><span class="p">(</span><span class="n">ii</span><span class="p">,</span> <span class="n">windows</span><span class="p">,</span> <span class="n">shcoords_multiple_scales</span><span class="p">,</span> <span class="n">X_selected</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;CUDA kernel function (``numba.cuda``-compiled) responsible for computing a two-dimensional array of HFs for multiple windows (given: integral image, windows coordinates, pixel coordinates of all features in several scales, and indexes of selected features).&quot;&quot;&quot;</span>               
     <span class="n">i</span> <span class="o">=</span> <span class="n">cuda</span><span class="o">.</span><span class="n">blockIdx</span><span class="o">.</span><span class="n">x</span>
     <span class="n">tpb</span> <span class="o">=</span> <span class="n">cuda</span><span class="o">.</span><span class="n">blockDim</span><span class="o">.</span><span class="n">x</span>
     <span class="n">tx</span> <span class="o">=</span> <span class="n">cuda</span><span class="o">.</span><span class="n">threadIdx</span><span class="o">.</span><span class="n">x</span>
@@ -242,7 +271,11 @@
         <span class="n">t</span> <span class="o">+=</span> <span class="n">tpb</span>
 
 <div class="viewcode-block" id="ii_delta_numba_jit_tf"><a class="viewcode-back" href="../haar.html#haar.ii_delta_numba_jit_tf">[docs]</a><span class="nd">@jit</span><span class="p">(</span><span class="n">nopython</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-<span class="k">def</span> <span class="nf">ii_delta_numba_jit_tf</span><span class="p">(</span><span class="n">ii</span><span class="p">,</span> <span class="n">j1</span><span class="p">,</span> <span class="n">k1</span><span class="p">,</span> <span class="n">j2</span><span class="p">,</span> <span class="n">k2</span><span class="p">):</span> <span class="c1"># same functionality as in haar_feature_numba_jit but types-free signature (tf)</span>
+<span class="k">def</span> <span class="nf">ii_delta_numba_jit_tf</span><span class="p">(</span><span class="n">ii</span><span class="p">,</span> <span class="n">j1</span><span class="p">,</span> <span class="n">k1</span><span class="p">,</span> <span class="n">j2</span><span class="p">,</span> <span class="n">k2</span><span class="p">):</span> 
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Computes a growth (delta operator) of an integral image using a ``numba.jit``-compiled function.</span>
+<span class="sd">    Function with the same functionality as ``ii_delta_numba_jit``, but using a types-free signature (tf) necessary in case of parallelization via ``joblib`` module.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">delta</span> <span class="o">=</span> <span class="n">ii</span><span class="p">[</span><span class="n">j2</span><span class="p">,</span> <span class="n">k2</span><span class="p">]</span>
     <span class="k">if</span> <span class="n">j1</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span> 
         <span class="n">delta</span> <span class="o">-=</span> <span class="n">ii</span><span class="p">[</span><span class="n">j1</span> <span class="o">-</span> <span class="mi">1</span><span class="p">,</span> <span class="n">k2</span><span class="p">]</span>
@@ -254,6 +287,10 @@
 
 <div class="viewcode-block" id="haar_feature_numba_jit_tf"><a class="viewcode-back" href="../haar.html#haar.haar_feature_numba_jit_tf">[docs]</a><span class="nd">@jit</span><span class="p">(</span><span class="n">nopython</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 <span class="k">def</span> <span class="nf">haar_feature_numba_jit_tf</span><span class="p">(</span><span class="n">ii</span><span class="p">,</span> <span class="n">j0</span><span class="p">,</span> <span class="n">k0</span><span class="p">,</span> <span class="n">shcoords_one_feature</span><span class="p">):</span> <span class="c1"># same functionality as in haar_feature_numba_jit but types-free signature (tf)</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Computes a single HF (given: integral image, window offset, and feature pixel coordinates) using a ``numba.jit``-compiled function.</span>
+<span class="sd">    Function with the same functionality as ``haar_feature_numba_jit``, but using a types-free signature (tf) necessary in case of parallelization via ``joblib`` module.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">j</span><span class="p">,</span> <span class="n">k</span><span class="p">,</span> <span class="n">h</span><span class="p">,</span> <span class="n">w</span> <span class="o">=</span> <span class="n">shcoords_one_feature</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> 
     <span class="n">j1</span> <span class="o">=</span> <span class="n">j0</span> <span class="o">+</span> <span class="n">j</span>
     <span class="n">k1</span> <span class="o">=</span> <span class="n">k0</span> <span class="o">+</span> <span class="n">k</span>
@@ -269,14 +306,22 @@
     <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">int16</span><span class="p">(</span><span class="n">white_intensity</span> <span class="o">/</span> <span class="n">white_area</span> <span class="o">-</span> <span class="n">black_intensity</span> <span class="o">/</span> <span class="n">black_area</span><span class="p">)</span></div>
         
 <div class="viewcode-block" id="haar_features_one_window_numba_jit_tf"><a class="viewcode-back" href="../haar.html#haar.haar_features_one_window_numba_jit_tf">[docs]</a><span class="nd">@jit</span><span class="p">(</span><span class="n">nopython</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-<span class="k">def</span> <span class="nf">haar_features_one_window_numba_jit_tf</span><span class="p">(</span><span class="n">ii</span><span class="p">,</span> <span class="n">j0</span><span class="p">,</span> <span class="n">k0</span><span class="p">,</span> <span class="n">shcoords_one_window</span><span class="p">,</span> <span class="n">n</span><span class="p">,</span> <span class="n">features_indexes</span><span class="p">):</span> <span class="c1"># same functionality as in haar_features_one_window_numba_jit but types-free signature (tf)  </span>
+<span class="k">def</span> <span class="nf">haar_features_one_window_numba_jit_tf</span><span class="p">(</span><span class="n">ii</span><span class="p">,</span> <span class="n">j0</span><span class="p">,</span> <span class="n">k0</span><span class="p">,</span> <span class="n">shcoords_one_window</span><span class="p">,</span> <span class="n">n</span><span class="p">,</span> <span class="n">features_indexes</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Computes a vector of HFs (given: integral image, window offset, pixel coordinates of all features, and indexes of selected features) using a ``numba.jit``-compiled function.</span>
+<span class="sd">    Function with the same functionality as ``haar_features_one_window_numba_jit``, but using a types-free signature (tf) necessary in case of parallelization via ``joblib`` module.</span>
+<span class="sd">    &quot;&quot;&quot;</span>      
     <span class="n">features</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">int16</span><span class="p">)</span>
     <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">features_indexes</span><span class="o">.</span><span class="n">size</span><span class="p">):</span>
         <span class="n">features</span><span class="p">[</span><span class="n">features_indexes</span><span class="p">[</span><span class="n">j</span><span class="p">]]</span> <span class="o">=</span> <span class="n">haar_feature_numba_jit_tf</span><span class="p">(</span><span class="n">ii</span><span class="p">,</span> <span class="n">j0</span><span class="p">,</span> <span class="n">k0</span><span class="p">,</span> <span class="n">shcoords_one_window</span><span class="p">[</span><span class="n">j</span><span class="p">])</span>
     <span class="k">return</span> <span class="n">features</span> </div>
 
 <div class="viewcode-block" id="haar_features_multiple_windows_numba_jit_tf"><a class="viewcode-back" href="../haar.html#haar.haar_features_multiple_windows_numba_jit_tf">[docs]</a><span class="nd">@jit</span><span class="p">(</span><span class="n">nopython</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>        
-<span class="k">def</span> <span class="nf">haar_features_multiple_windows_numba_jit_tf</span><span class="p">(</span><span class="n">ii</span><span class="p">,</span> <span class="n">windows</span><span class="p">,</span> <span class="n">shcoords_multiple_scales</span><span class="p">,</span> <span class="n">n</span><span class="p">,</span> <span class="n">features_indexes</span><span class="p">):</span> <span class="c1"># same functionality as in haar_features_multiple_windows_numba_jit but types-free signature (tf)</span>
+<span class="k">def</span> <span class="nf">haar_features_multiple_windows_numba_jit_tf</span><span class="p">(</span><span class="n">ii</span><span class="p">,</span> <span class="n">windows</span><span class="p">,</span> <span class="n">shcoords_multiple_scales</span><span class="p">,</span> <span class="n">n</span><span class="p">,</span> <span class="n">features_indexes</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Computes a two-dimensional array of HFs for multiple windows (given: integral image, windows coordinates, pixel coordinates of all features in several scales, and indexes of selected features) using a ``numba.jit``-compiled function.</span>
+<span class="sd">    Function with the same functionality as ``haar_features_multiple_windows_numba_jit``, but using a types-free signature (tf) necessary in case of parallelization via ``joblib`` module.</span>
+<span class="sd">    &quot;&quot;&quot;</span>    
     <span class="n">m</span> <span class="o">=</span> <span class="n">windows</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
     <span class="n">X</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">m</span><span class="p">,</span> <span class="n">n</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">int16</span><span class="p">)</span>
     <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">m</span><span class="p">):</span>        
@@ -284,7 +329,8 @@
         <span class="n">X</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">haar_features_one_window_numba_jit_tf</span><span class="p">(</span><span class="n">ii</span><span class="p">,</span> <span class="n">j0</span><span class="p">,</span> <span class="n">k0</span><span class="p">,</span> <span class="n">shcoords_multiple_scales</span><span class="p">[</span><span class="n">s</span><span class="p">],</span> <span class="n">n</span><span class="p">,</span> <span class="n">features_indexes</span><span class="p">)</span>
     <span class="k">return</span> <span class="n">X</span></div>
 
-<div class="viewcode-block" id="iou"><a class="viewcode-back" href="../haar.html#haar.iou">[docs]</a><span class="k">def</span> <span class="nf">iou</span><span class="p">(</span><span class="n">coords1</span><span class="p">,</span> <span class="n">coords2</span><span class="p">):</span> <span class="c1"># coords of two rectangles given in the form: (j1, k1, j2, k2), where: (j1, k1) - top-left corner, (j2, k2) - bottom-right corner  </span>
+<div class="viewcode-block" id="iou"><a class="viewcode-back" href="../haar.html#haar.iou">[docs]</a><span class="k">def</span> <span class="nf">iou</span><span class="p">(</span><span class="n">coords1</span><span class="p">,</span> <span class="n">coords2</span><span class="p">):</span> 
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Computes IoU (intersection over union ratio) for a pair rectangles with coordinates given as (j1, k1, j2, k2), where: (j1, k1) - top-left corner, (j2, k2) - bottom-right corner.&quot;&quot;&quot;</span>  
     <span class="n">j11</span><span class="p">,</span> <span class="n">k11</span><span class="p">,</span> <span class="n">j12</span><span class="p">,</span> <span class="n">k12</span> <span class="o">=</span> <span class="n">coords1</span>
     <span class="n">j21</span><span class="p">,</span> <span class="n">k21</span><span class="p">,</span> <span class="n">j22</span><span class="p">,</span> <span class="n">k22</span> <span class="o">=</span> <span class="n">coords2</span>    
     <span class="n">dj</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">min</span><span class="p">([</span><span class="n">j12</span><span class="p">,</span> <span class="n">j22</span><span class="p">])</span> <span class="o">-</span> <span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">([</span><span class="n">j21</span><span class="p">,</span> <span class="n">j11</span><span class="p">])</span> <span class="o">+</span> <span class="mi">1</span> 
@@ -297,7 +343,8 @@
     <span class="n">u</span> <span class="o">=</span> <span class="p">(</span><span class="n">j12</span> <span class="o">-</span> <span class="n">j11</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span> <span class="o">*</span> <span class="p">(</span><span class="n">k12</span> <span class="o">-</span> <span class="n">k11</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span> <span class="o">+</span> <span class="p">(</span><span class="n">j22</span> <span class="o">-</span> <span class="n">j21</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span> <span class="o">*</span> <span class="p">(</span><span class="n">k22</span> <span class="o">-</span> <span class="n">k21</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span> <span class="o">-</span> <span class="n">i</span>
     <span class="k">return</span> <span class="n">i</span> <span class="o">/</span> <span class="n">u</span></div>
 
-<div class="viewcode-block" id="iou2"><a class="viewcode-back" href="../haar.html#haar.iou2">[docs]</a><span class="k">def</span> <span class="nf">iou2</span><span class="p">(</span><span class="n">jkhw1</span><span class="p">,</span> <span class="n">jkhw2</span><span class="p">):</span> <span class="c1"># coords of two rectangles given in the form: (j, k, h, w), where (j, k) - top-left corner, (h, w) - height and width</span>
+<div class="viewcode-block" id="iou2"><a class="viewcode-back" href="../haar.html#haar.iou2">[docs]</a><span class="k">def</span> <span class="nf">iou2</span><span class="p">(</span><span class="n">jkhw1</span><span class="p">,</span> <span class="n">jkhw2</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Computes IoU (intersection over union ratio) for a pair rectangles given in the form: (j, k, h, w), where (j, k) - top-left corner, (h, w) - height and width.&quot;&quot;&quot;</span>
     <span class="n">j11</span> <span class="o">=</span> <span class="n">jkhw1</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> 
     <span class="n">k11</span> <span class="o">=</span> <span class="n">jkhw1</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> 
     <span class="n">j12</span> <span class="o">=</span> <span class="n">j11</span> <span class="o">+</span> <span class="n">jkhw1</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span> <span class="o">-</span> <span class="mi">1</span>
