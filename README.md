@@ -292,9 +292,9 @@ Owing to efficiency of `FastRealBoostBins`'s decision function, it can be applie
 By that we mean a procedure that scans densly a video frame (at multiple positions and scales) and requests a great number of predictions from a classifier - target or non-target? 
 This number depends on frames resolution and other settings, but usually ranges from 10<sup>4</sup> to 10<sup>5</sup>.
 
-To accomplish such an application, one should take advantage of the fact that at predict (detection) stage, it suffices to prepare only the *selected* features of multiple objects (windows to be checked)
-for the classifier, once it has been trained. With such a subset of selected features, one can directly call a suitable private function, e.g. `_decision_function_numba_cuda_job_int16` to ask for predictions,
-instead of `predict` (the latter expects all features to be passed). Moreover, with GPU/CUDA computations at disposal, the feature extraction can be done fast at GPU device side.
+To accomplish such an application, one should take advantage of the fact that at predict (detection) stage, it suffices to prepare for the classifier only the *selected* features 
+of multiple objects (windows) to be checked, once the classifier has been trained. With such a subset of selected features, one can directly call a suitable private function, e.g. `_decision_function_numba_cuda_job_int16` to ask for predictions, instead of `predict` (the latter expects all features to be passed). 
+Moreover, with GPU/CUDA computations at disposal, the feature extraction can be done fast at GPU device side.
 
 Using [FDDB](http://vis-www.cs.umass.edu/fddb) and [HaGRID](https://github.com/hukenovs/hagrid) data, coupled with Haar-like features (HFs), we trained `FastRealBoostBins` classifiers as detectors of *faces*
 and *palm gestures*, respectively. To reduce memory transfers between host and device, constant pieces of information (e.g. coordinates of all windows to be checked, HFs related information) were prepared just
