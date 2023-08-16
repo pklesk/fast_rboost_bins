@@ -292,15 +292,15 @@ Owing to efficiency of `FastRealBoostBins`'s decision function, it can be applie
 By that we mean a procedure that scans densly a video frame (at multiple positions and scales) and requests a great number of predictions from a classifier - target or non-target? 
 This number depends on frames resolution and other settings, but usually ranges from 10<sup>4</sup> to 10<sup>5</sup>.
 
-To accomplish such an application, one should take advantage of the fact that at predict (detection) stage, it suffices to prepare only the *selected* features of multiple objects (windows to be checked)
-for the classifier, once it has been trained. With such a subset of selected features, one can directly call a suitable private function, e.g. `_decision_function_numba_cuda_job_int16` to ask for predictions,
-instead of `predict` (the latter expects all features to be passed). Moreover, with GPU/CUDA computations at disposal, the feature extraction can be done fast at GPU device side.
+To accomplish such an application, one should take advantage of the fact that at predict (detection) stage, it suffices to prepare for the classifier only the *selected* features 
+of multiple objects (windows) to be checked, once the classifier has been trained. With such a subset of selected features, one can directly call a suitable private function, e.g. `_decision_function_numba_cuda_job_int16` to ask for predictions, instead of `predict` (the latter expects all features to be passed). 
+Moreover, with GPU/CUDA computations at disposal, the feature extraction can be done fast at GPU device side.
 
 Using [FDDB](http://vis-www.cs.umass.edu/fddb) and [HaGRID](https://github.com/hukenovs/hagrid) data, coupled with Haar-like features (HFs), we trained `FastRealBoostBins` classifiers as detectors of *faces*
 and *palm gestures*, respectively. To reduce memory transfers between host and device, constant pieces of information (e.g. coordinates of all windows to be checked, HFs related information) were prepared just
 once and placed in device-side arrays prior to an actual video sequence. Below we present example snapshots (click them to see videos) and obtained efficiency measurements from two environments with different 
 GPU devices: 1. GeForce RTX 3090 (contemporary, high-performance), 2. Quadro M4000M (older generation).
-Full details of environment 1 in a former section. Full details of environment 2 given below.
+Full details of environment 1 were specified in a former section, full details of environment 2 are given below.
 
 Hardware environment 2: Intel(R) Xeon(R) CPU E3-1505M v5 @ 2.80GHz, 63.9 GB RAM, NVIDIA Quadro M4000M GPU. <br/>
 Software environment 2: Windows 10, Python 3.9.7 [MSC v.1916 64 bit (AMD64)], numpy 1.20.0, numba 0.54.1, sklearn 1.0.2, cv2 4.5.5-dev, nvcc 11.6.
