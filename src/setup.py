@@ -2,7 +2,7 @@ from setuptools import setup
 
 setup(
     name = "frbb",
-    version = "0.9.4",
+    version = "1.0.0",
     description = "This module contains FastRealBoostBins class representing an ensemble classifier for fast predictions implemented using numba.jit and numba.cuda.",
     author = "Przemysław Klęsk",
     author_email = "pklesk@zut.edu.pl",
