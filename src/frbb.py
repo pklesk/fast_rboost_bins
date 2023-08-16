@@ -77,7 +77,7 @@ from sklearn.utils import check_array, check_X_y
 from sklearn.utils.validation import column_or_1d, check_is_fitted
 from sklearn.utils.multiclass import check_classification_targets
         
-__version__ = "0.9.4"
+__version__ = "1.0.0"
 __author__ = "Przemysław Klęsk"
 __email__ = "pklesk@zut.edu.pl" 
         
@@ -151,8 +151,7 @@ class FastRealBoostBins(BaseEstimator, ClassifierMixin):
     FIT_MODE_DEFAULT = "numba_cuda"
     DECISION_FUNCTION_MODE_DEFAULT = "numba_cuda"
     VERBOSE_DEFAULT = False
-    DEBUG_VERBOSE_DEFAULT = False
-        
+    DEBUG_VERBOSE_DEFAULT = False        
     B_MAX = 32                    
     OUTLIERS_RATIO_MAX = 0.25
     LOGIT_MAX_MAX = np.float32(8.0)

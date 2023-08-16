@@ -47,7 +47,6 @@ import colorama
 __author__ = "Przemysław Klęsk"
 __email__ = "pklesk@zut.edu.pl"
 
-
 # main settings
 KIND = "face" # choices: {"face", "hand"}
 S = 5 # parameter "scales" to generete Haar-like features

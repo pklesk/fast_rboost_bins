@@ -113,14 +113,12 @@
 <span class="kn">from</span> <span class="nn">joblib</span> <span class="kn">import</span> <span class="n">Parallel</span><span class="p">,</span> <span class="n">delayed</span>
 <span class="kn">from</span> <span class="nn">functools</span> <span class="kn">import</span> <span class="n">reduce</span>
 <span class="kn">from</span> <span class="nn">sklearn.metrics</span> <span class="kn">import</span> <span class="n">roc_curve</span>
-<span class="kn">from</span> <span class="nn">matplotlib</span> <span class="kn">import</span> <span class="n">pyplot</span> <span class="k">as</span> <span class="n">plt</span>
 <span class="kn">from</span> <span class="nn">utils</span> <span class="kn">import</span> <span class="n">cpu_and_system_props</span><span class="p">,</span> <span class="n">gpu_props</span><span class="p">,</span> <span class="n">dict_to_str</span><span class="p">,</span> <span class="n">pickle_objects</span><span class="p">,</span> <span class="n">unpickle_objects</span>
 <span class="kn">import</span> <span class="nn">argparse</span>
 <span class="kn">import</span> <span class="nn">colorama</span>
 
 <span class="n">__author__</span> <span class="o">=</span> <span class="s2">&quot;Przemysław Klęsk&quot;</span>
 <span class="n">__email__</span> <span class="o">=</span> <span class="s2">&quot;pklesk@zut.edu.pl&quot;</span>
-
 
 <span class="c1"># main settings</span>
 <span class="n">KIND</span> <span class="o">=</span> <span class="s2">&quot;face&quot;</span> <span class="c1"># choices: {&quot;face&quot;, &quot;hand&quot;}</span>
@@ -142,7 +140,7 @@
 <span class="n">DEMO_DETECT_IN_VIDEO_VERBOSE_LOOP</span> <span class="o">=</span> <span class="kc">False</span>
 <span class="n">DEMO_DETECT_IN_VIDEO_VERBOSE_DETECT</span> <span class="o">=</span> <span class="kc">False</span>
 <span class="n">DEMO_DETECT_IN_VIDEO_FRAMES</span> <span class="o">=</span> <span class="kc">None</span> <span class="c1"># if not None but integer then detection is stopped after seeing given number of frames</span>
-<span class="n">DEMO_DETECT_IN_VIDEO_MULTIPLE_CLFS</span> <span class="o">=</span> <span class="kc">True</span>
+<span class="n">DEMO_DETECT_IN_VIDEO_MULTIPLE_CLFS</span> <span class="o">=</span> <span class="kc">False</span>
 
 <span class="c1"># cv2 camera settings</span>
 <span class="n">CV2_VIDEO_CAPTURE_CAMERA_INDEX</span> <span class="o">=</span> <span class="mi">0</span>
