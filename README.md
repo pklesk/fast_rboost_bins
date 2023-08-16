@@ -19,7 +19,7 @@ weights binning, computing logits, computing exponential errors, finding the err
 The GPU-based predict is computed by a single CUDA kernel. We apply suitable *reduction* patterns and *mutexes*
 to carry out summations and 'argmin' operations. 
 
-To test the predict stage performance we compare `FastRealBoostBins` against state-of-the-art classifiers from `sklearn.ensemble` 
+To test the predict stage performance, we compare `FastRealBoostBins` against state-of-the-art classifiers from `sklearn.ensemble` 
 using large data sets and focusing on response times. In an additional experiment, we make our
 classifiers operate as object detectors under heavy computational load (over 60k queries per a video frame using ensembles of size 2048).
 
