@@ -76,7 +76,7 @@ def gpu_props():
     """Returns a dictionary with properties of GPU device."""
     gpu = cuda.get_current_device()
     props = {}
-    props["name"] = gpu.name.decode("ASCII")
+    props["name"] = gpu.name if isinstance(gpu.name, str) else gpu.name.decode("ASCII")
     props["max_threads_per_block"] = gpu.MAX_THREADS_PER_BLOCK
     props["max_block_dim_x"] = gpu.MAX_BLOCK_DIM_X
     props["max_block_dim_y"] = gpu.MAX_BLOCK_DIM_Y
@@ -94,19 +94,23 @@ def gpu_props():
     props["pci_device_id"] = gpu.PCI_DEVICE_ID
     props["compute_capability"] = gpu.compute_capability            
     CC_CORES_PER_SM_DICT = {
-        (2,0) : 32,
-        (2,1) : 48,
-        (3,0) : 256,
-        (3,5) : 256,
-        (3,7) : 256,
-        (5,0) : 128,
-        (5,2) : 128,
-        (6,0) : 64,
-        (6,1) : 128,
-        (7,0) : 64,
-        (7,5) : 64,
-        (8,0) : 64,
-        (8,6) : 128
+        (2, 0): 32,
+        (2, 1): 48,
+        (3, 0): 256,
+        (3, 5): 256,
+        (3, 7): 256,
+        (5, 0): 128,
+        (5, 2): 128,
+        (6, 0): 64,
+        (6, 1): 128,
+        (7, 0): 64,
+        (7, 5): 64,
+        (8, 0): 64,
+        (8, 6): 128,
+        (8, 7): 128,
+        (8, 9): 128,
+        (9, 0): 128,
+        (12, 0) : 128
         }
     props["cores_per_SM"] = CC_CORES_PER_SM_DICT.get(gpu.compute_capability)
     props["cores_total"] = props["cores_per_SM"] * gpu.MULTIPROCESSOR_COUNT
