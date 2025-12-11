@@ -1,6 +1,10 @@
 # FastRealBoostBins: An ensemble classifier for fast predictions implemented in Python using numba.jit and numba.cuda
 <table>
    <tr>
+      <td>&nbsp;</td>
+      <td colspan="2" align="center"><b>sample videos</b></td>
+   </tr>
+   <tr>
         <td><img src="/extras/fig_experiment_real_1903270360_20230625_fddb-patches_time_predict_test.png"/></td>
         <td><br/><a href="https://github.com/pklesk/fast_rboost_bins/assets/23095311/bbcd05d0-24f6-49cf-be5e-210a71d2595c"><img src="/extras/screenshot_video_1_geforce_rtx_3090__1280_960.jpg"/></td>
         <td><br/><a href="https://github.com/pklesk/fast_rboost_bins/assets/23095311/df08ca75-2cc2-4608-bcbd-e7019134030c"><img src="/extras/screenshot_video_2_quadro_m4000m__1280_960.jpg"/></td>
