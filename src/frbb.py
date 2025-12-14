@@ -610,7 +610,7 @@ class FastRealBoostBins(BaseEstimator, ClassifierMixin):
         t1_loop = time.time()
         if self.verbose:
             print("[main boosting loop...]")                    
-        dev_mutexes = cuda.to_device(np.zeros((n, 1), dtype=np.int32)) # in most cases per-feature mutexes  are applied (only in argmin case a single mutex)
+        dev_mutexes = cuda.to_device(np.zeros((n, 1), dtype=np.int32)) # in most cases per-feature mutexes are applied (only in argmin case a single mutex)
         dev_logits = cuda.device_array((n, self.B), dtype=np.float32)                                
         for t in range(self.T):
             t1_round = time.time()
